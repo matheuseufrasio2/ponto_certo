@@ -58,6 +58,12 @@ func TestHandleError(t *testing.T) {
 			expectedMsg:    domain.ErrNotFound.Error(),
 		},
 		{
+			name:           "billing not found error",
+			err:            domain.ErrBillingNotFound,
+			expectedStatus: http.StatusNotFound,
+			expectedMsg:    domain.ErrBillingNotFound.Error(),
+		},
+		{
 			name:           "appointment conflict error",
 			err:            domain.ErrAppointmentConflict,
 			expectedStatus: http.StatusConflict,
@@ -68,6 +74,12 @@ func TestHandleError(t *testing.T) {
 			err:            domain.ErrInvalidTimeSlot,
 			expectedStatus: http.StatusBadRequest,
 			expectedMsg:    domain.ErrInvalidTimeSlot.Error(),
+		},
+		{
+			name:           "invalid payment method error",
+			err:            domain.ErrInvalidPaymentMethod,
+			expectedStatus: http.StatusBadRequest,
+			expectedMsg:    domain.ErrInvalidPaymentMethod.Error(),
 		},
 		{
 			name:           "unexpected server error (sanitized to 500)",
