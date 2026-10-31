@@ -77,6 +77,10 @@ This document defines the **non-negotiable system invariants and architectural g
   - Releases, SemVer tags (`v0.1.0`), and `CHANGELOG.md` are completely automated via **Google Release Please**.
   - Commits must strictly follow Conventional Commits (`feat:`, `fix:`, `perf:`, `chore:`, `docs:`, `test:`).
   - Commits must be atomic with single responsibilities. Commit titles **MUST NOT** contain conjunctions (`and`, `e`, `&`, `+`). Consult [.agents/skills/atomic-commits/SKILL.md](file:///.agents/skills/atomic-commits/SKILL.md).
+- **Branch Protection & Feature PR Workflow**:
+  - Direct pushes to `main` are strictly forbidden by GitHub Rulesets and local git hooks.
+  - All development must happen on feature branches (`feat/*`, `fix/*`, `chore/*`).
+  - Merges into `main` occur exclusively via Pull Requests after GitHub Actions CI (`Test & Lint`) passes.
 
 ---
 
