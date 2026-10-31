@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/matheuseufrasio2/ponto_certo/docs"
 	"github.com/matheuseufrasio2/ponto_certo/internal/config"
+	"github.com/matheuseufrasio2/ponto_certo/internal/database"
 	"github.com/matheuseufrasio2/ponto_certo/internal/handler"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
@@ -37,7 +38,18 @@ func main() {
 	// 2. Setup structured logging with slog
 	setupLogger(cfg.Env)
 
-	// 3. Initialize Chi router and standard middlewares
+	// 3. Initialize PostgreSQL connection pool
+	dbCtx, dbCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer dbCancel()
+
+	dbPool, err := database.NewPostgresPool(dbCtx, cfg.DatabaseURL)
+	if err != nil {
+		slog.Error("❌ Database connection failure", "error", err)
+		os.Exit(1)
+	}
+	defer dbPool.Close()
+
+	// 4. Initialize Chi router and standard middlewares
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID) // Request tracing ID
@@ -45,7 +57,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer) // Protect against panics
 
-	// 4. Register API routes
+	// 5. Register API routes
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", handler.HealthCheck)
 	})
@@ -56,7 +68,7 @@ func main() {
 		httpSwagger.URL(swaggerURL),
 	))
 
-	// 5. Configure HTTP server with production timeouts
+	// 6. Configure HTTP server with production timeouts
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
 		Handler:      r,
@@ -65,7 +77,7 @@ func main() {
 		IdleTimeout:  cfg.IdleTimeout,
 	}
 
-	// 6. Graceful Shutdown: listen for OS termination signals (SIGINT, SIGTERM)
+	// 7. Graceful Shutdown: listen for OS termination signals (SIGINT, SIGTERM)
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 

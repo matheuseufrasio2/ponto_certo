@@ -72,6 +72,11 @@ With the server running, access the interactive OpenAPI documentation:
 | `make docs` | Updates Swagger documentation using `swag` |
 | `make build` | Compiles optimized production binary into `bin/api` |
 | `make test` | Runs the full test suite |
+| `make db-up` | Starts PostgreSQL 16 container and waits for healthcheck |
+| `make db-down` | Stops PostgreSQL container preserving volume data |
+| `make db-logs` | Streams PostgreSQL container logs in real time |
+| `make db-shell` | Opens interactive `psql` shell in database container |
+| `make db-reset` | Recreates database from scratch (drops volume) |
 | `make air-install` | Installs the `air` hot-reload tool |
 | `make clean` | Removes build binaries and temporary artifacts |
 

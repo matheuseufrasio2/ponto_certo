@@ -1,4 +1,4 @@
-.PHONY: all docs dev build test clean air-install
+.PHONY: all docs dev build test clean air-install db-up db-down db-logs db-shell db-reset
 
 # Generate Swagger documentation
 docs:
@@ -30,6 +30,31 @@ build: docs
 test:
 	@echo "🧪 Running test suite..."
 	@go test -v ./...
+
+# Database targets (Docker Compose)
+db-up:
+	@echo "🐘 Starting PostgreSQL container..."
+	@docker compose up -d postgres
+	@echo "⏳ Waiting for PostgreSQL to be healthy..."
+	@until docker compose exec -T postgres pg_isready -U postgres -d ponto_certo > /dev/null 2>&1; do \
+		sleep 1; \
+	done
+	@echo "✅ PostgreSQL is ready on localhost:5432"
+
+db-down:
+	@echo "🛑 Stopping PostgreSQL container..."
+	@docker compose down
+
+db-logs:
+	@docker compose logs -f postgres
+
+db-shell:
+	@docker compose exec -it postgres psql -U postgres -d ponto_certo
+
+db-reset:
+	@echo "⚠️  Resetting database (dropping volumes)..."
+	@docker compose down -v
+	@$(MAKE) db-up
 
 # Clean up build artifacts and temporary files
 clean:
