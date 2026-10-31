@@ -46,6 +46,8 @@ This document defines the **non-negotiable system invariants and architectural g
 - **NEVER** launch unmanaged background goroutines (`go func() { ... }()`) without a bounded context, recovery mechanism, or `sync.WaitGroup`.
 
 ### 4. Barbershop Domain Invariants
+- **Multi-Tenancy & Tenant Scoping**: Operational entities (`barbers`, `clients`, `services`, `billings`, `appointments`) belong to a `unit_id`. Requests must enforce tenant boundary matching the caller's unit/organization context.
+- **RBAC Taxonomy**: Valid roles are `SUPER_ADMIN` (global/platform), `ORG_OWNER` (entire franchise/organization), `UNIT_MANAGER` (single unit), `RECEPTIONIST` (unit agenda and cashier), `BARBER` (own agenda and commission).
 - **Monetary Values**: All monetary values (service prices, totals) **MUST** be stored as integer cents (`PriceInCents int64`), never as floating-point numbers (`float64`).
 - **Timestamps**: All dates and appointment intervals must be stored and processed in **UTC** (`time.Time`).
 - **Schedule Overlap Rule**: Two appointments for the same barber overlap if and only if:
