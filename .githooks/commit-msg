@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -e
+
+COMMIT_MSG_FILE="$1"
+FIRST_LINE=$(head -n 1 "$COMMIT_MSG_FILE")
+
+# 1. Regex for Conventional Commits
+CONVENTIONAL_REGEX="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9_-]+\))?: .+"
+
+if [[ ! "$FIRST_LINE" =~ $CONVENTIONAL_REGEX ]]; then
+    echo "❌ [Commit Rejected] Title does not match Conventional Commits format."
+    echo "👉 Expected format: <type>(<scope>): <subject>"
+    echo "   Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+    echo "   Got: '$FIRST_LINE'"
+    exit 1
+fi
+
+# 2. Check for conjunctions in title (Atomic commits rule from AGENTS.md)
+LOWER_LINE=$(echo "$FIRST_LINE" | tr '[:upper:]' '[:lower:]')
+
+if [[ "$LOWER_LINE" =~ [[:space:]](and|e|\&|\+)[[:space:]] ]]; then
+    echo "❌ [Commit Rejected] Title contains conjunctions ('and', 'e', '&', '+')."
+    echo "👉 Atomic commits rule: Commits must be atomic. Split into separate single-responsibility commits."
+    echo "   Got: '$FIRST_LINE'"
+    exit 1
+fi
+
+exit 0

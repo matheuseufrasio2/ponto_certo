@@ -69,8 +69,11 @@ This document defines the **non-negotiable system invariants and architectural g
 ## 📐 Coding Standards & Tooling
 
 - **Language Policy**:
-  - **Conversations & Plans**: All plans, discussions, and chat responses with the user must be conducted in **Portuguese**.
-  - **Codebase Artifacts**: English for all code, functions, types, comments, documentation, git commits, and PR descriptions. Only the brand/app name (`ponto_certo`) remains in Portuguese.
+  - **Conversations & Plans**: All plans, discussions, markdown artifacts in `.gemini/antigravity/brain/` (`plan_*.md`, `walkthrough.md`, analysis reports), and chat responses with the user must be conducted strictly in **Portuguese**.
+  - **Codebase Artifacts**: English for all code, functions, types, comments, git commit headers/bodies, and PR descriptions. Only the brand/app name (`ponto_certo`) remains in Portuguese.
+- **Interactive User Approval for Git & GitHub CLI**:
+  - All mutating `git` commands (`commit`, `checkout -b`, `push`, `reset`) and `gh` CLI commands **MUST NEVER** run in silent sandbox mode. They must be executed with elevated permissions (`BypassSandbox: true`) to trigger the interactive user authorization modal.
+  - Native Git hooks in `.githooks/` (`commit-msg`, `pre-commit`) enforce Conventional Commits and atomic commits without conjunctions (`and`, `e`, `&`, `+`) before any commit is finalized.
 - **Go Formatting & Tooling**:
   - Code must be formatted with standard `gofmt` (tabs for indentation, 4-space visual width).
   - All code must pass `golangci-lint` without warnings (`make dev` / `golangci-lint run`).
