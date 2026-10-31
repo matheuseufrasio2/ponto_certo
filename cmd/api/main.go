@@ -53,7 +53,6 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID) // Request tracing ID
-	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer) // Protect against panics
 
