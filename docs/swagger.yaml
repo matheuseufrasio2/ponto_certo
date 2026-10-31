@@ -1,0 +1,42 @@
+basePath: /api/v1
+definitions:
+  internal_handler.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  internal_handler.HealthResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+info:
+  contact:
+    email: matheuseufrasio2@gmail.com
+    name: Matheus
+  description: High-performance RESTful API for barbershop scheduling and operations
+    management.
+  title: Ponto Certo API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: HealthCheck is a handler function that checks the health of the
+        service and returns a JSON response indicating the status.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler.HealthResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      summary: Health check endpoint
+      tags:
+      - health
+swagger: "2.0"

@@ -1,0 +1,25 @@
+# Binaries and build output
+bin/
+tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+build-errors.log
+
+# Test coverage artifacts
+*.out
+*.test
+coverage/
+
+# Sensitive environment variables
+.env
+!.env.example
+
+# OS and IDE files
+.ai/
+.idea/
+.DS_Store
+*.swp
+*~

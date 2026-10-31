@@ -1,0 +1,29 @@
+{
+  "go.useLanguageServer": true,
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast"],
+  "go.lintOnSave": "package",
+  "go.testFlags": ["-v", "-race"],
+  "editor.formatOnSave": true,
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.insertSpaces": false,
+    "editor.tabSize": 4,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "gopls": {
+    "ui.semanticTokens": true,
+    "ui.inlayhint.hints": {
+      "parameterNames": true,
+      "assignVariableTypes": true,
+      "compositeLiteralFields": true
+    },
+    "ui.diagnostic.analyses": {
+      "shadow": true,
+      "unusedparams": true
+    }
+  }
+}
+
