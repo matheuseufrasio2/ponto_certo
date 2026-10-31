@@ -77,6 +77,9 @@ With the server running, access the interactive OpenAPI documentation:
 | `make db-logs` | Streams PostgreSQL container logs in real time |
 | `make db-shell` | Opens interactive `psql` shell in database container |
 | `make db-reset` | Recreates database from scratch (drops volume) |
+| `make migrate-up` | Applies versioned SQL database migrations |
+| `make migrate-down` | Reverts the most recent database migration |
+| `make migrate-status` | Checks current database migration version |
 | `make air-install` | Installs the `air` hot-reload tool |
 | `make clean` | Removes build binaries and temporary artifacts |
 

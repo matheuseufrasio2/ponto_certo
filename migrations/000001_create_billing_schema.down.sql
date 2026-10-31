@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS billings;
+DROP TABLE IF EXISTS services;
+DROP TABLE IF EXISTS clients;
+DROP TABLE IF EXISTS barbers;
+DROP FUNCTION IF EXISTS update_updated_at_column();

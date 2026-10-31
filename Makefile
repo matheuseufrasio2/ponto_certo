@@ -1,4 +1,4 @@
-.PHONY: all docs dev build test clean air-install db-up db-down db-logs db-shell db-reset
+.PHONY: all docs dev build test clean air-install db-up db-down db-logs db-shell db-reset migrate-up migrate-down migrate-status
 
 # Generate Swagger documentation
 docs:
@@ -55,6 +55,19 @@ db-reset:
 	@echo "⚠️  Resetting database (dropping volumes)..."
 	@docker compose down -v
 	@$(MAKE) db-up
+
+# Database migrations using official golang-migrate container
+migrate-up:
+	@echo "🚀 Applying database migrations..."
+	@docker compose --profile tools run --rm migrate up
+
+migrate-down:
+	@echo "⏪ Reverting last database migration..."
+	@docker compose --profile tools run --rm migrate down 1
+
+migrate-status:
+	@echo "📊 Checking migration version..."
+	@docker compose --profile tools run --rm migrate version
 
 # Clean up build artifacts and temporary files
 clean:

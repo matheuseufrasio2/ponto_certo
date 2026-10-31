@@ -17,5 +17,15 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    image: migrate/migrate:v4.17.0
+    profiles: ["tools"]
+    volumes:
+      - ./migrations:/migrations
+    entrypoint: ["migrate", "-path=/migrations", "-database=postgres://postgres:postgres@postgres:5432/ponto_certo?sslmode=disable"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
