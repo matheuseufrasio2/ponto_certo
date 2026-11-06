@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -96,8 +97,27 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID) // Request tracing ID
-	r.Use(middleware.Logger)
+	r.Use(internalMiddleware.RequestLogger(cfg.Env))
 	r.Use(middleware.Recoverer) // Protect against panics
+
+	// Fallback handlers with informative logging
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		slog.Warn("route not found (404)", "method", r.Method, "url", r.URL.RequestURI(), "remote_ip", r.RemoteAddr)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": fmt.Sprintf("endpoint não encontrado: %s %s", r.Method, r.URL.Path),
+		})
+	})
+
+	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		slog.Warn("method not allowed (405)", "method", r.Method, "url", r.URL.RequestURI(), "remote_ip", r.RemoteAddr)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": fmt.Sprintf("método %s não permitido para a rota %s", r.Method, r.URL.Path),
+		})
+	})
 
 	// 8. Register API routes
 	r.Route("/api/v1", func(r chi.Router) {
