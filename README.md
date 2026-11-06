@@ -63,6 +63,23 @@ The server starts at `http://localhost:8080`.
 With the server running, access the interactive OpenAPI documentation:
 👉 [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
 
+### 4. Credenciais de Teste / Dev Seed (Multi-Tenancy)
+Para testar a API no Swagger ou conectar com o Frontend (`pc-dashboard`), o script `scripts/seed.sql` cria 2 organizações completas com todas as roles RBAC.
+
+> 🔑 **Senha padrão para TODOS os usuários de teste:** `admin123`
+
+| Organização | Role | Nome | Email | Escopo / Unidade |
+| :--- | :--- | :--- | :--- | :--- |
+| **Global** | `SUPER_ADMIN` | Carlos Super Admin | `superadmin@pontocerto.com.br` | Acesso irrestrito multi-rede |
+| **Org 1 - Ponto Certo** | `ORG_OWNER` | Roberto Franchising Owner | `owner@pontocerto.com.br` | Toda a Rede Ponto Certo |
+| **Org 1 - Ponto Certo** | `UNIT_MANAGER` | Juliana Gerente Matriz | `manager.matriz@pontocerto.com.br` | Matriz Centro (`b...0001`) |
+| **Org 1 - Ponto Certo** | `RECEPTIONIST` | Lucas Recepção Matriz | `recepcao.matriz@pontocerto.com.br` | Matriz Centro (`b...0001`) |
+| **Org 1 - Ponto Certo** | `BARBER` | Marcos Mestre Barbeiro | `marcos.barbeiro@pontocerto.com.br` | Matriz Centro (`b...0001`) |
+| **Org 2 - Don Corleone** | `ORG_OWNER` | Vito Corleone Owner | `owner.corleone@pontocerto.com.br` | Toda a Rede Don Corleone |
+| **Org 2 - Don Corleone** | `UNIT_MANAGER` | Santino Gerente Jardins | `manager.jardins@pontocerto.com.br` | Unidade Jardins (`b...0003`) |
+| **Org 2 - Don Corleone** | `RECEPTIONIST` | Connie Recepção Jardins | `recepcao.jardins@pontocerto.com.br` | Unidade Jardins (`b...0003`) |
+| **Org 2 - Don Corleone** | `BARBER` | Enzo Barbeiro Jardins | `barbeiro.jardins@pontocerto.com.br` | Unidade Jardins (`b...0003`) |
+
 ---
 
 ## 🛠️ Makefile Commands

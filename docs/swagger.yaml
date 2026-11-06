@@ -334,8 +334,20 @@ info:
   contact:
     email: matheuseufrasio2@gmail.com
     name: Matheus
-  description: High-performance RESTful API for barbershop scheduling and operations
-    management.
+  description: "High-performance RESTful API for barbershop scheduling and operations
+    management.\n\n### \U0001F511 Credenciais de Teste (Dev Seed - Senha para todas:
+    `admin123`)\n\n| Role | Email | Organização / Unidade |\n| :--- | :--- | :---
+    |\n| `SUPER_ADMIN` | `superadmin@pontocerto.com.br` | Acesso global multi-rede
+    |\n| `ORG_OWNER` | `owner@pontocerto.com.br` | Org 1 - Rede Ponto Certo |\n| `UNIT_MANAGER`
+    | `manager.matriz@pontocerto.com.br` | Org 1 - Matriz Centro |\n| `RECEPTIONIST`
+    | `recepcao.matriz@pontocerto.com.br` | Org 1 - Matriz Centro |\n| `BARBER` |
+    `marcos.barbeiro@pontocerto.com.br` | Org 1 - Matriz Centro |\n| `ORG_OWNER` |
+    `owner.corleone@pontocerto.com.br` | Org 2 - Don Corleone |\n| `UNIT_MANAGER`
+    | `manager.jardins@pontocerto.com.br` | Org 2 - Jardins |\n| `RECEPTIONIST` |
+    `recepcao.jardins@pontocerto.com.br` | Org 2 - Jardins |\n| `BARBER` | `barbeiro.jardins@pontocerto.com.br`
+    | Org 2 - Jardins |\n\n**Como autenticar no Swagger:** Faça login em `POST /api/v1/auth/login`,
+    copie o token do JSON, clique no botão **Authorize** (topo direito) e cole: `Bearer
+    <token>`."
   title: Ponto Certo API
   version: "1.0"
 paths:

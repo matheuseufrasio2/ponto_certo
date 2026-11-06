@@ -27,6 +27,22 @@ import (
 // @title Ponto Certo API
 // @version 1.0
 // @description High-performance RESTful API for barbershop scheduling and operations management.
+// @description
+// @description ### 🔑 Credenciais de Teste (Dev Seed - Senha para todas: `admin123`)
+// @description
+// @description | Role | Email | Organização / Unidade |
+// @description | :--- | :--- | :--- |
+// @description | `SUPER_ADMIN` | `superadmin@pontocerto.com.br` | Acesso global multi-rede |
+// @description | `ORG_OWNER` | `owner@pontocerto.com.br` | Org 1 - Rede Ponto Certo |
+// @description | `UNIT_MANAGER` | `manager.matriz@pontocerto.com.br` | Org 1 - Matriz Centro |
+// @description | `RECEPTIONIST` | `recepcao.matriz@pontocerto.com.br` | Org 1 - Matriz Centro |
+// @description | `BARBER` | `marcos.barbeiro@pontocerto.com.br` | Org 1 - Matriz Centro |
+// @description | `ORG_OWNER` | `owner.corleone@pontocerto.com.br` | Org 2 - Don Corleone |
+// @description | `UNIT_MANAGER` | `manager.jardins@pontocerto.com.br` | Org 2 - Jardins |
+// @description | `RECEPTIONIST` | `recepcao.jardins@pontocerto.com.br` | Org 2 - Jardins |
+// @description | `BARBER` | `barbeiro.jardins@pontocerto.com.br` | Org 2 - Jardins |
+// @description
+// @description **Como autenticar no Swagger:** Faça login em `POST /api/v1/auth/login`, copie o token do JSON, clique no botão **Authorize** (topo direito) e cole: `Bearer <token>`.
 // @BasePath /api/v1
 
 // @contact.name Matheus
