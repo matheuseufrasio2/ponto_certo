@@ -32,7 +32,9 @@ func (r *PostgresBillingRepository) CreateCheckout(ctx context.Context, input do
 	if err != nil {
 		return nil, fmt.Errorf("begin checkout tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	// 1. Lock appointment row
 	lockQuery := `
