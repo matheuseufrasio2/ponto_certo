@@ -20,6 +20,18 @@ func NewCatalogHandler(catalogService *service.CatalogService) *CatalogHandler {
 }
 
 // GetUnitCatalog handles GET /api/v1/units/{unit_id}/catalog.
+// @Summary Obter catálogo da unidade
+// @Description Retorna a lista de barbeiros e serviços ativos disponíveis para atendimento na filial especificada.
+// @Tags Catalog
+// @Security BearerAuth
+// @Produce json
+// @Param unit_id path string true "ID da unidade"
+// @Success 200 {object} service.CatalogResponse "Catálogo com lista de barbeiros e serviços"
+// @Failure 401 {object} ErrorResponse "Não autenticado"
+// @Failure 403 {object} ErrorResponse "Acesso não permitido à unidade informada"
+// @Failure 404 {object} ErrorResponse "Unidade não encontrada"
+// @Failure 500 {object} ErrorResponse "Erro interno do servidor"
+// @Router /units/{unit_id}/catalog [get]
 func (h *CatalogHandler) GetUnitCatalog(w http.ResponseWriter, r *http.Request) {
 	unitID := chi.URLParam(r, "unit_id")
 	if unitID == "" {

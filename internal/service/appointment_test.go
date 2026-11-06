@@ -211,3 +211,4 @@ func TestAppointmentService_CompleteCut(t *testing.T) {
 		}
 	})
 }
+
