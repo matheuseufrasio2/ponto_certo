@@ -76,6 +76,127 @@ const docTemplate = `{
                 }
             }
         },
+        "/barber/appointments/{id}/complete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Finaliza a execução do serviço pelo barbeiro responsável, liberando a cadeira.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Barber"
+                ],
+                "summary": "Concluir atendimento na cadeira",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do agendamento",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mensagem de confirmação",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido ou transição de status não permitida",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Atendimento não pertence a este barbeiro",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Agendamento não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/barber/my-queue": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna todos os agendamentos atribuídos ao barbeiro autenticado no dia selecionado.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Barber"
+                ],
+                "summary": "Listar fila diária do barbeiro",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Data no formato YYYY-MM-DD (padrão: hoje)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fila de agendamentos do profissional",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Perfil de barbeiro não encontrado para o usuário",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "HealthCheck is a handler function that checks the health of the service and returns a JSON response indicating the status.",
@@ -101,9 +222,570 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/reception/appointments": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna a lista de agendamentos de uma unidade para a data informada (padrão: hoje).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "Listar agendamentos da recepção",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da unidade (opcional se usuário já vinculado a uma unidade)",
+                        "name": "unit_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Data no formato YYYY-MM-DD (padrão: hoje)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de agendamentos detalhados",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso não permitido a esta unidade",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cria um agendamento na unidade para cliente novo ou existente, com validação de colisão de horário.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "Criar novo agendamento ou encaixe",
+                "parameters": [
+                    {
+                        "description": "Dados do agendamento",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateAppointmentInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Agendamento criado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Appointment"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou corpo malformado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso não permitido",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Barbeiro já possui agendamento neste horário",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/reception/checkout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Liquida o atendimento com o método de pagamento selecionado, gera o registro financeiro e marca o agendamento como pago e concluído.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "Realizar checkout de agendamento",
+                "parameters": [
+                    {
+                        "description": "Dados de pagamento e agendamento",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CheckoutInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Faturamento registrado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing"
+                        }
+                    },
+                    "400": {
+                        "description": "Método de pagamento inválido ou corpo malformado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Agendamento não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Agendamento já foi liquidado anteriormente",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/units/{unit_id}/catalog": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna a lista de barbeiros e serviços ativos disponíveis para atendimento na filial especificada.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Obter catálogo da unidade",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID da unidade",
+                        "name": "unit_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Catálogo com lista de barbeiros e serviços",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso não permitido à unidade informada",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Unidade não encontrada",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Appointment": {
+            "type": "object",
+            "properties": {
+                "barber_id": {
+                    "type": "string"
+                },
+                "client_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "description": "Legacy alias",
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "payment_status": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus"
+                },
+                "price_in_cents": {
+                    "type": "integer"
+                },
+                "service_id": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails": {
+            "type": "object",
+            "properties": {
+                "barber_id": {
+                    "type": "string"
+                },
+                "barber_name": {
+                    "type": "string"
+                },
+                "client_id": {
+                    "type": "string"
+                },
+                "client_name": {
+                    "type": "string"
+                },
+                "client_phone": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "description": "Legacy alias",
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "payment_status": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus"
+                },
+                "price_in_cents": {
+                    "type": "integer"
+                },
+                "service_id": {
+                    "type": "string"
+                },
+                "service_name": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus"
+                },
+                "time_slot": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus": {
+            "type": "string",
+            "enum": [
+                "SCHEDULED",
+                "COMPLETED",
+                "CANCELLED",
+                "NO_SHOW"
+            ],
+            "x-enum-varnames": [
+                "StatusScheduled",
+                "StatusCompleted",
+                "StatusCancelled",
+                "StatusNoShow"
+            ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Barber": {
+            "type": "object",
+            "properties": {
+                "commission_percentage": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "Linked if barber has system login",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing": {
+            "type": "object",
+            "properties": {
+                "amount_in_cents": {
+                    "type": "integer"
+                },
+                "appointment_id": {
+                    "type": "string"
+                },
+                "barber_id": {
+                    "type": "string"
+                },
+                "client_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "service_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BillingStatus"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.BillingStatus": {
+            "type": "string",
+            "enum": [
+                "PAID",
+                "CANCELLED"
+            ],
+            "x-enum-varnames": [
+                "BillingStatusPaid",
+                "BillingStatusCancelled"
+            ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.CheckoutInput": {
+            "type": "object",
+            "properties": {
+                "appointment_id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateAppointmentInput": {
+            "type": "object",
+            "properties": {
+                "barber_id": {
+                    "type": "string"
+                },
+                "client_id": {
+                    "type": "string"
+                },
+                "client_name": {
+                    "type": "string"
+                },
+                "client_phone": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "service_id": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod": {
+            "type": "string",
+            "enum": [
+                "CREDIT_CARD",
+                "DEBIT_CARD",
+                "PIX",
+                "CASH",
+                "OTHER",
+                "CARD"
+            ],
+            "x-enum-comments": {
+                "PaymentMethodCard": "Kept for backward compatibility"
+            },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "Kept for backward compatibility"
+            ],
+            "x-enum-varnames": [
+                "PaymentMethodCreditCard",
+                "PaymentMethodDebitCard",
+                "PaymentMethodPix",
+                "PaymentMethodCash",
+                "PaymentMethodOther",
+                "PaymentMethodCard"
+            ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus": {
+            "type": "string",
+            "enum": [
+                "PENDING",
+                "PAID"
+            ],
+            "x-enum-varnames": [
+                "PaymentStatusPending",
+                "PaymentStatusPaid"
+            ]
+        },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.Role": {
             "type": "string",
             "enum": [
@@ -120,6 +802,84 @@ const docTemplate = `{
                 "RoleReceptionist",
                 "RoleBarber"
             ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Service": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceCategory"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "duration_minutes": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_in_cents": {
+                    "description": "Integer cents avoids floating-point issues",
+                    "type": "integer"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceCategory": {
+            "type": "string",
+            "enum": [
+                "CABELO",
+                "BARBA",
+                "CABELO_E_BARBA",
+                "COMBOS",
+                "TRATAMENTOS_CAPILARES",
+                "CUIDADOS_ESPECIAIS",
+                "QUIMICAS_CAPILARES",
+                "VISAGISMO",
+                "ESTETICA_FACIAL"
+            ],
+            "x-enum-varnames": [
+                "ServiceCategoryCabelo",
+                "ServiceCategoryBarba",
+                "ServiceCategoryCabeloEBarba",
+                "ServiceCategoryCombos",
+                "ServiceCategoryTratamentos",
+                "ServiceCategoryCuidadosEspeciais",
+                "ServiceCategoryQuimicas",
+                "ServiceCategoryVisagismo",
+                "ServiceCategoryEsteticaFacial"
+            ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse": {
+            "type": "object",
+            "properties": {
+                "barbers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Barber"
+                    }
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Service"
+                    }
+                }
+            }
         },
         "github_com_matheuseufrasio2_ponto_certo_internal_service.LoginInput": {
             "type": "object",
@@ -192,6 +952,14 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Digite \"Bearer \" seguido pelo token JWT.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

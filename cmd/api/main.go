@@ -31,6 +31,11 @@ import (
 
 // @contact.name Matheus
 // @contact.email matheuseufrasio2@gmail.com
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Digite "Bearer " seguido pelo token JWT.
 func main() {
 	// 1. Load application configuration
 	cfg, err := config.Load()
