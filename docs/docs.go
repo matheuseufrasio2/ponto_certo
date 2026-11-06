@@ -18,6 +18,64 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Autentica um usuário via e-mail e senha, retornando um JWT com seu papel e escopo de tenant.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Realizar autenticação",
+                "parameters": [
+                    {
+                        "description": "Credenciais de acesso",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.LoginInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token de acesso e dados do usuário",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.LoginOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Requisição malformada ou inválida",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciais incorretas",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Usuário desativado",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "HealthCheck is a handler function that checks the health of the service and returns a JSON response indicating the status.",
@@ -46,6 +104,76 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Role": {
+            "type": "string",
+            "enum": [
+                "SUPER_ADMIN",
+                "ORG_OWNER",
+                "UNIT_MANAGER",
+                "RECEPTIONIST",
+                "BARBER"
+            ],
+            "x-enum-varnames": [
+                "RoleSuperAdmin",
+                "RoleOrgOwner",
+                "RoleUnitManager",
+                "RoleReceptionist",
+                "RoleBarber"
+            ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_service.LoginInput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_service.LoginOutput": {
+            "type": "object",
+            "properties": {
+                "expires_in": {
+                    "description": "in seconds",
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "description": "always Bearer",
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.UserResponse"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_service.UserResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Role"
+                },
+                "unit_id": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_handler.ErrorResponse": {
             "type": "object",
             "properties": {
