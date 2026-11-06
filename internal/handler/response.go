@@ -50,6 +50,7 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrBillingNotFound),
 		errors.Is(err, domain.ErrUserNotFound),
 		errors.Is(err, domain.ErrOrganizationNotFound),
+		errors.Is(err, domain.ErrAppointmentNotFound),
 		errors.Is(err, domain.ErrUnitNotFound):
 		WriteError(w, http.StatusNotFound, err.Error())
 
@@ -59,12 +60,15 @@ func HandleError(w http.ResponseWriter, err error) {
 	case errors.Is(err, domain.ErrForbidden):
 		WriteError(w, http.StatusForbidden, err.Error())
 
-	case errors.Is(err, domain.ErrAppointmentConflict):
+	case errors.Is(err, domain.ErrAppointmentConflict),
+		errors.Is(err, domain.ErrBillingAlreadyProcessed):
 		WriteError(w, http.StatusConflict, err.Error())
 
 	case errors.Is(err, domain.ErrInvalidTimeSlot),
 		errors.Is(err, domain.ErrInvalidPaymentMethod),
 		errors.Is(err, domain.ErrInvalidBillingStatus),
+		errors.Is(err, domain.ErrInvalidAppointmentTransition),
+		errors.Is(err, domain.ErrInvalidAppointmentTime),
 		errors.Is(err, domain.ErrInvalidRole):
 		WriteError(w, http.StatusBadRequest, err.Error())
 

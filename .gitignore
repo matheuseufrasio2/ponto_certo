@@ -23,3 +23,5 @@ coverage/
 .DS_Store
 *.swp
 *~
+.neon
+node_modules/

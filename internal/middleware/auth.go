@@ -2,13 +2,13 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/matheuseufrasio2/ponto_certo/internal/domain"
-	"github.com/matheuseufrasio2/ponto_certo/internal/handler"
 	"github.com/matheuseufrasio2/ponto_certo/internal/service"
 )
 
@@ -16,18 +16,24 @@ type contextKey struct{}
 
 var userContextKey = contextKey{}
 
+func writeJSONError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
 func AuthMiddleware(jwtSecret string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				handler.HandleError(w, domain.ErrUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, domain.ErrUnauthorized.Error())
 				return
 			}
 
 			parts := strings.Split(authHeader, " ")
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				handler.HandleError(w, domain.ErrUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, domain.ErrUnauthorized.Error())
 				return
 			}
 
@@ -42,7 +48,7 @@ func AuthMiddleware(jwtSecret string) func(next http.Handler) http.Handler {
 			})
 
 			if err != nil || !token.Valid {
-				handler.HandleError(w, domain.ErrUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, domain.ErrUnauthorized.Error())
 				return
 			}
 
@@ -62,7 +68,7 @@ func RequireRoles(allowedRoles ...domain.Role) func(next http.Handler) http.Hand
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			claims, ok := UserFromContext(r.Context())
 			if !ok || claims == nil {
-				handler.HandleError(w, domain.ErrUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, domain.ErrUnauthorized.Error())
 				return
 			}
 
@@ -78,7 +84,7 @@ func RequireRoles(allowedRoles ...domain.Role) func(next http.Handler) http.Hand
 				}
 			}
 
-			handler.HandleError(w, domain.ErrForbidden)
+			writeJSONError(w, http.StatusForbidden, domain.ErrForbidden.Error())
 		})
 	}
 }
