@@ -78,12 +78,12 @@ func main() {
 
 			// SUPER_ADMIN routes (Example)
 			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin)).Get("/admin/stats", func(w http.ResponseWriter, r *http.Request) {
-				handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido ao Super Admin!"})
+				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido ao Super Admin!"})
 			})
 
 			// Owner and Manager routes (Example)
 			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin, domain.RoleOrgOwner, domain.RoleUnitManager)).Get("/manager/overview", func(w http.ResponseWriter, r *http.Request) {
-				handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido à gestão!"})
+				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido à gestão!"})
 			})
 		})
 	})
