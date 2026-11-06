@@ -29,6 +29,7 @@ var (
 	ErrInvalidProductStock        = errors.New("product stock quantity must be greater than or equal to zero")
 	ErrInvalidAppointmentTransition = errors.New("invalid appointment status transition")
 	ErrInvalidAppointmentTime     = errors.New("appointment start time must be before end time")
+	ErrBillingAlreadyProcessed    = errors.New("appointment has already been paid and processed")
 )
 
 // Role defines system actor roles for RBAC.
@@ -391,3 +392,34 @@ func (a Appointment) Validate() error {
 func HasScheduleConflict(startA, endA, startB, endB time.Time) bool {
 	return startA.Before(endB) && endA.After(startB)
 }
+
+// AppointmentDetails enriches an Appointment with related entity names for UI presentation.
+type AppointmentDetails struct {
+	Appointment
+	ClientName  string `json:"client_name"`
+	ClientPhone string `json:"client_phone,omitempty"`
+	BarberName  string `json:"barber_name"`
+	ServiceName string `json:"service_name"`
+	TimeSlot    string `json:"time_slot"`
+}
+
+// CreateAppointmentInput holds payload data for booking an appointment.
+type CreateAppointmentInput struct {
+	UnitID      string    `json:"unit_id"`
+	BarberID    string    `json:"barber_id"`
+	ClientID    string    `json:"client_id,omitempty"`
+	ClientName  string    `json:"client_name,omitempty"`
+	ClientPhone string    `json:"client_phone,omitempty"`
+	ServiceID   string    `json:"service_id"`
+	StartTime   time.Time `json:"start_time"`
+	EndTime     time.Time `json:"end_time"`
+	Notes       string    `json:"notes,omitempty"`
+}
+
+// CheckoutInput holds parameters required to liquidate an appointment.
+type CheckoutInput struct {
+	AppointmentID string        `json:"appointment_id"`
+	PaymentMethod PaymentMethod `json:"payment_method"`
+	Notes         string        `json:"notes,omitempty"`
+}
+

@@ -47,26 +47,38 @@ func main() {
 	defer dbCancel()
 
 	dbPool, err := database.NewPostgresPool(dbCtx, cfg.DatabaseURL)
-
 	if err != nil {
 		slog.Error("❌ Database connection failure", "error", err)
 		os.Exit(1)
 	}
 	defer dbPool.Close()
 
-	// 4. Instantiate repositories, services, and handlers
+	// 4. Instantiate repositories
 	userRepo := repository.NewPostgresUserRepository(dbPool)
-	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
-	authHandler := handler.NewAuthHandler(authService)
+	catalogRepo := repository.NewPostgresCatalogRepository(dbPool)
+	appointmentRepo := repository.NewPostgresAppointmentRepository(dbPool)
+	billingRepo := repository.NewPostgresBillingRepository(dbPool)
 
-	// 4. Initialize Chi router and standard middlewares
+	// 5. Instantiate services
+	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
+	catalogService := service.NewCatalogService(catalogRepo)
+	appointmentService := service.NewAppointmentService(appointmentRepo, catalogRepo)
+	billingService := service.NewBillingService(billingRepo)
+
+	// 6. Instantiate handlers
+	authHandler := handler.NewAuthHandler(authService)
+	catalogHandler := handler.NewCatalogHandler(catalogService)
+	appointmentHandler := handler.NewAppointmentHandler(appointmentService)
+	billingHandler := handler.NewBillingHandler(billingService)
+
+	// 7. Initialize Chi router and standard middlewares
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID) // Request tracing ID
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer) // Protect against panics
 
-	// 5. Register API routes
+	// 8. Register API routes
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public routes
 		r.Get("/health", handler.HealthCheck)
@@ -76,14 +88,44 @@ func main() {
 		r.Group(func(r chi.Router) {
 			r.Use(internalMiddleware.AuthMiddleware(cfg.JWTSecret))
 
-			// SUPER_ADMIN routes (Example)
+			// SUPER_ADMIN routes
 			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin)).Get("/admin/stats", func(w http.ResponseWriter, r *http.Request) {
 				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido ao Super Admin!"})
 			})
 
-			// Owner and Manager routes (Example)
+			// Owner and Manager routes
 			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin, domain.RoleOrgOwner, domain.RoleUnitManager)).Get("/manager/overview", func(w http.ResponseWriter, r *http.Request) {
 				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido à gestão!"})
+			})
+
+			// Unit catalog lookup (accessible by staff)
+			r.With(internalMiddleware.RequireRoles(
+				domain.RoleSuperAdmin,
+				domain.RoleOrgOwner,
+				domain.RoleUnitManager,
+				domain.RoleReceptionist,
+				domain.RoleBarber,
+			)).Get("/units/{unit_id}/catalog", catalogHandler.GetUnitCatalog)
+
+			// Reception & Unit Operations routes
+			r.With(internalMiddleware.RequireRoles(
+				domain.RoleSuperAdmin,
+				domain.RoleOrgOwner,
+				domain.RoleUnitManager,
+				domain.RoleReceptionist,
+			)).Route("/reception", func(r chi.Router) {
+				r.Get("/appointments", appointmentHandler.ListByUnit)
+				r.Post("/appointments", appointmentHandler.Create)
+				r.Post("/checkout", billingHandler.Checkout)
+			})
+
+			// Barber operational routes
+			r.With(internalMiddleware.RequireRoles(
+				domain.RoleSuperAdmin,
+				domain.RoleBarber,
+			)).Route("/barber", func(r chi.Router) {
+				r.Get("/my-queue", appointmentHandler.ListMyQueue)
+				r.Post("/appointments/{id}/complete", appointmentHandler.CompleteCut)
 			})
 		})
 	})
@@ -94,7 +136,7 @@ func main() {
 		httpSwagger.URL(swaggerURL),
 	))
 
-	// 6. Configure HTTP server with production timeouts
+	// 9. Configure HTTP server with production timeouts
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
 		Handler:      r,
@@ -103,7 +145,7 @@ func main() {
 		IdleTimeout:  cfg.IdleTimeout,
 	}
 
-	// 7. Graceful Shutdown: listen for OS termination signals (SIGINT, SIGTERM)
+	// 10. Graceful Shutdown: listen for OS termination signals (SIGINT, SIGTERM)
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
