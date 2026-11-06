@@ -20,6 +20,7 @@ ponto_certo/
 │   ├── service/              # Use cases and business logic (consumer-defined interfaces)
 │   └── repository/           # Persistence layer (PostgreSQL)
 ├── migrations/               # Versioned SQL migration scripts
+├── scripts/                  # Development database seed scripts (seed.sql)
 ├── docs/                     # Generated OpenAPI/Swagger specifications
 ├── .air.toml                 # Hot-reload configuration for local development
 ├── .env.example              # Environment variables template
@@ -77,6 +78,7 @@ With the server running, access the interactive OpenAPI documentation:
 | `make db-logs` | Streams PostgreSQL container logs in real time |
 | `make db-shell` | Opens interactive `psql` shell in database container |
 | `make db-reset` | Recreates database from scratch (drops volume) |
+| `make db-seed` | Seeds database with realistic development data (users, 34 services, 20 products, schedules, appointments) |
 | `make migrate-up` | Applies versioned SQL database migrations |
 | `make migrate-down` | Reverts the most recent database migration |
 | `make migrate-status` | Checks current database migration version |
@@ -102,3 +104,7 @@ With the server running, access the interactive OpenAPI documentation:
    - Configured through `.air.toml` and wired into `make dev`.
 6. **Automated Releases with Release Please**:
    - Automated `CHANGELOG.md` generation and SemVer git tags driven by Conventional Commits.
+7. **Multi-Tenancy, RBAC & Barbershop Scheduling Domain**:
+   - Multi-tenant architecture with tenant isolation by `unit_id` and `organization_id`.
+   - Granular RBAC (`SUPER_ADMIN`, `ORG_OWNER`, `UNIT_MANAGER`, `RECEPTIONIST`, `BARBER`).
+   - Appointments and working schedules with overlap conflict prevention, services catalog, and retail products inventory.
