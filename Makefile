@@ -1,4 +1,4 @@
-.PHONY: all docs dev build test clean air-install hooks-install db-up db-down db-logs db-shell db-reset migrate-up migrate-down migrate-status
+.PHONY: all docs dev build test clean air-install hooks-install db-up db-down db-logs db-shell db-reset db-seed migrate-up migrate-down migrate-status
 
 # Install native Git hooks for Conventional Commits and Atomic Commits validation
 hooks-install:
@@ -62,6 +62,12 @@ db-reset:
 	@echo "⚠️  Resetting database (dropping volumes)..."
 	@docker compose down -v
 	@$(MAKE) db-up
+
+# Seed database with realistic development and testing data
+db-seed:
+	@echo "🌱 Seeding database with realistic barbershop data..."
+	@docker compose exec -T postgres psql -U postgres -d ponto_certo < scripts/seed.sql
+	@echo "✅ Database seeded successfully"
 
 # Database migrations using official golang-migrate container
 migrate-up:
