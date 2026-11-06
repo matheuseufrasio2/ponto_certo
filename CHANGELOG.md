@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.3.0...ponto_certo-v0.4.0) (2026-11-06)
+
+
+### Features
+
+* add appointments, retail products, and realistic database seed ([2d6c648](https://github.com/matheuseufrasio2/ponto_certo/commit/2d6c648b1c3666c0080a6760cb4f0565a5960b8d))
+* **db:** add appointments, products, schedules schema ([fc21c3a](https://github.com/matheuseufrasio2/ponto_certo/commit/fc21c3a9c104a78f27bc591d89fe00980f025a3b))
+* **db:** create realistic database seed with products, make target ([f5f67cd](https://github.com/matheuseufrasio2/ponto_certo/commit/f5f67cd8bac163758587bcc4115381c11bbe5e68))
+* **domain:** add appointment, product domain models with validations ([b836428](https://github.com/matheuseufrasio2/ponto_certo/commit/b8364280db002f0c0bbe6b333c663a31f5cbd1a9))
+
 ## [0.3.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.2.0...ponto_certo-v0.3.0) (2026-11-06)
 
 
