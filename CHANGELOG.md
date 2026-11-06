@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.4.0...ponto_certo-v0.5.0) (2026-11-06)
+
+
+### Features
+
+* **reception:** implement operational endpoints ([88cdafc](https://github.com/matheuseufrasio2/ponto_certo/commit/88cdafceb18534878d4f008d1eeb03e1898630f2))
+* **reception:** implement phase 1 operational endpoints ([91c2711](https://github.com/matheuseufrasio2/ponto_certo/commit/91c2711b698c5774a108433f4e3f5d4953280ec9))
+
+
+### Bug Fixes
+
+* **billing:** ignore unchecked transaction rollback error in defer ([b3de8a2](https://github.com/matheuseufrasio2/ponto_certo/commit/b3de8a2fd42f3ce3bdf90cef83024f94b1043a39))
+
 ## [0.4.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.3.0...ponto_certo-v0.4.0) (2026-11-06)
 
 
