@@ -46,6 +46,8 @@ This document defines the **non-negotiable system invariants and architectural g
 - **NEVER** launch unmanaged background goroutines (`go func() { ... }()`) without a bounded context, recovery mechanism, or `sync.WaitGroup`.
 
 ### 4. Barbershop Domain Invariants
+- **Multi-Tenancy & Tenant Scoping**: Operational entities (`barbers`, `clients`, `services`, `billings`, `appointments`) belong to a `unit_id`. Requests must enforce tenant boundary matching the caller's unit/organization context.
+- **RBAC Taxonomy**: Valid roles are `SUPER_ADMIN` (global/platform), `ORG_OWNER` (entire franchise/organization), `UNIT_MANAGER` (single unit), `RECEPTIONIST` (unit agenda and cashier), `BARBER` (own agenda and commission).
 - **Monetary Values**: All monetary values (service prices, totals) **MUST** be stored as integer cents (`PriceInCents int64`), never as floating-point numbers (`float64`).
 - **Timestamps**: All dates and appointment intervals must be stored and processed in **UTC** (`time.Time`).
 - **Schedule Overlap Rule**: Two appointments for the same barber overlap if and only if:
@@ -67,8 +69,11 @@ This document defines the **non-negotiable system invariants and architectural g
 ## 📐 Coding Standards & Tooling
 
 - **Language Policy**:
-  - **Conversations & Plans**: All plans, discussions, and chat responses with the user must be conducted in **Portuguese**.
-  - **Codebase Artifacts**: English for all code, functions, types, comments, documentation, git commits, and PR descriptions. Only the brand/app name (`ponto_certo`) remains in Portuguese.
+  - **Conversations & Plans**: All plans, discussions, markdown artifacts in `.gemini/antigravity/brain/` (`plan_*.md`, `walkthrough.md`, analysis reports), and chat responses with the user must be conducted strictly in **Portuguese**.
+  - **Codebase Artifacts**: English for all code, functions, types, comments, git commit headers/bodies, and PR descriptions. Only the brand/app name (`ponto_certo`) remains in Portuguese.
+- **Interactive User Approval for Git & GitHub CLI**:
+  - All mutating `git` commands (`commit`, `checkout -b`, `push`, `reset`) and `gh` CLI commands **MUST NEVER** run in silent sandbox mode. They must be executed with elevated permissions (`BypassSandbox: true`) to trigger the interactive user authorization modal.
+  - Native Git hooks in `.githooks/` (`commit-msg`, `pre-commit`) enforce Conventional Commits and atomic commits without conjunctions (`and`, `e`, `&`, `+`) before any commit is finalized.
 - **Go Formatting & Tooling**:
   - Code must be formatted with standard `gofmt` (tabs for indentation, 4-space visual width).
   - All code must pass `golangci-lint` without warnings (`make dev` / `golangci-lint run`).

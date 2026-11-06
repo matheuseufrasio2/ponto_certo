@@ -8,12 +8,14 @@ import (
 
 // Config holds all configuration variables for the application.
 type Config struct {
-	Port         string
-	Env          string
-	DatabaseURL  string
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	IdleTimeout  time.Duration
+	Port          string
+	Env           string
+	DatabaseURL   string
+	JWTSecret     string
+	JWTExpiration time.Duration
+	ReadTimeout   time.Duration
+	WriteTimeout  time.Duration
+	IdleTimeout   time.Duration
 }
 
 // Load loads configuration from environment variables and an optional .env file.
@@ -22,12 +24,14 @@ func Load() (*Config, error) {
 	loadDotEnv(".env")
 
 	cfg := &Config{
-		Port:         getEnv("PORT", "8080"),
-		Env:          getEnv("ENV", "development"),
-		DatabaseURL:  getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/ponto_certo?sslmode=disable"),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  time.Minute,
+		Port:          getEnv("PORT", "8080"),
+		Env:           getEnv("ENV", "development"),
+		DatabaseURL:   getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/ponto_certo?sslmode=disable"),
+		JWTSecret:     getEnv("JWT_SECRET", "super-secret-jwt-key-for-dev-only-change-in-production"),
+		JWTExpiration: 24 * time.Hour,
+		ReadTimeout:   10 * time.Second,
+		WriteTimeout:  30 * time.Second,
+		IdleTimeout:   time.Minute,
 	}
 
 	return cfg, nil

@@ -16,7 +16,11 @@ import (
 	_ "github.com/matheuseufrasio2/ponto_certo/docs"
 	"github.com/matheuseufrasio2/ponto_certo/internal/config"
 	"github.com/matheuseufrasio2/ponto_certo/internal/database"
+	"github.com/matheuseufrasio2/ponto_certo/internal/domain"
 	"github.com/matheuseufrasio2/ponto_certo/internal/handler"
+	internalMiddleware "github.com/matheuseufrasio2/ponto_certo/internal/middleware"
+	"github.com/matheuseufrasio2/ponto_certo/internal/repository"
+	"github.com/matheuseufrasio2/ponto_certo/internal/service"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
@@ -43,11 +47,17 @@ func main() {
 	defer dbCancel()
 
 	dbPool, err := database.NewPostgresPool(dbCtx, cfg.DatabaseURL)
+
 	if err != nil {
 		slog.Error("❌ Database connection failure", "error", err)
 		os.Exit(1)
 	}
 	defer dbPool.Close()
+
+	// 4. Instantiate repositories, services, and handlers
+	userRepo := repository.NewPostgresUserRepository(dbPool)
+	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
+	authHandler := handler.NewAuthHandler(authService)
 
 	// 4. Initialize Chi router and standard middlewares
 	r := chi.NewRouter()
@@ -58,7 +68,24 @@ func main() {
 
 	// 5. Register API routes
 	r.Route("/api/v1", func(r chi.Router) {
+		// Public routes
 		r.Get("/health", handler.HealthCheck)
+		r.Post("/auth/login", authHandler.Login)
+
+		// Protected routes requiring valid JWT
+		r.Group(func(r chi.Router) {
+			r.Use(internalMiddleware.AuthMiddleware(cfg.JWTSecret))
+
+			// SUPER_ADMIN routes (Example)
+			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin)).Get("/admin/stats", func(w http.ResponseWriter, r *http.Request) {
+				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido ao Super Admin!"})
+			})
+
+			// Owner and Manager routes (Example)
+			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin, domain.RoleOrgOwner, domain.RoleUnitManager)).Get("/manager/overview", func(w http.ResponseWriter, r *http.Request) {
+				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido à gestão!"})
+			})
+		})
 	})
 
 	// Swagger documentation route

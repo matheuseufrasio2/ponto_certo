@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🔍 [Pre-Commit Hook] Running Go test suite with race detector..."
+
+export PATH="/usr/local/go/bin:$PATH"
+go test -v -race ./...
+
+echo "✅ [Pre-Commit Hook] Tests passed cleanly."
+exit 0

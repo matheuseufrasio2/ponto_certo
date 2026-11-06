@@ -82,6 +82,30 @@ func TestHandleError(t *testing.T) {
 			expectedMsg:    domain.ErrInvalidPaymentMethod.Error(),
 		},
 		{
+			name:           "user not found error",
+			err:            domain.ErrUserNotFound,
+			expectedStatus: http.StatusNotFound,
+			expectedMsg:    domain.ErrUserNotFound.Error(),
+		},
+		{
+			name:           "unauthorized error",
+			err:            domain.ErrUnauthorized,
+			expectedStatus: http.StatusUnauthorized,
+			expectedMsg:    domain.ErrUnauthorized.Error(),
+		},
+		{
+			name:           "forbidden error",
+			err:            domain.ErrForbidden,
+			expectedStatus: http.StatusForbidden,
+			expectedMsg:    domain.ErrForbidden.Error(),
+		},
+		{
+			name:           "invalid role error",
+			err:            domain.ErrInvalidRole,
+			expectedStatus: http.StatusBadRequest,
+			expectedMsg:    domain.ErrInvalidRole.Error(),
+		},
+		{
 			name:           "unexpected server error (sanitized to 500)",
 			err:            errors.New("raw postgres connection pool exhausted"),
 			expectedStatus: http.StatusInternalServerError,

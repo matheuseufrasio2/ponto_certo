@@ -1,4 +1,11 @@
-.PHONY: all docs dev build test clean air-install db-up db-down db-logs db-shell db-reset migrate-up migrate-down migrate-status
+.PHONY: all docs dev build test clean air-install hooks-install db-up db-down db-logs db-shell db-reset migrate-up migrate-down migrate-status
+
+# Install native Git hooks for Conventional Commits and Atomic Commits validation
+hooks-install:
+	@echo "🪝 Configuring Git hooks from .githooks..."
+	@git config core.hooksPath .githooks
+	@chmod +x .githooks/*
+	@echo "✅ Git hooks installed successfully"
 
 # Generate Swagger documentation
 docs:
