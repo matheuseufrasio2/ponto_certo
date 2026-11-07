@@ -19,10 +19,11 @@ import (
 
 type mockTenantAdminManager struct {
 	getMetricsFn         func(ctx context.Context, claims *service.UserClaims) (*domain.SaaSMetrics, error)
-	listTenantsFn        func(ctx context.Context, claims *service.UserClaims, search string, page, perPage int) (*domain.PaginatedOrganizations, error)
+	listTenantsFn        func(ctx context.Context, claims *service.UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error)
 	createTenantFn       func(ctx context.Context, claims *service.UserClaims, input domain.CreateTenantInput) (*domain.Organization, error)
 	toggleTenantStatusFn func(ctx context.Context, claims *service.UserClaims, tenantID string, isActive bool) error
 	getTenantUsersFn     func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.User, error)
+	getTenantUnitsFn     func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error)
 	impersonateUserFn    func(ctx context.Context, claims *service.UserClaims, targetUserID string) (*domain.ImpersonateResponse, error)
 }
 
@@ -39,9 +40,9 @@ func (m *mockTenantAdminManager) GetSaaSMetrics(ctx context.Context, claims *ser
 	}, nil
 }
 
-func (m *mockTenantAdminManager) ListTenants(ctx context.Context, claims *service.UserClaims, search string, page, perPage int) (*domain.PaginatedOrganizations, error) {
+func (m *mockTenantAdminManager) ListTenants(ctx context.Context, claims *service.UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error) {
 	if m.listTenantsFn != nil {
-		return m.listTenantsFn(ctx, claims, search, page, perPage)
+		return m.listTenantsFn(ctx, claims, search, status, plan, page, perPage)
 	}
 	return &domain.PaginatedOrganizations{
 		Items:   []domain.Organization{{ID: "org-1", Name: "Navalha de Ouro"}},
@@ -75,6 +76,15 @@ func (m *mockTenantAdminManager) GetTenantUsers(ctx context.Context, claims *ser
 	}
 	return []domain.User{
 		{ID: "user-1", Name: "Carlos Silva", Role: domain.RoleOrgOwner},
+	}, nil
+}
+
+func (m *mockTenantAdminManager) GetTenantUnits(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error) {
+	if m.getTenantUnitsFn != nil {
+		return m.getTenantUnitsFn(ctx, claims, tenantID)
+	}
+	return []domain.BarbershopUnit{
+		{ID: "unit-1", OrganizationID: tenantID, Name: "Matriz Centro", ChairCount: 4, IsActive: true},
 	}, nil
 }
 
@@ -118,6 +128,7 @@ func setupTenantAdminTestRouter(mgr *mockTenantAdminManager, secret string) http
 		r.Post("/tenants", h.CreateTenant)
 		r.Patch("/tenants/{id}/toggle-status", h.ToggleTenantStatus)
 		r.Get("/tenants/{id}/users", h.GetTenantUsers)
+		r.Get("/tenants/{id}/units", h.GetTenantUnits)
 		r.Post("/users/{id}/impersonate", h.ImpersonateUser)
 	})
 
@@ -284,6 +295,72 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected 403, got %d. Body: %s", rec.Code, rec.Body.String())
+		}
+	})
+
+	t.Run("GET /api/v1/admin/tenants/{id}/units returns 200 with unit list", func(t *testing.T) {
+		mockMgr.getTenantUnitsFn = func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error) {
+			return []domain.BarbershopUnit{
+				{ID: "unit-1", OrganizationID: tenantID, Name: "Matriz Centro", ChairCount: 5, IsActive: true},
+				{ID: "unit-2", OrganizationID: tenantID, Name: "Filial Jardins", ChairCount: 3, IsActive: true},
+			}, nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/org-123/units", nil)
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d. Body: %s", rec.Code, rec.Body.String())
+		}
+
+		var units []domain.BarbershopUnit
+		if err := json.Unmarshal(rec.Body.Bytes(), &units); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if len(units) != 2 || units[0].Name != "Matriz Centro" {
+			t.Errorf("unexpected units list: %+v", units)
+		}
+	})
+
+	t.Run("GET /api/v1/admin/tenants/{id}/units forbidden for non-superadmin", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/org-123/units", nil)
+		req.Header.Set("Authorization", "Bearer "+barberToken)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("expected 403, got %d", rec.Code)
+		}
+	})
+
+	t.Run("GET /api/v1/admin/tenants passes status and plan query parameters", func(t *testing.T) {
+		var capturedStatus, capturedPlan string
+		mockMgr.listTenantsFn = func(ctx context.Context, claims *service.UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error) {
+			capturedStatus = status
+			capturedPlan = plan
+			return &domain.PaginatedOrganizations{
+				Items:   []domain.Organization{{ID: "org-1", Name: "Navalha de Ouro"}},
+				Total:   1,
+				Page:    page,
+				PerPage: perPage,
+			}, nil
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants?search=Navalha&status=ACTIVE&plan=PRO&page=1&per_page=15", nil)
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d. Body: %s", rec.Code, rec.Body.String())
+		}
+		if capturedStatus != "ACTIVE" || capturedPlan != "PRO" {
+			t.Errorf("expected status=ACTIVE, plan=PRO, got status=%s, plan=%s", capturedStatus, capturedPlan)
 		}
 	})
 }

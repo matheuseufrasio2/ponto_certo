@@ -14,10 +14,11 @@ import (
 // TenantAdminManager specifies business logic methods for SaaS platform management.
 type TenantAdminManager interface {
 	GetSaaSMetrics(ctx context.Context, claims *service.UserClaims) (*domain.SaaSMetrics, error)
-	ListTenants(ctx context.Context, claims *service.UserClaims, search string, page, perPage int) (*domain.PaginatedOrganizations, error)
+	ListTenants(ctx context.Context, claims *service.UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error)
 	CreateTenant(ctx context.Context, claims *service.UserClaims, input domain.CreateTenantInput) (*domain.Organization, error)
 	ToggleTenantStatus(ctx context.Context, claims *service.UserClaims, tenantID string, isActive bool) error
 	GetTenantUsers(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.User, error)
+	GetTenantUnits(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error)
 	ImpersonateUser(ctx context.Context, claims *service.UserClaims, targetUserID string) (*domain.ImpersonateResponse, error)
 }
 
@@ -65,11 +66,13 @@ func (h *TenantAdminHandler) GetPlatformMetrics(w http.ResponseWriter, r *http.R
 
 // ListTenants godoc
 // @Summary List and search organizations
-// @Description Returns paginated organizations matching search term
+// @Description Returns paginated organizations matching search term, status, and plan filters
 // @Tags admin
 // @Produce json
 // @Security BearerAuth
 // @Param search query string false "Search by name, trade name or document"
+// @Param status query string false "Filter by subscription status (ACTIVE, PAST_DUE, TRIAL, CANCELLED) or BLOCKED"
+// @Param plan query string false "Filter by plan (BASIC, PRO, ENTERPRISE)"
 // @Param page query int false "Page number (default 1)"
 // @Param per_page query int false "Items per page (default 15)"
 // @Success 200 {object} domain.PaginatedOrganizations
@@ -85,6 +88,8 @@ func (h *TenantAdminHandler) ListTenants(w http.ResponseWriter, r *http.Request)
 	}
 
 	search := r.URL.Query().Get("search")
+	status := r.URL.Query().Get("status")
+	plan := r.URL.Query().Get("plan")
 	page := 1
 	perPage := 15
 
@@ -100,7 +105,7 @@ func (h *TenantAdminHandler) ListTenants(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	result, err := h.svc.ListTenants(r.Context(), claims, search, page, perPage)
+	result, err := h.svc.ListTenants(r.Context(), claims, search, status, plan, page, perPage)
 	if err != nil {
 		HandleError(w, err)
 		return
@@ -225,6 +230,45 @@ func (h *TenantAdminHandler) GetTenantUsers(w http.ResponseWriter, r *http.Reque
 	}
 
 	_ = WriteJSON(w, http.StatusOK, users)
+}
+
+// GetTenantUnits godoc
+// @Summary List all physical branches/units in a tenant organization
+// @Description Returns branches/units belonging to an organization for Super Admin inspection
+// @Tags admin
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Organization UUID"
+// @Success 200 {array} domain.BarbershopUnit
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /admin/tenants/{id}/units [get]
+func (h *TenantAdminHandler) GetTenantUnits(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.UserFromContext(r.Context())
+	if !ok || claims == nil {
+		HandleError(w, domain.ErrUnauthorized)
+		return
+	}
+
+	tenantID := chi.URLParam(r, "id")
+	if tenantID == "" {
+		WriteError(w, http.StatusBadRequest, "tenant id is required")
+		return
+	}
+
+	units, err := h.svc.GetTenantUnits(r.Context(), claims, tenantID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	if units == nil {
+		units = []domain.BarbershopUnit{}
+	}
+
+	_ = WriteJSON(w, http.StatusOK, units)
 }
 
 // ImpersonateUser godoc
