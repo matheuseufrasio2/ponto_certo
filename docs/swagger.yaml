@@ -100,6 +100,8 @@ definitions:
         type: string
       phone:
         type: string
+      status:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BarberStatus'
       unit_id:
         type: string
       updated_at:
@@ -108,6 +110,20 @@ definitions:
         description: Linked if barber has system login
         type: string
     type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.BarberStatus:
+    enum:
+    - AVAILABLE
+    - BUSY
+    - LUNCH
+    - OFF_DUTY
+    - VACATION
+    type: string
+    x-enum-varnames:
+    - BarberStatusAvailable
+    - BarberStatusBusy
+    - BarberStatusLunch
+    - BarberStatusOffDuty
+    - BarberStatusVacation
   github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing:
     properties:
       amount_in_cents:

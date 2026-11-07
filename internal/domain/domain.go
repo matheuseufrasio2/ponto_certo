@@ -30,7 +30,30 @@ var (
 	ErrInvalidAppointmentTransition = errors.New("invalid appointment status transition")
 	ErrInvalidAppointmentTime     = errors.New("appointment start time must be before end time")
 	ErrBillingAlreadyProcessed    = errors.New("appointment has already been paid and processed")
+	ErrBarberHasFutureAppointments = errors.New("cannot change barber status to off duty or vacation while future appointments exist")
+	ErrInvalidBarberStatus         = errors.New("invalid barber operational status")
 )
+
+// BarberStatus defines live operational shift state for a barber.
+type BarberStatus string
+
+const (
+	BarberStatusAvailable BarberStatus = "AVAILABLE"
+	BarberStatusBusy      BarberStatus = "BUSY"
+	BarberStatusLunch     BarberStatus = "LUNCH"
+	BarberStatusOffDuty   BarberStatus = "OFF_DUTY"
+	BarberStatusVacation  BarberStatus = "VACATION"
+)
+
+// IsValid validates whether the barber status is recognized.
+func (s BarberStatus) IsValid() bool {
+	switch s {
+	case BarberStatusAvailable, BarberStatusBusy, BarberStatusLunch, BarberStatusOffDuty, BarberStatusVacation:
+		return true
+	default:
+		return false
+	}
+}
 
 // Role defines system actor roles for RBAC.
 type Role string
@@ -71,6 +94,7 @@ type BarbershopUnit struct {
 	Name           string    `json:"name"`
 	Phone          string    `json:"phone,omitempty"`
 	Address        string    `json:"address,omitempty"`
+	ChairCount     int       `json:"chair_count"`
 	IsActive       bool      `json:"is_active"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
@@ -92,15 +116,16 @@ type User struct {
 
 // Barber represents a barber professional linked to an optional user login.
 type Barber struct {
-	ID                   string    `json:"id"`
-	UnitID               string    `json:"unit_id,omitempty"`
-	UserID               *string   `json:"user_id,omitempty"` // Linked if barber has system login
-	Name                 string    `json:"name"`
-	Phone                string    `json:"phone,omitempty"`
-	CommissionPercentage int       `json:"commission_percentage"`
-	IsActive             bool      `json:"is_active"`
-	CreatedAt            time.Time `json:"created_at"`
-	UpdatedAt            time.Time `json:"updated_at"`
+	ID                   string       `json:"id"`
+	UnitID               string       `json:"unit_id,omitempty"`
+	UserID               *string      `json:"user_id,omitempty"` // Linked if barber has system login
+	Name                 string       `json:"name"`
+	Phone                string       `json:"phone,omitempty"`
+	CommissionPercentage int          `json:"commission_percentage"`
+	Status               BarberStatus `json:"status"`
+	IsActive             bool         `json:"is_active"`
+	CreatedAt            time.Time    `json:"created_at"`
+	UpdatedAt            time.Time    `json:"updated_at"`
 }
 
 // Client represents a barbershop customer/client.
@@ -421,5 +446,41 @@ type CheckoutInput struct {
 	AppointmentID string        `json:"appointment_id"`
 	PaymentMethod PaymentMethod `json:"payment_method"`
 	Notes         string        `json:"notes,omitempty"`
+}
+
+// CashClosingSummary aggregates financial close data by payment method for a unit and date.
+type CashClosingSummary struct {
+	Date               time.Time               `json:"date"`
+	UnitID             string                  `json:"unit_id"`
+	TotalAmountInCents int64                   `json:"total_amount_in_cents"`
+	TotalTransactions  int                     `json:"total_transactions"`
+	ByPaymentMethod    map[PaymentMethod]int64 `json:"by_payment_method"`
+}
+
+// ManagerDashboardMetrics provides real-time operational KPIs for unit managers.
+type ManagerDashboardMetrics struct {
+	TodayRevenueInCents       int64 `json:"today_revenue_in_cents"`
+	ChairOccupancyRatePercent int   `json:"chair_occupancy_rate_percent"`
+	TodayAppointmentsCount    int   `json:"today_appointments_count"`
+	ActiveBarbersCount        int   `json:"active_barbers_count"`
+	WaitingClientsCount       int   `json:"waiting_clients_count"`
+}
+
+// UpdateBarberStatusInput carries new operational shift status for a barber.
+type UpdateBarberStatusInput struct {
+	Status BarberStatus `json:"status"`
+}
+
+// Validate verifies that status matches recognized operational states.
+func (i UpdateBarberStatusInput) Validate() error {
+	if !i.Status.IsValid() {
+		return ErrInvalidBarberStatus
+	}
+	return nil
+}
+
+// ToggleServiceInput defines parameters for enabling or pausing a service at unit level.
+type ToggleServiceInput struct {
+	IsActive bool `json:"is_active"`
 }
 

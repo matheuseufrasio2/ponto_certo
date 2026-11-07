@@ -64,6 +64,7 @@ func HandleError(w http.ResponseWriter, err error) {
 		WriteError(w, http.StatusForbidden, err.Error())
 
 	case errors.Is(err, domain.ErrAppointmentConflict),
+		errors.Is(err, domain.ErrBarberHasFutureAppointments),
 		errors.Is(err, domain.ErrBillingAlreadyProcessed):
 		slog.Warn("conflict detected (409)", "error", err.Error())
 		WriteError(w, http.StatusConflict, err.Error())
@@ -71,6 +72,7 @@ func HandleError(w http.ResponseWriter, err error) {
 	case errors.Is(err, domain.ErrInvalidTimeSlot),
 		errors.Is(err, domain.ErrInvalidPaymentMethod),
 		errors.Is(err, domain.ErrInvalidBillingStatus),
+		errors.Is(err, domain.ErrInvalidBarberStatus),
 		errors.Is(err, domain.ErrInvalidAppointmentTransition),
 		errors.Is(err, domain.ErrInvalidAppointmentTime),
 		errors.Is(err, domain.ErrInvalidRole):

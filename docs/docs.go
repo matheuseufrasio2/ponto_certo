@@ -626,6 +626,9 @@ const docTemplate = `{
                 "phone": {
                     "type": "string"
                 },
+                "status": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BarberStatus"
+                },
                 "unit_id": {
                     "type": "string"
                 },
@@ -637,6 +640,23 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.BarberStatus": {
+            "type": "string",
+            "enum": [
+                "AVAILABLE",
+                "BUSY",
+                "LUNCH",
+                "OFF_DUTY",
+                "VACATION"
+            ],
+            "x-enum-varnames": [
+                "BarberStatusAvailable",
+                "BarberStatusBusy",
+                "BarberStatusLunch",
+                "BarberStatusOffDuty",
+                "BarberStatusVacation"
+            ]
         },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing": {
             "type": "object",

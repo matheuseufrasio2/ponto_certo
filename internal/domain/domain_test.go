@@ -462,3 +462,39 @@ func TestUserAndBarber_Link(t *testing.T) {
 		t.Errorf("unexpected working hour values: %+v", workingHour)
 	}
 }
+
+func TestBarberStatus_IsValid(t *testing.T) {
+	tests := []struct {
+		name     string
+		status   domain.BarberStatus
+		expected bool
+	}{
+		{name: "available", status: domain.BarberStatusAvailable, expected: true},
+		{name: "busy", status: domain.BarberStatusBusy, expected: true},
+		{name: "lunch", status: domain.BarberStatusLunch, expected: true},
+		{name: "off duty", status: domain.BarberStatusOffDuty, expected: true},
+		{name: "vacation", status: domain.BarberStatusVacation, expected: true},
+		{name: "invalid status", status: domain.BarberStatus("SLEEPING"), expected: false},
+		{name: "empty status", status: domain.BarberStatus(""), expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.status.IsValid(); got != tt.expected {
+				t.Errorf("BarberStatus.IsValid() = %v, expected %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUpdateBarberStatusInput_Validate(t *testing.T) {
+	valid := domain.UpdateBarberStatusInput{Status: domain.BarberStatusLunch}
+	if err := valid.Validate(); err != nil {
+		t.Errorf("expected valid input, got error: %v", err)
+	}
+
+	invalid := domain.UpdateBarberStatusInput{Status: domain.BarberStatus("INVALID")}
+	if err := invalid.Validate(); err != domain.ErrInvalidBarberStatus {
+		t.Errorf("expected ErrInvalidBarberStatus, got: %v", err)
+	}
+}
