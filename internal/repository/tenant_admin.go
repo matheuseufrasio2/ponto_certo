@@ -13,10 +13,11 @@ import (
 // TenantAdminRepository defines data access methods for SaaS multi-tenancy and platform administration.
 type TenantAdminRepository interface {
 	GetSaaSPlatformKPIs(ctx context.Context) (*domain.SaaSMetrics, error)
-	ListTenants(ctx context.Context, search string, limit, offset int) ([]domain.Organization, int, error)
+	ListTenants(ctx context.Context, search, status, plan string, limit, offset int) ([]domain.Organization, int, error)
 	CreateTenantWithAdmin(ctx context.Context, input domain.CreateTenantInput, passwordHash string) (*domain.Organization, error)
 	ToggleTenantActiveStatus(ctx context.Context, tenantID string, isActive bool) error
 	GetTenantUsers(ctx context.Context, tenantID string) ([]domain.User, error)
+	GetTenantUnits(ctx context.Context, tenantID string) ([]domain.BarbershopUnit, error)
 	GetUserByID(ctx context.Context, userID string) (*domain.User, error)
 }
 
@@ -58,8 +59,8 @@ func (r *PostgresTenantAdminRepository) GetSaaSPlatformKPIs(ctx context.Context)
 	return metrics, nil
 }
 
-// ListTenants retrieves organizations matching search query with total count.
-func (r *PostgresTenantAdminRepository) ListTenants(ctx context.Context, search string, limit, offset int) ([]domain.Organization, int, error) {
+// ListTenants retrieves organizations matching search, status, and plan filters with total count.
+func (r *PostgresTenantAdminRepository) ListTenants(ctx context.Context, search, status, plan string, limit, offset int) ([]domain.Organization, int, error) {
 	query := `
 		SELECT 
 			id::TEXT,
@@ -75,11 +76,19 @@ func (r *PostgresTenantAdminRepository) ListTenants(ctx context.Context, search 
 			COUNT(*) OVER() AS total_count
 		FROM organizations
 		WHERE ($1 = '' OR name ILIKE '%' || $1 || '%' OR trade_name ILIKE '%' || $1 || '%' OR document ILIKE '%' || $1 || '%')
+		  AND (
+			$2 = '' OR 
+			($2 = 'BLOCKED' AND is_active = FALSE) OR
+			($2 = 'INACTIVE' AND is_active = FALSE) OR
+			($2 = 'ACTIVE' AND is_active = TRUE AND subscription_status = 'ACTIVE') OR
+			(subscription_status = $2)
+		  )
+		  AND ($3 = '' OR UPPER(plan) = UPPER($3))
 		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3;
+		LIMIT $4 OFFSET $5;
 	`
 
-	rows, err := r.db.Query(ctx, query, search, limit, offset)
+	rows, err := r.db.Query(ctx, query, search, status, plan, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("query tenants: %w", err)
 	}
@@ -275,6 +284,56 @@ func (r *PostgresTenantAdminRepository) GetTenantUsers(ctx context.Context, tena
 	}
 
 	return users, rows.Err()
+}
+
+// GetTenantUnits returns all physical branches belonging to an organization.
+func (r *PostgresTenantAdminRepository) GetTenantUnits(ctx context.Context, tenantID string) ([]domain.BarbershopUnit, error) {
+	query := `
+		SELECT 
+			id::TEXT,
+			organization_id::TEXT,
+			name,
+			COALESCE(phone, ''),
+			COALESCE(address, ''),
+			COALESCE(chair_count, 4),
+			is_active,
+			created_at,
+			updated_at
+		FROM barbershop_units
+		WHERE organization_id = $1
+		ORDER BY created_at ASC;
+	`
+
+	rows, err := r.db.Query(ctx, query, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("query tenant units: %w", err)
+	}
+	defer rows.Close()
+
+	units := make([]domain.BarbershopUnit, 0)
+	for rows.Next() {
+		var u domain.BarbershopUnit
+		if err := rows.Scan(
+			&u.ID,
+			&u.OrganizationID,
+			&u.Name,
+			&u.Phone,
+			&u.Address,
+			&u.ChairCount,
+			&u.IsActive,
+			&u.CreatedAt,
+			&u.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan tenant unit: %w", err)
+		}
+		units = append(units, u)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate tenant unit rows: %w", err)
+	}
+
+	return units, nil
 }
 
 // GetUserByID retrieves a single user by ID for impersonation verification.
