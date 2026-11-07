@@ -95,21 +95,5 @@ func RequireRoles(allowedRoles ...domain.Role) func(next http.Handler) http.Hand
 }
 
 func RequireUnitAccess(targetUnitID string, claims *service.UserClaims) bool {
-	if claims == nil {
-		return false
-	}
-
-	if claims.Role == domain.RoleSuperAdmin {
-		return true
-	}
-
-	if claims.Role == domain.RoleOrgOwner {
-		return true
-	}
-
-	if claims.UnitID != nil && *claims.UnitID == targetUnitID {
-		return true
-	}
-
-	return false
+	return claims.HasUnitAccess(targetUnitID)
 }
