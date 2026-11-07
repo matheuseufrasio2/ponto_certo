@@ -252,6 +252,8 @@ definitions:
     type: object
   github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization:
     properties:
+      active_users_count:
+        type: integer
       created_at:
         type: string
       document:
@@ -260,9 +262,13 @@ definitions:
         type: string
       is_active:
         type: boolean
+      last_activity_at:
+        type: string
       monthly_fee_in_cents:
         type: integer
       name:
+        type: string
+      past_due_since:
         type: string
       plan:
         type: string
@@ -270,6 +276,8 @@ definitions:
         $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus'
       trade_name:
         type: string
+      units_count:
+        type: integer
       updated_at:
         type: string
     type: object
@@ -347,6 +355,20 @@ definitions:
     x-enum-varnames:
     - PaymentStatusPending
     - PaymentStatusPaid
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.ResetPasswordResponse:
+    properties:
+      temporary_password:
+        type: string
+      user_email:
+        type: string
+      user_id:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.ResetTenantPasswordInput:
+    properties:
+      new_password:
+        type: string
+    type: object
   github_com_matheuseufrasio2_ponto_certo_internal_domain.Role:
     enum:
     - SUPER_ADMIN
@@ -447,6 +469,19 @@ definitions:
     - SubscriptionStatusPastDue
     - SubscriptionStatusTrial
     - SubscriptionStatusCancelled
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.TenantOverview:
+    properties:
+      appointments_last_30_days:
+        type: integer
+      days_overdue:
+        type: integer
+      gmv_last_30_days_in_cents:
+        type: integer
+      organization:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization'
+      total_barbers_count:
+        type: integer
+    type: object
   github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison:
     properties:
       revenue_in_cents:
@@ -454,6 +489,13 @@ definitions:
       unit_id:
         type: string
       unit_name:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.UpdateTenantPlanInput:
+    properties:
+      monthly_fee_in_cents:
+        type: integer
+      plan:
         type: string
     type: object
   github_com_matheuseufrasio2_ponto_certo_internal_domain.User:
@@ -678,6 +720,147 @@ paths:
       security:
       - BearerAuth: []
       summary: Onboard a new barbershop franchise tenant
+      tags:
+      - admin
+  /admin/tenants/{id}/overview:
+    get:
+      description: Returns 30-day GMV, 30-day appointment volume, total barbers, and
+        overdue status
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.TenantOverview'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get aggregated engagement and financial metrics for a tenant
+      tags:
+      - admin
+  /admin/tenants/{id}/plan:
+    patch:
+      consumes:
+      - application/json
+      description: Updates organization plan tier (BASIC, PRO, ENTERPRISE) and monthly
+        fee
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Plan update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.UpdateTenantPlanInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upgrade or downgrade a tenant's subscription plan and fee
+      tags:
+      - admin
+  /admin/tenants/{id}/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Sets a specified password or generates a temporary credential for
+        tenant owner
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Optional custom password payload
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ResetTenantPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ResetPasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Administratively reset franchise owner's password
       tags:
       - admin
   /admin/tenants/{id}/toggle-status:

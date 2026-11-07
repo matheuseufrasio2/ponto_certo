@@ -197,6 +197,221 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/tenants/{id}/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns 30-day GMV, 30-day appointment volume, total barbers, and overdue status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get aggregated engagement and financial metrics for a tenant",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.TenantOverview"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/plan": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates organization plan tier (BASIC, PRO, ENTERPRISE) and monthly fee",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Upgrade or downgrade a tenant's subscription plan and fee",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Plan update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.UpdateTenantPlanInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/reset-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sets a specified password or generates a temporary credential for tenant owner",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Administratively reset franchise owner's password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Optional custom password payload",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ResetTenantPasswordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ResetPasswordResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/tenants/{id}/toggle-status": {
             "patch": {
                 "security": [
@@ -1598,6 +1813,9 @@ const docTemplate = `{
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization": {
             "type": "object",
             "properties": {
+                "active_users_count": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1610,10 +1828,16 @@ const docTemplate = `{
                 "is_active": {
                     "type": "boolean"
                 },
+                "last_activity_at": {
+                    "type": "string"
+                },
                 "monthly_fee_in_cents": {
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "past_due_since": {
                     "type": "string"
                 },
                 "plan": {
@@ -1624,6 +1848,9 @@ const docTemplate = `{
                 },
                 "trade_name": {
                     "type": "string"
+                },
+                "units_count": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1733,6 +1960,28 @@ const docTemplate = `{
                 "PaymentStatusPending",
                 "PaymentStatusPaid"
             ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.ResetPasswordResponse": {
+            "type": "object",
+            "properties": {
+                "temporary_password": {
+                    "type": "string"
+                },
+                "user_email": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.ResetTenantPasswordInput": {
+            "type": "object",
+            "properties": {
+                "new_password": {
+                    "type": "string"
+                }
+            }
         },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.Role": {
             "type": "string",
@@ -1870,6 +2119,26 @@ const docTemplate = `{
                 "SubscriptionStatusCancelled"
             ]
         },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.TenantOverview": {
+            "type": "object",
+            "properties": {
+                "appointments_last_30_days": {
+                    "type": "integer"
+                },
+                "days_overdue": {
+                    "type": "integer"
+                },
+                "gmv_last_30_days_in_cents": {
+                    "type": "integer"
+                },
+                "organization": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization"
+                },
+                "total_barbers_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison": {
             "type": "object",
             "properties": {
@@ -1880,6 +2149,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "unit_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.UpdateTenantPlanInput": {
+            "type": "object",
+            "properties": {
+                "monthly_fee_in_cents": {
+                    "type": "integer"
+                },
+                "plan": {
                     "type": "string"
                 }
             }
