@@ -157,7 +157,9 @@ func (r *PostgresUnitOperationsRepository) UpdateBarberStatus(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	var prevStatus domain.BarberStatus
 	fetchQuery := `SELECT status FROM barbers WHERE id = $1 FOR UPDATE;`
