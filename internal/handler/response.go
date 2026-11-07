@@ -59,7 +59,11 @@ func HandleError(w http.ResponseWriter, err error) {
 		slog.Warn("unauthorized request (401)", "error", err.Error())
 		WriteError(w, http.StatusUnauthorized, err.Error())
 
-	case errors.Is(err, domain.ErrForbidden):
+	case errors.Is(err, domain.ErrForbidden),
+		errors.Is(err, domain.ErrCannotImpersonateSelf),
+		errors.Is(err, domain.ErrCannotImpersonateSuperAdmin),
+		errors.Is(err, domain.ErrImpersonationActionBlocked),
+		errors.Is(err, domain.ErrTenantInactive):
 		slog.Warn("forbidden request (403)", "error", err.Error())
 		WriteError(w, http.StatusForbidden, err.Error())
 
