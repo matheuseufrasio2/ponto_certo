@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.7.0...ponto_certo-v0.8.0) (2026-11-07)
+
+
+### Features
+
+* **api:** register owner analytics endpoints ([7407c6f](https://github.com/matheuseufrasio2/ponto_certo/commit/7407c6fe61696eb8c7085c2322ddd2a20264da2c))
+* **domain:** add owner bi executive structures ([6243473](https://github.com/matheuseufrasio2/ponto_certo/commit/6243473d2078d0307a0043075409bb5c2029df95))
+* **owner:** implement executive network bi and financial analytics for phase 3 ([6eb7407](https://github.com/matheuseufrasio2/ponto_certo/commit/6eb740782da45cb62cf1ae955911c0eed234cce6))
+* **repository:** implement owner analytics repository ([ea312ed](https://github.com/matheuseufrasio2/ponto_certo/commit/ea312edbea4f19604eab796b5a95559c66be48fd))
+* **service:** implement owner analytics service ([29d2e8b](https://github.com/matheuseufrasio2/ponto_certo/commit/29d2e8b27e83dd1a2591db51c92cbe53fd318442))
+
 ## [0.7.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.6.0...ponto_certo-v0.7.0) (2026-11-07)
 
 
