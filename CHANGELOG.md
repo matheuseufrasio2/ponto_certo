@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.5.0...ponto_certo-v0.6.0) (2026-11-07)
+
+
+### Features
+
+* **logger:** implement contextual request logging middleware ([065615f](https://github.com/matheuseufrasio2/ponto_certo/commit/065615f7618f98c91ff9ec0536074a49e72b7377))
+* **seed:** add second organization for multi-tenant testing ([f729a96](https://github.com/matheuseufrasio2/ponto_certo/commit/f729a967eac2f133ce92e99d6671043da41f75a6))
+
 ## [0.5.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.4.0...ponto_certo-v0.5.0) (2026-11-06)
 
 
