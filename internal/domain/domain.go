@@ -484,3 +484,38 @@ type ToggleServiceInput struct {
 	IsActive bool `json:"is_active"`
 }
 
+// OwnerExecutiveKPIs aggregates organization-wide financial KPIs and performance.
+type OwnerExecutiveKPIs struct {
+	GrossRevenueInCents     int64   `json:"gross_revenue_in_cents"`
+	NetRevenueInCents       int64   `json:"net_revenue_in_cents"`
+	TotalCommissionsInCents int64   `json:"total_commissions_in_cents"`
+	AverageTicketInCents    int64   `json:"average_ticket_in_cents"`
+	TotalAppointments       int     `json:"total_appointments"`
+	RetentionRatePercent    float64 `json:"retention_rate_percent"`
+}
+
+// UnitRevenueComparison summarizes revenue per unit for organization comparisons.
+type UnitRevenueComparison struct {
+	UnitID         string `json:"unit_id"`
+	UnitName       string `json:"unit_name"`
+	RevenueInCents int64  `json:"revenue_in_cents"`
+}
+
+// ServiceMixAnalytics details sales volume and revenue by service.
+type ServiceMixAnalytics struct {
+	ServiceID      string `json:"service_id"`
+	ServiceName    string `json:"service_name"`
+	Category       string `json:"category"`
+	Count          int    `json:"count"`
+	RevenueInCents int64  `json:"revenue_in_cents"`
+}
+
+// PaginatedBillings carries a slice of billings with pagination metadata.
+type PaginatedBillings struct {
+	Items   []Billing `json:"items"`
+	Total   int       `json:"total"`
+	Page    int       `json:"page"`
+	PerPage int       `json:"per_page"`
+}
+
+

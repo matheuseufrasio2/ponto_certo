@@ -195,6 +195,34 @@ definitions:
       unit_id:
         type: string
     type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs:
+    properties:
+      average_ticket_in_cents:
+        type: integer
+      gross_revenue_in_cents:
+        type: integer
+      net_revenue_in_cents:
+        type: integer
+      retention_rate_percent:
+        type: number
+      total_appointments:
+        type: integer
+      total_commissions_in_cents:
+        type: integer
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedBillings:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing'
+        type: array
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total:
+        type: integer
+    type: object
   github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod:
     enum:
     - CREDIT_CARD
@@ -288,6 +316,28 @@ definitions:
     - ServiceCategoryQuimicas
     - ServiceCategoryVisagismo
     - ServiceCategoryEsteticaFacial
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceMixAnalytics:
+    properties:
+      category:
+        type: string
+      count:
+        type: integer
+      revenue_in_cents:
+        type: integer
+      service_id:
+        type: string
+      service_name:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison:
+    properties:
+      revenue_in_cents:
+        type: integer
+      unit_id:
+        type: string
+      unit_name:
+        type: string
+    type: object
   github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse:
     properties:
       barbers:
@@ -503,6 +553,206 @@ paths:
       summary: Health check endpoint
       tags:
       - health
+  /owner/billings:
+    get:
+      description: Returns paginated financial transactions with optional unit and
+        payment method filters
+      parameters:
+      - description: Filter by unit UUID or ALL
+        in: query
+        name: unit_id
+        type: string
+      - description: Payment method (PIX, CREDIT_CARD, DEBIT_CARD, CASH)
+        in: query
+        name: method
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedBillings'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List consolidated billings
+      tags:
+      - owner
+  /owner/export/csv:
+    get:
+      description: Streams a CSV file containing all billing records for the organization
+      parameters:
+      - description: Filter by unit UUID or ALL
+        in: query
+        name: unit_id
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV file download
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Export consolidated billings as CSV
+      tags:
+      - owner
+  /owner/metrics:
+    get:
+      description: Returns gross revenue, net revenue, total commissions, average
+        ticket and retention rate
+      parameters:
+      - description: Filter by unit UUID or ALL
+        in: query
+        name: unit_id
+        type: string
+      - description: Start date YYYY-MM-DD
+        in: query
+        name: start
+        type: string
+      - description: End date YYYY-MM-DD
+        in: query
+        name: end
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get executive network KPIs
+      tags:
+      - owner
+  /owner/revenue-by-unit:
+    get:
+      description: Aggregates and ranks revenue by physical branch
+      parameters:
+      - description: Start date YYYY-MM-DD
+        in: query
+        name: start
+        type: string
+      - description: End date YYYY-MM-DD
+        in: query
+        name: end
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get revenue comparison across all units
+      tags:
+      - owner
+  /owner/services-mix:
+    get:
+      description: Ranks performed services by quantity and revenue generated
+      parameters:
+      - description: Filter by unit UUID or ALL
+        in: query
+        name: unit_id
+        type: string
+      - description: Start date YYYY-MM-DD
+        in: query
+        name: start
+        type: string
+      - description: End date YYYY-MM-DD
+        in: query
+        name: end
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceMixAnalytics'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get service mix analytics
+      tags:
+      - owner
   /reception/appointments:
     get:
       description: 'Retorna a lista de agendamentos de uma unidade para a data informada

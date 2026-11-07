@@ -81,6 +81,7 @@ func main() {
 	appointmentRepo := repository.NewPostgresAppointmentRepository(dbPool)
 	billingRepo := repository.NewPostgresBillingRepository(dbPool)
 	unitOpsRepo := repository.NewPostgresUnitOperationsRepository(dbPool)
+	ownerAnalyticsRepo := repository.NewPostgresOwnerAnalyticsRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
@@ -88,6 +89,7 @@ func main() {
 	appointmentService := service.NewAppointmentService(appointmentRepo, catalogRepo)
 	billingService := service.NewBillingService(billingRepo)
 	unitOpsService := service.NewUnitOperationsService(unitOpsRepo)
+	ownerAnalyticsService := service.NewOwnerAnalyticsService(ownerAnalyticsRepo)
 
 	// 6. Instantiate handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -95,6 +97,7 @@ func main() {
 	appointmentHandler := handler.NewAppointmentHandler(appointmentService)
 	billingHandler := handler.NewBillingHandler(billingService)
 	unitOpsHandler := handler.NewUnitOperationsHandler(unitOpsService)
+	ownerAnalyticsHandler := handler.NewOwnerAnalyticsHandler(ownerAnalyticsService)
 
 	// 7. Initialize Chi router and standard middlewares
 	r := chi.NewRouter()
@@ -135,6 +138,18 @@ func main() {
 			// SUPER_ADMIN routes
 			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin)).Get("/admin/stats", func(w http.ResponseWriter, r *http.Request) {
 				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido ao Super Admin!"})
+			})
+
+			// Owner Executive BI routes
+			r.With(internalMiddleware.RequireRoles(
+				domain.RoleSuperAdmin,
+				domain.RoleOrgOwner,
+			)).Route("/owner", func(r chi.Router) {
+				r.Get("/metrics", ownerAnalyticsHandler.GetMetrics)
+				r.Get("/revenue-by-unit", ownerAnalyticsHandler.GetRevenueByUnit)
+				r.Get("/services-mix", ownerAnalyticsHandler.GetServicesMix)
+				r.Get("/billings", ownerAnalyticsHandler.ListBillings)
+				r.Get("/export/csv", ownerAnalyticsHandler.ExportCSV)
 			})
 
 			// Owner and Manager routes
