@@ -18,13 +18,16 @@ import (
 )
 
 type mockTenantAdminManager struct {
-	getMetricsFn         func(ctx context.Context, claims *service.UserClaims) (*domain.SaaSMetrics, error)
-	listTenantsFn        func(ctx context.Context, claims *service.UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error)
-	createTenantFn       func(ctx context.Context, claims *service.UserClaims, input domain.CreateTenantInput) (*domain.Organization, error)
-	toggleTenantStatusFn func(ctx context.Context, claims *service.UserClaims, tenantID string, isActive bool) error
-	getTenantUsersFn     func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.User, error)
-	getTenantUnitsFn     func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error)
-	impersonateUserFn    func(ctx context.Context, claims *service.UserClaims, targetUserID string) (*domain.ImpersonateResponse, error)
+	getMetricsFn          func(ctx context.Context, claims *service.UserClaims) (*domain.SaaSMetrics, error)
+	listTenantsFn         func(ctx context.Context, claims *service.UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error)
+	getTenantOverviewFn   func(ctx context.Context, claims *service.UserClaims, tenantID string) (*domain.TenantOverview, error)
+	updateTenantPlanFn    func(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.UpdateTenantPlanInput) (*domain.Organization, error)
+	createTenantFn        func(ctx context.Context, claims *service.UserClaims, input domain.CreateTenantInput) (*domain.Organization, error)
+	toggleTenantStatusFn  func(ctx context.Context, claims *service.UserClaims, tenantID string, isActive bool) error
+	getTenantUsersFn      func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.User, error)
+	getTenantUnitsFn      func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error)
+	resetTenantPasswordFn func(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.ResetTenantPasswordInput) (*domain.ResetPasswordResponse, error)
+	impersonateUserFn     func(ctx context.Context, claims *service.UserClaims, targetUserID string) (*domain.ImpersonateResponse, error)
 }
 
 func (m *mockTenantAdminManager) GetSaaSMetrics(ctx context.Context, claims *service.UserClaims) (*domain.SaaSMetrics, error) {
@@ -88,6 +91,42 @@ func (m *mockTenantAdminManager) GetTenantUnits(ctx context.Context, claims *ser
 	}, nil
 }
 
+func (m *mockTenantAdminManager) GetTenantOverview(ctx context.Context, claims *service.UserClaims, tenantID string) (*domain.TenantOverview, error) {
+	if m.getTenantOverviewFn != nil {
+		return m.getTenantOverviewFn(ctx, claims, tenantID)
+	}
+	return &domain.TenantOverview{
+		Organization:           domain.Organization{ID: tenantID, Name: "Navalha de Ouro"},
+		GMVLast30DaysInCents:   5000000,
+		AppointmentsLast30Days: 400,
+		TotalBarbersCount:      6,
+		DaysOverdue:            0,
+	}, nil
+}
+
+func (m *mockTenantAdminManager) UpdateTenantPlan(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.UpdateTenantPlanInput) (*domain.Organization, error) {
+	if m.updateTenantPlanFn != nil {
+		return m.updateTenantPlanFn(ctx, claims, tenantID, input)
+	}
+	return &domain.Organization{
+		ID:                tenantID,
+		Plan:              input.Plan,
+		MonthlyFeeInCents: input.MonthlyFeeInCents,
+		IsActive:          true,
+	}, nil
+}
+
+func (m *mockTenantAdminManager) ResetTenantPassword(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.ResetTenantPasswordInput) (*domain.ResetPasswordResponse, error) {
+	if m.resetTenantPasswordFn != nil {
+		return m.resetTenantPasswordFn(ctx, claims, tenantID, input)
+	}
+	return &domain.ResetPasswordResponse{
+		UserID:            "owner-1",
+		UserEmail:         "owner@navalha.com",
+		TemporaryPassword: "GeneratedPassword123",
+	}, nil
+}
+
 func (m *mockTenantAdminManager) ImpersonateUser(ctx context.Context, claims *service.UserClaims, targetUserID string) (*domain.ImpersonateResponse, error) {
 	if m.impersonateUserFn != nil {
 		return m.impersonateUserFn(ctx, claims, targetUserID)
@@ -129,6 +168,9 @@ func setupTenantAdminTestRouter(mgr *mockTenantAdminManager, secret string) http
 		r.Patch("/tenants/{id}/toggle-status", h.ToggleTenantStatus)
 		r.Get("/tenants/{id}/users", h.GetTenantUsers)
 		r.Get("/tenants/{id}/units", h.GetTenantUnits)
+		r.Get("/tenants/{id}/overview", h.GetTenantOverview)
+		r.Patch("/tenants/{id}/plan", h.UpdateTenantPlan)
+		r.Post("/tenants/{id}/reset-password", h.ResetTenantPassword)
 		r.Post("/users/{id}/impersonate", h.ImpersonateUser)
 	})
 
@@ -361,6 +403,75 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 		}
 		if capturedStatus != "ACTIVE" || capturedPlan != "PRO" {
 			t.Errorf("expected status=ACTIVE, plan=PRO, got status=%s, plan=%s", capturedStatus, capturedPlan)
+		}
+	})
+
+	t.Run("GET /api/v1/admin/tenants/{id}/overview returns 200 with metrics", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/org-123/overview", nil)
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d. Body: %s", rec.Code, rec.Body.String())
+		}
+
+		var overview domain.TenantOverview
+		if err := json.Unmarshal(rec.Body.Bytes(), &overview); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if overview.GMVLast30DaysInCents != 5000000 || overview.AppointmentsLast30Days != 400 {
+			t.Errorf("unexpected overview response: %+v", overview)
+		}
+	})
+
+	t.Run("PATCH /api/v1/admin/tenants/{id}/plan updates subscription tier", func(t *testing.T) {
+		payload := domain.UpdateTenantPlanInput{
+			Plan:              "ENTERPRISE",
+			MonthlyFeeInCents: 59900,
+		}
+		body, _ := json.Marshal(payload)
+		req := httptest.NewRequest(http.MethodPatch, "/api/v1/admin/tenants/org-123/plan", bytes.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d. Body: %s", rec.Code, rec.Body.String())
+		}
+
+		var org domain.Organization
+		if err := json.Unmarshal(rec.Body.Bytes(), &org); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if org.Plan != "ENTERPRISE" || org.MonthlyFeeInCents != 59900 {
+			t.Errorf("unexpected updated organization: %+v", org)
+		}
+	})
+
+	t.Run("POST /api/v1/admin/tenants/{id}/reset-password resets owner password", func(t *testing.T) {
+		payload := domain.ResetTenantPasswordInput{NewPassword: "NovaSenhaAdmin123"}
+		body, _ := json.Marshal(payload)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/tenants/org-123/reset-password", bytes.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d. Body: %s", rec.Code, rec.Body.String())
+		}
+
+		var resp domain.ResetPasswordResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if resp.UserEmail != "owner@navalha.com" || resp.TemporaryPassword != "GeneratedPassword123" {
+			t.Errorf("unexpected reset response: %+v", resp)
 		}
 	})
 }

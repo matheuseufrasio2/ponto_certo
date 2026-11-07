@@ -146,6 +146,9 @@ func main() {
 				r.Patch("/tenants/{id}/toggle-status", tenantAdminHandler.ToggleTenantStatus)
 				r.Get("/tenants/{id}/users", tenantAdminHandler.GetTenantUsers)
 				r.Get("/tenants/{id}/units", tenantAdminHandler.GetTenantUnits)
+				r.Get("/tenants/{id}/overview", tenantAdminHandler.GetTenantOverview)
+				r.Patch("/tenants/{id}/plan", tenantAdminHandler.UpdateTenantPlan)
+				r.Post("/tenants/{id}/reset-password", tenantAdminHandler.ResetTenantPassword)
 				r.Post("/users/{id}/impersonate", tenantAdminHandler.ImpersonateUser)
 			})
 

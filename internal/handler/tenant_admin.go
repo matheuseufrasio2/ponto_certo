@@ -15,10 +15,13 @@ import (
 type TenantAdminManager interface {
 	GetSaaSMetrics(ctx context.Context, claims *service.UserClaims) (*domain.SaaSMetrics, error)
 	ListTenants(ctx context.Context, claims *service.UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error)
+	GetTenantOverview(ctx context.Context, claims *service.UserClaims, tenantID string) (*domain.TenantOverview, error)
+	UpdateTenantPlan(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.UpdateTenantPlanInput) (*domain.Organization, error)
 	CreateTenant(ctx context.Context, claims *service.UserClaims, input domain.CreateTenantInput) (*domain.Organization, error)
 	ToggleTenantStatus(ctx context.Context, claims *service.UserClaims, tenantID string, isActive bool) error
 	GetTenantUsers(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.User, error)
 	GetTenantUnits(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error)
+	ResetTenantPassword(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.ResetTenantPasswordInput) (*domain.ResetPasswordResponse, error)
 	ImpersonateUser(ctx context.Context, claims *service.UserClaims, targetUserID string) (*domain.ImpersonateResponse, error)
 }
 
@@ -269,6 +272,129 @@ func (h *TenantAdminHandler) GetTenantUnits(w http.ResponseWriter, r *http.Reque
 	}
 
 	_ = WriteJSON(w, http.StatusOK, units)
+}
+
+// GetTenantOverview godoc
+// @Summary Get aggregated engagement and financial metrics for a tenant
+// @Description Returns 30-day GMV, 30-day appointment volume, total barbers, and overdue status
+// @Tags admin
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Organization UUID"
+// @Success 200 {object} domain.TenantOverview
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /admin/tenants/{id}/overview [get]
+func (h *TenantAdminHandler) GetTenantOverview(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.UserFromContext(r.Context())
+	if !ok || claims == nil {
+		HandleError(w, domain.ErrUnauthorized)
+		return
+	}
+
+	tenantID := chi.URLParam(r, "id")
+	if tenantID == "" {
+		WriteError(w, http.StatusBadRequest, "tenant id is required")
+		return
+	}
+
+	overview, err := h.svc.GetTenantOverview(r.Context(), claims, tenantID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	_ = WriteJSON(w, http.StatusOK, overview)
+}
+
+// UpdateTenantPlan godoc
+// @Summary Upgrade or downgrade a tenant's subscription plan and fee
+// @Description Updates organization plan tier (BASIC, PRO, ENTERPRISE) and monthly fee
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Organization UUID"
+// @Param body body domain.UpdateTenantPlanInput true "Plan update payload"
+// @Success 200 {object} domain.Organization
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /admin/tenants/{id}/plan [patch]
+func (h *TenantAdminHandler) UpdateTenantPlan(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.UserFromContext(r.Context())
+	if !ok || claims == nil {
+		HandleError(w, domain.ErrUnauthorized)
+		return
+	}
+
+	tenantID := chi.URLParam(r, "id")
+	if tenantID == "" {
+		WriteError(w, http.StatusBadRequest, "tenant id is required")
+		return
+	}
+
+	var input domain.UpdateTenantPlanInput
+	if err := ReadJSON(w, r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	org, err := h.svc.UpdateTenantPlan(r.Context(), claims, tenantID, input)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	_ = WriteJSON(w, http.StatusOK, org)
+}
+
+// ResetTenantPassword godoc
+// @Summary Administratively reset franchise owner's password
+// @Description Sets a specified password or generates a temporary credential for tenant owner
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Organization UUID"
+// @Param body body domain.ResetTenantPasswordInput false "Optional custom password payload"
+// @Success 200 {object} domain.ResetPasswordResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /admin/tenants/{id}/reset-password [post]
+func (h *TenantAdminHandler) ResetTenantPassword(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.UserFromContext(r.Context())
+	if !ok || claims == nil {
+		HandleError(w, domain.ErrUnauthorized)
+		return
+	}
+
+	tenantID := chi.URLParam(r, "id")
+	if tenantID == "" {
+		WriteError(w, http.StatusBadRequest, "tenant id is required")
+		return
+	}
+
+	var input domain.ResetTenantPasswordInput
+	if r.Body != nil && r.ContentLength > 0 {
+		_ = ReadJSON(w, r, &input)
+	}
+
+	resp, err := h.svc.ResetTenantPassword(r.Context(), claims, tenantID, input)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	_ = WriteJSON(w, http.StatusOK, resp)
 }
 
 // ImpersonateUser godoc
