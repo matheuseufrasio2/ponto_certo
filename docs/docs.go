@@ -18,6 +18,369 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns platform-wide MRR, ARR, active tenants, churn rate, and total units",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get SaaS platform KPIs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SaaSMetrics"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns paginated organizations matching search term",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List and search organizations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search by name, trade name or document",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 15)",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedOrganizations"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates organization, headquarters branch and owner user in a transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Onboard a new barbershop franchise tenant",
+                "parameters": [
+                    {
+                        "description": "Tenant creation payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateTenantInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/toggle-status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates organization active status and revokes or restores access",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Activate or suspend an organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Toggle status payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ToggleStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns users of a tenant for diagnostic impersonation",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List all users in a tenant organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.User"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/impersonate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Issues a temporary 30-minute JWT token with target user identity",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Impersonate a user for diagnostic support",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target User UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ImpersonateResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Autentica um usuário via e-mail e senha, retornando um JWT com seu papel e escopo de tenant.",
@@ -1076,6 +1439,92 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateTenantInput": {
+            "type": "object",
+            "properties": {
+                "admin_email": {
+                    "type": "string"
+                },
+                "admin_name": {
+                    "type": "string"
+                },
+                "admin_password": {
+                    "type": "string"
+                },
+                "document": {
+                    "type": "string"
+                },
+                "monthly_fee_in_cents": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "plan": {
+                    "description": "BASIC, PRO, ENTERPRISE",
+                    "type": "string"
+                },
+                "trade_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.ImpersonateResponse": {
+            "type": "object",
+            "properties": {
+                "expires_in": {
+                    "description": "Ex: 1800 for 30min",
+                    "type": "integer"
+                },
+                "target_role": {
+                    "type": "string"
+                },
+                "target_user_id": {
+                    "type": "string"
+                },
+                "target_user_name": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "document": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "monthly_fee_in_cents": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "plan": {
+                    "type": "string"
+                },
+                "subscription_status": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus"
+                },
+                "trade_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs": {
             "type": "object",
             "properties": {
@@ -1106,6 +1555,26 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "per_page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedOrganizations": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization"
                     }
                 },
                 "page": {
@@ -1176,6 +1645,29 @@ const docTemplate = `{
                 "RoleReceptionist",
                 "RoleBarber"
             ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.SaaSMetrics": {
+            "type": "object",
+            "properties": {
+                "active_tenants": {
+                    "type": "integer"
+                },
+                "arr_in_cents": {
+                    "type": "integer"
+                },
+                "churn_rate_percent": {
+                    "type": "number"
+                },
+                "mrr_in_cents": {
+                    "type": "integer"
+                },
+                "past_due_tenants_count": {
+                    "type": "integer"
+                },
+                "total_units_across_tenants": {
+                    "type": "integer"
+                }
+            }
         },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.Service": {
             "type": "object",
@@ -1258,6 +1750,21 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus": {
+            "type": "string",
+            "enum": [
+                "ACTIVE",
+                "PAST_DUE",
+                "TRIAL",
+                "CANCELLED"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionStatusActive",
+                "SubscriptionStatusPastDue",
+                "SubscriptionStatusTrial",
+                "SubscriptionStatusCancelled"
+            ]
+        },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison": {
             "type": "object",
             "properties": {
@@ -1268,6 +1775,40 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "unit_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "description": "NULL for SUPER_ADMIN",
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Role"
+                },
+                "unit_id": {
+                    "description": "NULL for SUPER_ADMIN \u0026 ORG_OWNER",
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -1358,6 +1899,14 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_handler.ToggleStatusRequest": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
                 }
             }
         }

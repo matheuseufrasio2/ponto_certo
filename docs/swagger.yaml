@@ -195,6 +195,63 @@ definitions:
       unit_id:
         type: string
     type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateTenantInput:
+    properties:
+      admin_email:
+        type: string
+      admin_name:
+        type: string
+      admin_password:
+        type: string
+      document:
+        type: string
+      monthly_fee_in_cents:
+        type: integer
+      name:
+        type: string
+      plan:
+        description: BASIC, PRO, ENTERPRISE
+        type: string
+      trade_name:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.ImpersonateResponse:
+    properties:
+      expires_in:
+        description: 'Ex: 1800 for 30min'
+        type: integer
+      target_role:
+        type: string
+      target_user_id:
+        type: string
+      target_user_name:
+        type: string
+      token:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization:
+    properties:
+      created_at:
+        type: string
+      document:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      monthly_fee_in_cents:
+        type: integer
+      name:
+        type: string
+      plan:
+        type: string
+      subscription_status:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus'
+      trade_name:
+        type: string
+      updated_at:
+        type: string
+    type: object
   github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs:
     properties:
       average_ticket_in_cents:
@@ -215,6 +272,19 @@ definitions:
       items:
         items:
           $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing'
+        type: array
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedOrganizations:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization'
         type: array
       page:
         type: integer
@@ -270,6 +340,21 @@ definitions:
     - RoleUnitManager
     - RoleReceptionist
     - RoleBarber
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.SaaSMetrics:
+    properties:
+      active_tenants:
+        type: integer
+      arr_in_cents:
+        type: integer
+      churn_rate_percent:
+        type: number
+      mrr_in_cents:
+        type: integer
+      past_due_tenants_count:
+        type: integer
+      total_units_across_tenants:
+        type: integer
+    type: object
   github_com_matheuseufrasio2_ponto_certo_internal_domain.Service:
     properties:
       category:
@@ -329,6 +414,18 @@ definitions:
       service_name:
         type: string
     type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus:
+    enum:
+    - ACTIVE
+    - PAST_DUE
+    - TRIAL
+    - CANCELLED
+    type: string
+    x-enum-varnames:
+    - SubscriptionStatusActive
+    - SubscriptionStatusPastDue
+    - SubscriptionStatusTrial
+    - SubscriptionStatusCancelled
   github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison:
     properties:
       revenue_in_cents:
@@ -336,6 +433,29 @@ definitions:
       unit_id:
         type: string
       unit_name:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      organization_id:
+        description: NULL for SUPER_ADMIN
+        type: string
+      role:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Role'
+      unit_id:
+        description: NULL for SUPER_ADMIN & ORG_OWNER
+        type: string
+      updated_at:
         type: string
     type: object
   github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse:
@@ -396,6 +516,11 @@ definitions:
       status:
         type: string
     type: object
+  internal_handler.ToggleStatusRequest:
+    properties:
+      is_active:
+        type: boolean
+    type: object
 info:
   contact:
     email: matheuseufrasio2@gmail.com
@@ -417,6 +542,239 @@ info:
   title: Ponto Certo API
   version: "1.0"
 paths:
+  /admin/metrics:
+    get:
+      description: Returns platform-wide MRR, ARR, active tenants, churn rate, and
+        total units
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SaaSMetrics'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get SaaS platform KPIs
+      tags:
+      - admin
+  /admin/tenants:
+    get:
+      description: Returns paginated organizations matching search term
+      parameters:
+      - description: Search by name, trade name or document
+        in: query
+        name: search
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 15)
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedOrganizations'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List and search organizations
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Creates organization, headquarters branch and owner user in a transaction
+      parameters:
+      - description: Tenant creation payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateTenantInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Onboard a new barbershop franchise tenant
+      tags:
+      - admin
+  /admin/tenants/{id}/toggle-status:
+    patch:
+      consumes:
+      - application/json
+      description: Updates organization active status and revokes or restores access
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Toggle status payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler.ToggleStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate or suspend an organization
+      tags:
+      - admin
+  /admin/tenants/{id}/users:
+    get:
+      description: Returns users of a tenant for diagnostic impersonation
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.User'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all users in a tenant organization
+      tags:
+      - admin
+  /admin/users/{id}/impersonate:
+    post:
+      description: Issues a temporary 30-minute JWT token with target user identity
+      parameters:
+      - description: Target User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ImpersonateResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Impersonate a user for diagnostic support
+      tags:
+      - admin
   /auth/login:
     post:
       consumes:
