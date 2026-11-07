@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.8.0...ponto_certo-v0.9.0) (2026-11-07)
+
+
+### Features
+
+* **admin:** implement saas governance and diagnostic user impersonation ([8dc3aa8](https://github.com/matheuseufrasio2/ponto_certo/commit/8dc3aa8bbd688b0c3ea2f8a6b3a98eed32603bff))
+* **api:** register saas platform admin endpoints ([451d5f9](https://github.com/matheuseufrasio2/ponto_certo/commit/451d5f95d6063dc3e2b95d23d7eda47921384f82))
+* **db:** add saas governance columns to organizations ([451b82c](https://github.com/matheuseufrasio2/ponto_certo/commit/451b82c707eb311809756e1eee10f608efee1900))
+* **domain:** add saas governance impersonation models ([1265d87](https://github.com/matheuseufrasio2/ponto_certo/commit/1265d8743d655bda43296990a987d75ada206fab))
+* **middleware:** add impersonation mutation guard ([30162b1](https://github.com/matheuseufrasio2/ponto_certo/commit/30162b1a1b077dea12951b6f8b42561fa66ae21f))
+* **repository:** implement tenant admin repository ([fc959ab](https://github.com/matheuseufrasio2/ponto_certo/commit/fc959ab552522b6da03810914561e50ee8660bb1))
+* **service:** implement tenant admin impersonation logic ([548b265](https://github.com/matheuseufrasio2/ponto_certo/commit/548b265cbac7e5c604ef4ee0f68f6300bc2c9ba2))
+
 ## [0.8.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.7.0...ponto_certo-v0.8.0) (2026-11-07)
 
 
