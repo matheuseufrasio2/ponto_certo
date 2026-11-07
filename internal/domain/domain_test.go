@@ -498,3 +498,49 @@ func TestUpdateBarberStatusInput_Validate(t *testing.T) {
 		t.Errorf("expected ErrInvalidBarberStatus, got: %v", err)
 	}
 }
+
+func TestUpdateTenantPlanInput_Validate(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       domain.UpdateTenantPlanInput
+		expectError bool
+	}{
+		{
+			name:        "valid basic plan",
+			input:       domain.UpdateTenantPlanInput{Plan: "BASIC", MonthlyFeeInCents: 19900},
+			expectError: false,
+		},
+		{
+			name:        "valid pro plan",
+			input:       domain.UpdateTenantPlanInput{Plan: "PRO", MonthlyFeeInCents: 29900},
+			expectError: false,
+		},
+		{
+			name:        "valid enterprise plan",
+			input:       domain.UpdateTenantPlanInput{Plan: "ENTERPRISE", MonthlyFeeInCents: 59900},
+			expectError: false,
+		},
+		{
+			name:        "invalid plan name",
+			input:       domain.UpdateTenantPlanInput{Plan: "GOLD", MonthlyFeeInCents: 19900},
+			expectError: true,
+		},
+		{
+			name:        "negative fee fails",
+			input:       domain.UpdateTenantPlanInput{Plan: "PRO", MonthlyFeeInCents: -100},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.input.Validate()
+			if tt.expectError && err == nil {
+				t.Errorf("expected error, got nil")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}
