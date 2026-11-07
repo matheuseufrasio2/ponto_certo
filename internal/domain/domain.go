@@ -32,6 +32,10 @@ var (
 	ErrBillingAlreadyProcessed    = errors.New("appointment has already been paid and processed")
 	ErrBarberHasFutureAppointments = errors.New("cannot change barber status to off duty or vacation while future appointments exist")
 	ErrInvalidBarberStatus         = errors.New("invalid barber operational status")
+	ErrCannotImpersonateSelf       = errors.New("cannot impersonate yourself")
+	ErrCannotImpersonateSuperAdmin = errors.New("cannot impersonate another super admin")
+	ErrImpersonationActionBlocked  = errors.New("action blocked during user impersonation")
+	ErrTenantInactive              = errors.New("organization blocked due to registration or financial pending issues")
 )
 
 // BarberStatus defines live operational shift state for a barber.
@@ -76,15 +80,28 @@ func (r Role) IsValid() bool {
 	}
 }
 
+// SubscriptionStatus defines the SaaS billing and platform access state for an organization.
+type SubscriptionStatus string
+
+const (
+	SubscriptionStatusActive    SubscriptionStatus = "ACTIVE"
+	SubscriptionStatusPastDue   SubscriptionStatus = "PAST_DUE"
+	SubscriptionStatusTrial     SubscriptionStatus = "TRIAL"
+	SubscriptionStatusCancelled SubscriptionStatus = "CANCELLED"
+)
+
 // Organization represents the top-level tenant (brand, franchise or single barbershop).
 type Organization struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	TradeName string    `json:"trade_name,omitempty"`
-	Document  string    `json:"document,omitempty"`
-	IsActive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID                 string             `json:"id"`
+	Name               string             `json:"name"`
+	TradeName          string             `json:"trade_name,omitempty"`
+	Document           string             `json:"document,omitempty"`
+	Plan               string             `json:"plan"`
+	MonthlyFeeInCents  int64              `json:"monthly_fee_in_cents"`
+	SubscriptionStatus SubscriptionStatus `json:"subscription_status"`
+	IsActive           bool               `json:"is_active"`
+	CreatedAt          time.Time          `json:"created_at"`
+	UpdatedAt          time.Time          `json:"updated_at"`
 }
 
 // BarbershopUnit represents a physical branch or location belonging to an organization.
@@ -517,5 +534,45 @@ type PaginatedBillings struct {
 	Page    int       `json:"page"`
 	PerPage int       `json:"per_page"`
 }
+
+// SaaSMetrics represents global platform health and recurring financial KPIs.
+type SaaSMetrics struct {
+	MRRInCents              int64   `json:"mrr_in_cents"`
+	ARRInCents              int64   `json:"arr_in_cents"`
+	ActiveTenants           int     `json:"active_tenants"`
+	ChurnRatePercent        float64 `json:"churn_rate_percent"`
+	PastDueTenantsCount     int     `json:"past_due_tenants_count"`
+	TotalUnitsAcrossTenants int     `json:"total_units_across_tenants"`
+}
+
+// CreateTenantInput defines parameters for onboarding a new barbershop franchise.
+type CreateTenantInput struct {
+	Name              string `json:"name"`
+	TradeName         string `json:"trade_name"`
+	Document          string `json:"document"`
+	Plan              string `json:"plan"` // BASIC, PRO, ENTERPRISE
+	MonthlyFeeInCents int64  `json:"monthly_fee_in_cents"`
+	AdminName         string `json:"admin_name"`
+	AdminEmail        string `json:"admin_email"`
+	AdminPassword     string `json:"admin_password"`
+}
+
+// ImpersonateResponse carries access credentials for a super admin diagnostic session.
+type ImpersonateResponse struct {
+	Token          string `json:"token"`
+	TargetUserID   string `json:"target_user_id"`
+	TargetUserName string `json:"target_user_name"`
+	TargetRole     string `json:"target_role"`
+	ExpiresIn      int    `json:"expires_in"` // Ex: 1800 for 30min
+}
+
+// PaginatedOrganizations carries a list of organizations with pagination metadata.
+type PaginatedOrganizations struct {
+	Items   []Organization `json:"items"`
+	Total   int            `json:"total"`
+	Page    int            `json:"page"`
+	PerPage int            `json:"per_page"`
+}
+
 
 

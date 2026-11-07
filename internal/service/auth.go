@@ -22,6 +22,8 @@ type UserClaims struct {
 	Role           domain.Role `json:"role"`
 	OrganizationID *string     `json:"organization_id,omitempty"`
 	UnitID         *string     `json:"unit_id,omitempty"`
+	IsImpersonated bool        `json:"is_impersonated,omitempty"`
+	ImpersonatedBy *string     `json:"impersonated_by,omitempty"`
 	jwt.RegisteredClaims
 }
 

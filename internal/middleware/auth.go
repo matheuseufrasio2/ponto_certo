@@ -97,3 +97,15 @@ func RequireRoles(allowedRoles ...domain.Role) func(next http.Handler) http.Hand
 func RequireUnitAccess(targetUnitID string, claims *service.UserClaims) bool {
 	return claims.HasUnitAccess(targetUnitID)
 }
+
+// PreventImpersonatedMutations restricts high-risk actions when a session is impersonated by Super Admin.
+func PreventImpersonatedMutations(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := UserFromContext(r.Context())
+		if ok && claims != nil && claims.IsImpersonated {
+			writeJSONError(w, http.StatusForbidden, domain.ErrImpersonationActionBlocked.Error())
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}

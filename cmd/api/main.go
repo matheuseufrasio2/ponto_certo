@@ -82,6 +82,7 @@ func main() {
 	billingRepo := repository.NewPostgresBillingRepository(dbPool)
 	unitOpsRepo := repository.NewPostgresUnitOperationsRepository(dbPool)
 	ownerAnalyticsRepo := repository.NewPostgresOwnerAnalyticsRepository(dbPool)
+	tenantAdminRepo := repository.NewPostgresTenantAdminRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
@@ -90,6 +91,7 @@ func main() {
 	billingService := service.NewBillingService(billingRepo)
 	unitOpsService := service.NewUnitOperationsService(unitOpsRepo)
 	ownerAnalyticsService := service.NewOwnerAnalyticsService(ownerAnalyticsRepo)
+	tenantAdminService := service.NewTenantAdminService(tenantAdminRepo, cfg.JWTSecret)
 
 	// 6. Instantiate handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -98,6 +100,7 @@ func main() {
 	billingHandler := handler.NewBillingHandler(billingService)
 	unitOpsHandler := handler.NewUnitOperationsHandler(unitOpsService)
 	ownerAnalyticsHandler := handler.NewOwnerAnalyticsHandler(ownerAnalyticsService)
+	tenantAdminHandler := handler.NewTenantAdminHandler(tenantAdminService)
 
 	// 7. Initialize Chi router and standard middlewares
 	r := chi.NewRouter()
@@ -135,9 +138,14 @@ func main() {
 		r.Group(func(r chi.Router) {
 			r.Use(internalMiddleware.AuthMiddleware(cfg.JWTSecret))
 
-			// SUPER_ADMIN routes
-			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin)).Get("/admin/stats", func(w http.ResponseWriter, r *http.Request) {
-				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido ao Super Admin!"})
+			// SUPER_ADMIN SaaS governance routes
+			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin)).Route("/admin", func(r chi.Router) {
+				r.Get("/metrics", tenantAdminHandler.GetPlatformMetrics)
+				r.Get("/tenants", tenantAdminHandler.ListTenants)
+				r.Post("/tenants", tenantAdminHandler.CreateTenant)
+				r.Patch("/tenants/{id}/toggle-status", tenantAdminHandler.ToggleTenantStatus)
+				r.Get("/tenants/{id}/users", tenantAdminHandler.GetTenantUsers)
+				r.Post("/users/{id}/impersonate", tenantAdminHandler.ImpersonateUser)
 			})
 
 			// Owner Executive BI routes
