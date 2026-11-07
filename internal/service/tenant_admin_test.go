@@ -10,10 +10,11 @@ import (
 
 type mockTenantAdminRepo struct {
 	getMetricsFn    func(ctx context.Context) (*domain.SaaSMetrics, error)
-	listTenantsFn   func(ctx context.Context, search string, limit, offset int) ([]domain.Organization, int, error)
+	listTenantsFn   func(ctx context.Context, search, status, plan string, limit, offset int) ([]domain.Organization, int, error)
 	createTenantFn  func(ctx context.Context, input domain.CreateTenantInput, passwordHash string) (*domain.Organization, error)
 	toggleStatusFn  func(ctx context.Context, tenantID string, isActive bool) error
 	getUsersFn      func(ctx context.Context, tenantID string) ([]domain.User, error)
+	getUnitsFn      func(ctx context.Context, tenantID string) ([]domain.BarbershopUnit, error)
 	getUserByIDFn   func(ctx context.Context, userID string) (*domain.User, error)
 }
 
@@ -24,9 +25,9 @@ func (m *mockTenantAdminRepo) GetSaaSPlatformKPIs(ctx context.Context) (*domain.
 	return &domain.SaaSMetrics{}, nil
 }
 
-func (m *mockTenantAdminRepo) ListTenants(ctx context.Context, search string, limit, offset int) ([]domain.Organization, int, error) {
+func (m *mockTenantAdminRepo) ListTenants(ctx context.Context, search, status, plan string, limit, offset int) ([]domain.Organization, int, error) {
 	if m.listTenantsFn != nil {
-		return m.listTenantsFn(ctx, search, limit, offset)
+		return m.listTenantsFn(ctx, search, status, plan, limit, offset)
 	}
 	return nil, 0, nil
 }
@@ -48,6 +49,13 @@ func (m *mockTenantAdminRepo) ToggleTenantActiveStatus(ctx context.Context, tena
 func (m *mockTenantAdminRepo) GetTenantUsers(ctx context.Context, tenantID string) ([]domain.User, error) {
 	if m.getUsersFn != nil {
 		return m.getUsersFn(ctx, tenantID)
+	}
+	return nil, nil
+}
+
+func (m *mockTenantAdminRepo) GetTenantUnits(ctx context.Context, tenantID string) ([]domain.BarbershopUnit, error) {
+	if m.getUnitsFn != nil {
+		return m.getUnitsFn(ctx, tenantID)
 	}
 	return nil, nil
 }
@@ -157,4 +165,114 @@ func TestTenantAdminService_Impersonation(t *testing.T) {
 			t.Errorf("expected ErrForbidden, got %v", err)
 		}
 	})
+}
+
+func TestTenantAdminService_GetTenantUnits(t *testing.T) {
+	ctx := context.Background()
+	secret := "test-secret"
+	adminClaims := &service.UserClaims{
+		UserID: "super-admin-1",
+		Role:   domain.RoleSuperAdmin,
+	}
+
+	expectedUnits := []domain.BarbershopUnit{
+		{
+			ID:             "unit-1",
+			OrganizationID: "org-1",
+			Name:           "Matriz Centro",
+			ChairCount:     5,
+			IsActive:       true,
+		},
+		{
+			ID:             "unit-2",
+			OrganizationID: "org-1",
+			Name:           "Filial Jardins",
+			ChairCount:     3,
+			IsActive:       true,
+		},
+	}
+
+	repo := &mockTenantAdminRepo{
+		getUnitsFn: func(ctx context.Context, tenantID string) ([]domain.BarbershopUnit, error) {
+			if tenantID == "org-1" {
+				return expectedUnits, nil
+			}
+			return []domain.BarbershopUnit{}, nil
+		},
+	}
+
+	svc := service.NewTenantAdminService(repo, secret)
+
+	t.Run("successfully retrieves units for super admin", func(t *testing.T) {
+		units, err := svc.GetTenantUnits(ctx, adminClaims, "org-1")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(units) != 2 {
+			t.Fatalf("expected 2 units, got %d", len(units))
+		}
+		if units[0].Name != "Matriz Centro" {
+			t.Errorf("expected unit name 'Matriz Centro', got %s", units[0].Name)
+		}
+	})
+
+	t.Run("rejects request without claims", func(t *testing.T) {
+		_, err := svc.GetTenantUnits(ctx, nil, "org-1")
+		if err != domain.ErrUnauthorized {
+			t.Errorf("expected ErrUnauthorized, got %v", err)
+		}
+	})
+
+	t.Run("rejects request from non-superadmin", func(t *testing.T) {
+		managerClaims := &service.UserClaims{
+			UserID: "manager-1",
+			Role:   domain.RoleUnitManager,
+		}
+		_, err := svc.GetTenantUnits(ctx, managerClaims, "org-1")
+		if err != domain.ErrForbidden {
+			t.Errorf("expected ErrForbidden, got %v", err)
+		}
+	})
+
+	t.Run("rejects empty tenant id", func(t *testing.T) {
+		_, err := svc.GetTenantUnits(ctx, adminClaims, "")
+		if err == nil {
+			t.Fatal("expected error for empty tenant id, got nil")
+		}
+	})
+}
+
+func TestTenantAdminService_ListTenants_Filters(t *testing.T) {
+	ctx := context.Background()
+	secret := "test-secret"
+	adminClaims := &service.UserClaims{
+		UserID: "super-admin-1",
+		Role:   domain.RoleSuperAdmin,
+	}
+
+	var capturedSearch, capturedStatus, capturedPlan string
+	repo := &mockTenantAdminRepo{
+		listTenantsFn: func(ctx context.Context, search, status, plan string, limit, offset int) ([]domain.Organization, int, error) {
+			capturedSearch = search
+			capturedStatus = status
+			capturedPlan = plan
+			return []domain.Organization{
+				{ID: "org-1", Name: "Barbearia Alfa", Plan: "PRO", SubscriptionStatus: domain.SubscriptionStatusActive},
+			}, 1, nil
+		},
+	}
+
+	svc := service.NewTenantAdminService(repo, secret)
+
+	res, err := svc.ListTenants(ctx, adminClaims, "Alfa", "ACTIVE", "PRO", 1, 15)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if res.Total != 1 {
+		t.Errorf("expected total 1, got %d", res.Total)
+	}
+	if capturedSearch != "Alfa" || capturedStatus != "ACTIVE" || capturedPlan != "PRO" {
+		t.Errorf("filters not passed correctly to repo: search=%s status=%s plan=%s", capturedSearch, capturedStatus, capturedPlan)
+	}
 }

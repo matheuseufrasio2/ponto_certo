@@ -45,8 +45,8 @@ func (s *TenantAdminService) GetSaaSMetrics(ctx context.Context, claims *UserCla
 	return s.repo.GetSaaSPlatformKPIs(ctx)
 }
 
-// ListTenants returns paginated organizations matching search term.
-func (s *TenantAdminService) ListTenants(ctx context.Context, claims *UserClaims, search string, page, perPage int) (*domain.PaginatedOrganizations, error) {
+// ListTenants returns paginated organizations matching search, status, and plan filters.
+func (s *TenantAdminService) ListTenants(ctx context.Context, claims *UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error) {
 	if err := requireSuperAdmin(claims); err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *TenantAdminService) ListTenants(ctx context.Context, claims *UserClaims
 	}
 
 	offset := (page - 1) * perPage
-	items, total, err := s.repo.ListTenants(ctx, search, perPage, offset)
+	items, total, err := s.repo.ListTenants(ctx, search, status, plan, perPage, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +110,17 @@ func (s *TenantAdminService) GetTenantUsers(ctx context.Context, claims *UserCla
 		return nil, err
 	}
 	return s.repo.GetTenantUsers(ctx, tenantID)
+}
+
+// GetTenantUnits returns physical units/branches belonging to a tenant organization.
+func (s *TenantAdminService) GetTenantUnits(ctx context.Context, claims *UserClaims, tenantID string) ([]domain.BarbershopUnit, error) {
+	if err := requireSuperAdmin(claims); err != nil {
+		return nil, err
+	}
+	if tenantID == "" {
+		return nil, errors.New("tenant id is required")
+	}
+	return s.repo.GetTenantUnits(ctx, tenantID)
 }
 
 // ImpersonateUser generates a temporary JWT token allowing a Super Admin to access the system as a specific user.
