@@ -61,7 +61,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns paginated organizations matching search term",
+                "description": "Returns paginated organizations matching search term, status, and plan filters",
                 "produces": [
                     "application/json"
                 ],
@@ -74,6 +74,18 @@
                         "type": "string",
                         "description": "Search by name, trade name or document",
                         "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by subscription status (ACTIVE, PAST_DUE, TRIAL, CANCELLED) or BLOCKED",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by plan (BASIC, PRO, ENTERPRISE)",
+                        "name": "plan",
                         "in": "query"
                     },
                     {
@@ -242,6 +254,67 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/units": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns branches/units belonging to an organization for Super Admin inspection",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List all physical branches/units in a tenant organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BarbershopUnit"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/internal_handler.ErrorResponse"
                         }
@@ -1324,6 +1397,38 @@
                 "BarberStatusOffDuty",
                 "BarberStatusVacation"
             ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.BarbershopUnit": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "chair_count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
         },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing": {
             "type": "object",

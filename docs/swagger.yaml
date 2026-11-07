@@ -124,6 +124,27 @@ definitions:
     - BarberStatusLunch
     - BarberStatusOffDuty
     - BarberStatusVacation
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.BarbershopUnit:
+    properties:
+      address:
+        type: string
+      chair_count:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      organization_id:
+        type: string
+      phone:
+        type: string
+      updated_at:
+        type: string
+    type: object
   github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing:
     properties:
       amount_in_cents:
@@ -572,11 +593,21 @@ paths:
       - admin
   /admin/tenants:
     get:
-      description: Returns paginated organizations matching search term
+      description: Returns paginated organizations matching search term, status, and
+        plan filters
       parameters:
       - description: Search by name, trade name or document
         in: query
         name: search
+        type: string
+      - description: Filter by subscription status (ACTIVE, PAST_DUE, TRIAL, CANCELLED)
+          or BLOCKED
+        in: query
+        name: status
+        type: string
+      - description: Filter by plan (BASIC, PRO, ENTERPRISE)
+        in: query
+        name: plan
         type: string
       - description: Page number (default 1)
         in: query
@@ -697,6 +728,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Activate or suspend an organization
+      tags:
+      - admin
+  /admin/tenants/{id}/units:
+    get:
+      description: Returns branches/units belonging to an organization for Super Admin
+        inspection
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BarbershopUnit'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all physical branches/units in a tenant organization
       tags:
       - admin
   /admin/tenants/{id}/users:
