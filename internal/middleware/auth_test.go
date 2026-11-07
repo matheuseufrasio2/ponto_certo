@@ -79,6 +79,57 @@ func TestAuthMiddleware_MissingOrInvalidToken(t *testing.T) {
 	})
 }
 
+func TestPreventImpersonatedMutations(t *testing.T) {
+	secret := "my-secret"
+
+	t.Run("blocks mutation when session is impersonated", func(t *testing.T) {
+		claims := service.UserClaims{
+			UserID:         "user-1",
+			Role:           domain.RoleOrgOwner,
+			IsImpersonated: true,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			},
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		signed, _ := token.SignedString([]byte(secret))
+
+		req := httptest.NewRequest(http.MethodPost, "/sensitive", nil)
+		req.Header.Set("Authorization", "Bearer "+signed)
+		rec := httptest.NewRecorder()
+
+		handler := middleware.AuthMiddleware(secret)(
+			middleware.PreventImpersonatedMutations(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})),
+		)
+		handler.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusForbidden {
+			t.Errorf("expected status 403, got %d", rec.Code)
+		}
+	})
+
+	t.Run("allows normal non-impersonated session", func(t *testing.T) {
+		token := generateTestToken(secret, domain.RoleOrgOwner, time.Now().Add(1*time.Hour))
+
+		req := httptest.NewRequest(http.MethodPost, "/sensitive", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		rec := httptest.NewRecorder()
+
+		handler := middleware.AuthMiddleware(secret)(
+			middleware.PreventImpersonatedMutations(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})),
+		)
+		handler.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d", rec.Code)
+		}
+	})
+}
+
 func TestRequireRoles(t *testing.T) {
 	secret := "my-secret"
 
