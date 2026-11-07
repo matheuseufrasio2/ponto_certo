@@ -4,11 +4,21 @@
 
 -- 1. Organizations (Root Tenant)
 INSERT INTO organizations (id, name, trade_name, document, is_active, created_at, updated_at)
-VALUES (
+VALUES 
+(
     'a0000000-0000-0000-0000-000000000001',
     'Rede Ponto Certo Franchising LTDA',
     'Barbearias Ponto Certo',
     '12.345.678/0001-90',
+    TRUE,
+    NOW(),
+    NOW()
+),
+(
+    'a0000000-0000-0000-0000-000000000002',
+    'Barbearia Don Corleone ME',
+    'Don Corleone Classic Barbershop',
+    '98.765.432/0001-10',
     TRUE,
     NOW(),
     NOW()
@@ -33,6 +43,16 @@ VALUES
     'Ponto Certo - Shopping Sul',
     '11999990002',
     'Av. das Nações Unidas, 4777 - Shopping Sul Piso L2, São Paulo - SP',
+    TRUE,
+    NOW(),
+    NOW()
+),
+(
+    'b0000000-0000-0000-0000-000000000003',
+    'a0000000-0000-0000-0000-000000000002',
+    'Don Corleone - Jardins',
+    '11999990003',
+    'Rua Oscar Freire, 1200 - Jardins, São Paulo - SP',
     TRUE,
     NOW(),
     NOW()
@@ -109,6 +129,54 @@ VALUES
     TRUE,
     NOW(),
     NOW()
+),
+(
+    'c0000000-0000-0000-0000-000000000006',
+    'a0000000-0000-0000-0000-000000000002',
+    NULL,
+    'Vito Corleone Owner',
+    'owner.corleone@pontocerto.com.br',
+    '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
+    'ORG_OWNER',
+    TRUE,
+    NOW(),
+    NOW()
+),
+(
+    'c0000000-0000-0000-0000-000000000007',
+    'a0000000-0000-0000-0000-000000000002',
+    'b0000000-0000-0000-0000-000000000003',
+    'Santino Gerente Jardins',
+    'manager.jardins@pontocerto.com.br',
+    '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
+    'UNIT_MANAGER',
+    TRUE,
+    NOW(),
+    NOW()
+),
+(
+    'c0000000-0000-0000-0000-000000000008',
+    'a0000000-0000-0000-0000-000000000002',
+    'b0000000-0000-0000-0000-000000000003',
+    'Connie Recepcionista Jardins',
+    'recepcao.jardins@pontocerto.com.br',
+    '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
+    'RECEPTIONIST',
+    TRUE,
+    NOW(),
+    NOW()
+),
+(
+    'c0000000-0000-0000-0000-000000000009',
+    'a0000000-0000-0000-0000-000000000002',
+    'b0000000-0000-0000-0000-000000000003',
+    'Enzo Barbeiro Jardins',
+    'barbeiro.jardins@pontocerto.com.br',
+    '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
+    'BARBER',
+    TRUE,
+    NOW(),
+    NOW()
 ) ON CONFLICT (email) DO NOTHING;
 
 -- 5. Barbers
@@ -153,6 +221,28 @@ VALUES
     NULL,
     'Rafael Barbeiro Shopping Sul',
     '11988880004',
+    50,
+    TRUE,
+    NOW(),
+    NOW()
+),
+(
+    'd0000000-0000-0000-0000-000000000005',
+    'b0000000-0000-0000-0000-000000000003',
+    'c0000000-0000-0000-0000-000000000009',
+    'Enzo Barbeiro Jardins',
+    '11988880005',
+    55,
+    TRUE,
+    NOW(),
+    NOW()
+),
+(
+    'd0000000-0000-0000-0000-000000000006',
+    'b0000000-0000-0000-0000-000000000003',
+    NULL,
+    'Tom Barbeiro Jardins',
+    '11988880006',
     50,
     TRUE,
     NOW(),
@@ -252,7 +342,13 @@ VALUES
 
 -- ESTÉTICA FACIAL
 ('e0000000-0000-0000-0000-000000000052', 'b0000000-0000-0000-0000-000000000001', 'Limpeza Facial Black', 'ESTETICA_FACIAL', 'Limpeza profunda com esfoliação e máscara negra de carvão.', 30, 4000, TRUE),
-('e0000000-0000-0000-0000-000000000053', 'b0000000-0000-0000-0000-000000000001', 'Sobrancelha', 'ESTETICA_FACIAL', 'Design e limpeza com navalha e tesoura.', 20, 2500, TRUE)
+('e0000000-0000-0000-0000-000000000053', 'b0000000-0000-0000-0000-000000000001', 'Sobrancelha', 'ESTETICA_FACIAL', 'Design e limpeza com navalha e tesoura.', 20, 2500, TRUE),
+
+-- SERVIÇOS UNIDADE 3 (DON CORLEONE - JARDINS - ORG 2)
+('e0000000-0000-0000-0000-000000000101', 'b0000000-0000-0000-0000-000000000003', 'Corte Don Corleone Clássico', 'CABELO', 'Corte clássico estilo italiano com tesoura e acabamento impecável.', 35, 7500, TRUE),
+('e0000000-0000-0000-0000-000000000102', 'b0000000-0000-0000-0000-000000000003', 'Barba Tradicional Italiana', 'BARBA', 'Barba desenhada com toalha quente, navalha e loção siciliana.', 30, 6500, TRUE),
+('e0000000-0000-0000-0000-000000000103', 'b0000000-0000-0000-0000-000000000003', 'Combo Il Padrino (Cabelo e Barba)', 'CABELO_E_BARBA', 'Experiência completa italiana: corte clássico e barba com toalha quente.', 60, 13000, TRUE),
+('e0000000-0000-0000-0000-000000000104', 'b0000000-0000-0000-0000-000000000003', 'Tratamento Capilar Don', 'TRATAMENTOS_CAPILARES', 'Hidratação profunda reconstrutora com máscara capilar italiana.', 40, 9000, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- 9. Barber Services Capabilities (N:N Skill Matrix)
@@ -277,6 +373,21 @@ SELECT 'd0000000-0000-0000-0000-000000000003', s.id
 FROM services s
 WHERE s.unit_id = 'b0000000-0000-0000-0000-000000000001'
   AND s.category IN ('CABELO', 'TRATAMENTOS_CAPILARES', 'ESTETICA_FACIAL')
+ON CONFLICT (barber_id, service_id) DO NOTHING;
+
+-- Enzo Barbeiro Jardins (Master Unit 3) is qualified for ALL Unit 3 services
+INSERT INTO barber_services (barber_id, service_id)
+SELECT 'd0000000-0000-0000-0000-000000000005', s.id
+FROM services s
+WHERE s.unit_id = 'b0000000-0000-0000-0000-000000000003'
+ON CONFLICT (barber_id, service_id) DO NOTHING;
+
+-- Tom Barbeiro Jardins (Unit 3) is qualified for Cabelo, Barba e Combo
+INSERT INTO barber_services (barber_id, service_id)
+SELECT 'd0000000-0000-0000-0000-000000000006', s.id
+FROM services s
+WHERE s.unit_id = 'b0000000-0000-0000-0000-000000000003'
+  AND s.category IN ('CABELO', 'BARBA', 'CABELO_E_BARBA')
 ON CONFLICT (barber_id, service_id) DO NOTHING;
 
 -- 10. Products Catalog (All 20 retail products loaded for Unit 1)
@@ -308,7 +419,11 @@ VALUES
 ('f0000000-0000-0000-0000-000000000017', 'b0000000-0000-0000-0000-000000000001', 'Pente de Madeira Anti-Estática', 'ACESSORIOS', 'Pente artesanal de madeira para barba e cabelo.', 3000, 1200, 22, TRUE),
 ('f0000000-0000-0000-0000-000000000018', 'b0000000-0000-0000-0000-000000000001', 'Necessaire Masculina Couro Sintético', 'ACESSORIOS', 'Resistente à água e com compartimentos para viagens.', 7500, 3500, 8, TRUE),
 ('f0000000-0000-0000-0000-000000000019', 'b0000000-0000-0000-0000-000000000001', 'Sabonete Facial Esfoliante Skincare 100g', 'SKINCARE', 'Esfoliação suave anti-oleosidade e anti-cravos.', 6500, 2800, 12, TRUE),
-('f0000000-0000-0000-0000-000000000020', 'b0000000-0000-0000-0000-000000000001', 'Cerveja Artesanal Ponto Certo IPA 500ml', 'BEBIDAS_MERCHANDISING', 'Cerveja artesanal com lúpulo aromático para espera e consumo.', 1800, 800, 30, TRUE)
+('f0000000-0000-0000-0000-000000000020', 'b0000000-0000-0000-0000-000000000001', 'Cerveja Artesanal Ponto Certo IPA 500ml', 'BEBIDAS_MERCHANDISING', 'Cerveja artesanal com lúpulo aromático para espera e consumo.', 1800, 800, 30, TRUE),
+
+-- PRODUTOS UNIDADE 3 (DON CORLEONE - JARDINS - ORG 2)
+('f0000000-0000-0000-0000-000000000101', 'b0000000-0000-0000-0000-000000000003', 'Pomada Clássica Don Corleone 100g', 'FINALIZADORES', 'Pomada italiana base d água fixação forte brilho natural.', 6500, 3000, 15, TRUE),
+('f0000000-0000-0000-0000-000000000102', 'b0000000-0000-0000-0000-000000000003', 'Óleo Hidratante de Barba Siciliano 30ml', 'FINALIZADORES', 'Óleo aromático com extrato de bergamota e sândalo.', 6000, 2500, 12, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- 11. Clients
@@ -347,6 +462,25 @@ VALUES
     'André Lima',
     '11977770004',
     'andre.lima@cliente.com',
+    NOW(),
+    NOW()
+),
+-- CLIENTES UNIDADE 3 (DON CORLEONE - JARDINS - ORG 2)
+(
+    '00000000-0000-0000-0000-000000000005',
+    'b0000000-0000-0000-0000-000000000003',
+    'Giovanni Rossi',
+    '11977770005',
+    'giovanni.rossi@cliente.com',
+    NOW(),
+    NOW()
+),
+(
+    '00000000-0000-0000-0000-000000000006',
+    'b0000000-0000-0000-0000-000000000003',
+    'Matteo Bianchi',
+    '11977770006',
+    'matteo.bianchi@cliente.com',
     NOW(),
     NOW()
 ) ON CONFLICT (id) DO NOTHING;
@@ -433,6 +567,39 @@ VALUES
     'Cancelado pelo cliente com 4 horas de antecedência.',
     NOW(),
     NOW()
+),
+-- AGENDAMENTOS UNIDADE 3 (DON CORLEONE - JARDINS - ORG 2)
+-- Unit 3 Appointment 1: Completed and Paid today (Il Padrino com Enzo)
+(
+    '11111111-0000-0000-0000-000000000006',
+    'b0000000-0000-0000-0000-000000000003',
+    'd0000000-0000-0000-0000-000000000005',
+    '00000000-0000-0000-0000-000000000005',
+    'e0000000-0000-0000-0000-000000000103', -- Combo Il Padrino
+    (CURRENT_DATE + TIME '10:00:00')::TIMESTAMPTZ,
+    (CURRENT_DATE + TIME '11:00:00')::TIMESTAMPTZ,
+    'COMPLETED',
+    'PAID',
+    13000,
+    'Cliente VIP Jardins.',
+    NOW(),
+    NOW()
+),
+-- Unit 3 Appointment 2: Scheduled today (Corte Clássico com Enzo)
+(
+    '11111111-0000-0000-0000-000000000007',
+    'b0000000-0000-0000-0000-000000000003',
+    'd0000000-0000-0000-0000-000000000005',
+    '00000000-0000-0000-0000-000000000006',
+    'e0000000-0000-0000-0000-000000000101', -- Corte Clássico
+    (CURRENT_DATE + TIME '11:30:00')::TIMESTAMPTZ,
+    (CURRENT_DATE + TIME '12:05:00')::TIMESTAMPTZ,
+    'SCHEDULED',
+    'PENDING',
+    7500,
+    'Agendado pela recepção dos Jardins.',
+    NOW(),
+    NOW()
 ) ON CONFLICT (id) DO NOTHING;
 
 -- 13. Billings (Financial transactions: Appointment checkout + Product sale)
@@ -471,6 +638,24 @@ VALUES
     'CREDIT_CARD',
     'PAID',
     'Venda de produto após atendimento.',
+    NOW(),
+    NOW()
+),
+-- Billing 3: Checkout Unidade 3 (Il Padrino com Enzo)
+(
+    '22222222-0000-0000-0000-000000000003',
+    'b0000000-0000-0000-0000-000000000003',
+    CURRENT_DATE,
+    'd0000000-0000-0000-0000-000000000005',
+    '00000000-0000-0000-0000-000000000005',
+    'e0000000-0000-0000-0000-000000000103',
+    NULL,
+    '11111111-0000-0000-0000-000000000006',
+    1,
+    13000,
+    'PIX',
+    'PAID',
+    'Checkout de agendamento finalizado na unidade Jardins.',
     NOW(),
     NOW()
 ) ON CONFLICT (id) DO NOTHING;

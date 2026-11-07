@@ -52,16 +52,20 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrOrganizationNotFound),
 		errors.Is(err, domain.ErrAppointmentNotFound),
 		errors.Is(err, domain.ErrUnitNotFound):
+		slog.Warn("resource not found (404)", "error", err.Error())
 		WriteError(w, http.StatusNotFound, err.Error())
 
 	case errors.Is(err, domain.ErrUnauthorized):
+		slog.Warn("unauthorized request (401)", "error", err.Error())
 		WriteError(w, http.StatusUnauthorized, err.Error())
 
 	case errors.Is(err, domain.ErrForbidden):
+		slog.Warn("forbidden request (403)", "error", err.Error())
 		WriteError(w, http.StatusForbidden, err.Error())
 
 	case errors.Is(err, domain.ErrAppointmentConflict),
 		errors.Is(err, domain.ErrBillingAlreadyProcessed):
+		slog.Warn("conflict detected (409)", "error", err.Error())
 		WriteError(w, http.StatusConflict, err.Error())
 
 	case errors.Is(err, domain.ErrInvalidTimeSlot),
@@ -70,10 +74,11 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrInvalidAppointmentTransition),
 		errors.Is(err, domain.ErrInvalidAppointmentTime),
 		errors.Is(err, domain.ErrInvalidRole):
+		slog.Warn("bad request validation failed (400)", "error", err.Error())
 		WriteError(w, http.StatusBadRequest, err.Error())
 
 	default:
-		slog.Error("unhandled server error", "error", err)
+		slog.Error("unhandled server error (500)", "error", err)
 		WriteError(w, http.StatusInternalServerError, "internal server error")
 	}
 }

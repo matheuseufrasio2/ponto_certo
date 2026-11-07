@@ -1,5 +1,217 @@
 basePath: /api/v1
 definitions:
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.Appointment:
+    properties:
+      barber_id:
+        type: string
+      client_id:
+        type: string
+      created_at:
+        type: string
+      customer_id:
+        description: Legacy alias
+        type: string
+      end_time:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      payment_status:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus'
+      price_in_cents:
+        type: integer
+      service_id:
+        type: string
+      start_time:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus'
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails:
+    properties:
+      barber_id:
+        type: string
+      barber_name:
+        type: string
+      client_id:
+        type: string
+      client_name:
+        type: string
+      client_phone:
+        type: string
+      created_at:
+        type: string
+      customer_id:
+        description: Legacy alias
+        type: string
+      end_time:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      payment_status:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus'
+      price_in_cents:
+        type: integer
+      service_id:
+        type: string
+      service_name:
+        type: string
+      start_time:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus'
+      time_slot:
+        type: string
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus:
+    enum:
+    - SCHEDULED
+    - COMPLETED
+    - CANCELLED
+    - NO_SHOW
+    type: string
+    x-enum-varnames:
+    - StatusScheduled
+    - StatusCompleted
+    - StatusCancelled
+    - StatusNoShow
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.Barber:
+    properties:
+      commission_percentage:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        description: Linked if barber has system login
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing:
+    properties:
+      amount_in_cents:
+        type: integer
+      appointment_id:
+        type: string
+      barber_id:
+        type: string
+      client_id:
+        type: string
+      created_at:
+        type: string
+      date:
+        type: string
+      id:
+        type: string
+      notes:
+        type: string
+      payment_method:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod'
+      product_id:
+        type: string
+      quantity:
+        type: integer
+      service_id:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BillingStatus'
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.BillingStatus:
+    enum:
+    - PAID
+    - CANCELLED
+    type: string
+    x-enum-varnames:
+    - BillingStatusPaid
+    - BillingStatusCancelled
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.CheckoutInput:
+    properties:
+      appointment_id:
+        type: string
+      notes:
+        type: string
+      payment_method:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod'
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateAppointmentInput:
+    properties:
+      barber_id:
+        type: string
+      client_id:
+        type: string
+      client_name:
+        type: string
+      client_phone:
+        type: string
+      end_time:
+        type: string
+      notes:
+        type: string
+      service_id:
+        type: string
+      start_time:
+        type: string
+      unit_id:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod:
+    enum:
+    - CREDIT_CARD
+    - DEBIT_CARD
+    - PIX
+    - CASH
+    - OTHER
+    - CARD
+    type: string
+    x-enum-comments:
+      PaymentMethodCard: Kept for backward compatibility
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - Kept for backward compatibility
+    x-enum-varnames:
+    - PaymentMethodCreditCard
+    - PaymentMethodDebitCard
+    - PaymentMethodPix
+    - PaymentMethodCash
+    - PaymentMethodOther
+    - PaymentMethodCard
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus:
+    enum:
+    - PENDING
+    - PAID
+    type: string
+    x-enum-varnames:
+    - PaymentStatusPending
+    - PaymentStatusPaid
   github_com_matheuseufrasio2_ponto_certo_internal_domain.Role:
     enum:
     - SUPER_ADMIN
@@ -14,6 +226,63 @@ definitions:
     - RoleUnitManager
     - RoleReceptionist
     - RoleBarber
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.Service:
+    properties:
+      category:
+        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceCategory'
+      created_at:
+        type: string
+      description:
+        type: string
+      duration_minutes:
+        type: integer
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      price_in_cents:
+        description: Integer cents avoids floating-point issues
+        type: integer
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceCategory:
+    enum:
+    - CABELO
+    - BARBA
+    - CABELO_E_BARBA
+    - COMBOS
+    - TRATAMENTOS_CAPILARES
+    - CUIDADOS_ESPECIAIS
+    - QUIMICAS_CAPILARES
+    - VISAGISMO
+    - ESTETICA_FACIAL
+    type: string
+    x-enum-varnames:
+    - ServiceCategoryCabelo
+    - ServiceCategoryBarba
+    - ServiceCategoryCabeloEBarba
+    - ServiceCategoryCombos
+    - ServiceCategoryTratamentos
+    - ServiceCategoryCuidadosEspeciais
+    - ServiceCategoryQuimicas
+    - ServiceCategoryVisagismo
+    - ServiceCategoryEsteticaFacial
+  github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse:
+    properties:
+      barbers:
+        items:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Barber'
+        type: array
+      services:
+        items:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Service'
+        type: array
+    type: object
   github_com_matheuseufrasio2_ponto_certo_internal_service.LoginInput:
     properties:
       email:
@@ -65,8 +334,20 @@ info:
   contact:
     email: matheuseufrasio2@gmail.com
     name: Matheus
-  description: High-performance RESTful API for barbershop scheduling and operations
-    management.
+  description: "High-performance RESTful API for barbershop scheduling and operations
+    management.\n\n### \U0001F511 Credenciais de Teste (Dev Seed - Senha para todas:
+    `admin123`)\n\n| Role | Email | Organização / Unidade |\n| :--- | :--- | :---
+    |\n| `SUPER_ADMIN` | `superadmin@pontocerto.com.br` | Acesso global multi-rede
+    |\n| `ORG_OWNER` | `owner@pontocerto.com.br` | Org 1 - Rede Ponto Certo |\n| `UNIT_MANAGER`
+    | `manager.matriz@pontocerto.com.br` | Org 1 - Matriz Centro |\n| `RECEPTIONIST`
+    | `recepcao.matriz@pontocerto.com.br` | Org 1 - Matriz Centro |\n| `BARBER` |
+    `marcos.barbeiro@pontocerto.com.br` | Org 1 - Matriz Centro |\n| `ORG_OWNER` |
+    `owner.corleone@pontocerto.com.br` | Org 2 - Don Corleone |\n| `UNIT_MANAGER`
+    | `manager.jardins@pontocerto.com.br` | Org 2 - Jardins |\n| `RECEPTIONIST` |
+    `recepcao.jardins@pontocerto.com.br` | Org 2 - Jardins |\n| `BARBER` | `barbeiro.jardins@pontocerto.com.br`
+    | Org 2 - Jardins |\n\n**Como autenticar no Swagger:** Faça login em `POST /api/v1/auth/login`,
+    copie o token do JSON, clique no botão **Authorize** (topo direito) e cole: `Bearer
+    <token>`."
   title: Ponto Certo API
   version: "1.0"
 paths:
@@ -109,6 +390,85 @@ paths:
       summary: Realizar autenticação
       tags:
       - Auth
+  /barber/appointments/{id}/complete:
+    post:
+      description: Finaliza a execução do serviço pelo barbeiro responsável, liberando
+        a cadeira.
+      parameters:
+      - description: ID do agendamento
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Mensagem de confirmação
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: ID inválido ou transição de status não permitida
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Não autenticado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Atendimento não pertence a este barbeiro
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Concluir atendimento na cadeira
+      tags:
+      - Barber
+  /barber/my-queue:
+    get:
+      description: Retorna todos os agendamentos atribuídos ao barbeiro autenticado
+        no dia selecionado.
+      parameters:
+      - description: 'Data no formato YYYY-MM-DD (padrão: hoje)'
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Fila de agendamentos do profissional
+          schema:
+            items:
+              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails'
+            type: array
+        "401":
+          description: Não autenticado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Perfil de barbeiro não encontrado para o usuário
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar fila diária do barbeiro
+      tags:
+      - Barber
   /health:
     get:
       description: HealthCheck is a handler function that checks the health of the
@@ -127,4 +487,176 @@ paths:
       summary: Health check endpoint
       tags:
       - health
+  /reception/appointments:
+    get:
+      description: 'Retorna a lista de agendamentos de uma unidade para a data informada
+        (padrão: hoje).'
+      parameters:
+      - description: ID da unidade (opcional se usuário já vinculado a uma unidade)
+        in: query
+        name: unit_id
+        type: string
+      - description: 'Data no formato YYYY-MM-DD (padrão: hoje)'
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos detalhados
+          schema:
+            items:
+              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails'
+            type: array
+        "401":
+          description: Não autenticado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Acesso não permitido a esta unidade
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar agendamentos da recepção
+      tags:
+      - Reception
+    post:
+      consumes:
+      - application/json
+      description: Cria um agendamento na unidade para cliente novo ou existente,
+        com validação de colisão de horário.
+      parameters:
+      - description: Dados do agendamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateAppointmentInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Agendamento criado com sucesso
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Appointment'
+        "400":
+          description: Dados inválidos ou corpo malformado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Não autenticado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Acesso não permitido
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "409":
+          description: Barbeiro já possui agendamento neste horário
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Criar novo agendamento ou encaixe
+      tags:
+      - Reception
+  /reception/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Liquida o atendimento com o método de pagamento selecionado, gera
+        o registro financeiro e marca o agendamento como pago e concluído.
+      parameters:
+      - description: Dados de pagamento e agendamento
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CheckoutInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Faturamento registrado com sucesso
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing'
+        "400":
+          description: Método de pagamento inválido ou corpo malformado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "401":
+          description: Não autenticado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Agendamento não encontrado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "409":
+          description: Agendamento já foi liquidado anteriormente
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Realizar checkout de agendamento
+      tags:
+      - Reception
+  /units/{unit_id}/catalog:
+    get:
+      description: Retorna a lista de barbeiros e serviços ativos disponíveis para
+        atendimento na filial especificada.
+      parameters:
+      - description: ID da unidade
+        in: path
+        name: unit_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Catálogo com lista de barbeiros e serviços
+          schema:
+            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse'
+        "401":
+          description: Não autenticado
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "403":
+          description: Acesso não permitido à unidade informada
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "404":
+          description: Unidade não encontrada
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/internal_handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Obter catálogo da unidade
+      tags:
+      - Catalog
+securityDefinitions:
+  BearerAuth:
+    description: Digite "Bearer " seguido pelo token JWT.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

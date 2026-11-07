@@ -52,6 +52,11 @@ func AuthMiddleware(jwtSecret string) func(next http.Handler) http.Handler {
 				return
 			}
 
+			if holder, ok := r.Context().Value(userHolderKey).(*userHolder); ok && holder != nil {
+				holder.email = claims.Email
+				holder.role = string(claims.Role)
+			}
+
 			ctx := context.WithValue(r.Context(), userContextKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

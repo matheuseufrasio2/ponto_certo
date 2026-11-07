@@ -28,3 +28,4 @@ func (s *BillingService) Checkout(ctx context.Context, input domain.CheckoutInpu
 
 	return s.billingRepo.CreateCheckout(ctx, input, cashierUserID)
 }
+

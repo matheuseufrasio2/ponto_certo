@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -27,10 +28,31 @@ import (
 // @title Ponto Certo API
 // @version 1.0
 // @description High-performance RESTful API for barbershop scheduling and operations management.
+// @description
+// @description ### 🔑 Credenciais de Teste (Dev Seed - Senha para todas: `admin123`)
+// @description
+// @description | Role | Email | Organização / Unidade |
+// @description | :--- | :--- | :--- |
+// @description | `SUPER_ADMIN` | `superadmin@pontocerto.com.br` | Acesso global multi-rede |
+// @description | `ORG_OWNER` | `owner@pontocerto.com.br` | Org 1 - Rede Ponto Certo |
+// @description | `UNIT_MANAGER` | `manager.matriz@pontocerto.com.br` | Org 1 - Matriz Centro |
+// @description | `RECEPTIONIST` | `recepcao.matriz@pontocerto.com.br` | Org 1 - Matriz Centro |
+// @description | `BARBER` | `marcos.barbeiro@pontocerto.com.br` | Org 1 - Matriz Centro |
+// @description | `ORG_OWNER` | `owner.corleone@pontocerto.com.br` | Org 2 - Don Corleone |
+// @description | `UNIT_MANAGER` | `manager.jardins@pontocerto.com.br` | Org 2 - Jardins |
+// @description | `RECEPTIONIST` | `recepcao.jardins@pontocerto.com.br` | Org 2 - Jardins |
+// @description | `BARBER` | `barbeiro.jardins@pontocerto.com.br` | Org 2 - Jardins |
+// @description
+// @description **Como autenticar no Swagger:** Faça login em `POST /api/v1/auth/login`, copie o token do JSON, clique no botão **Authorize** (topo direito) e cole: `Bearer <token>`.
 // @BasePath /api/v1
 
 // @contact.name Matheus
 // @contact.email matheuseufrasio2@gmail.com
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Digite "Bearer " seguido pelo token JWT.
 func main() {
 	// 1. Load application configuration
 	cfg, err := config.Load()
@@ -75,8 +97,27 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID) // Request tracing ID
-	r.Use(middleware.Logger)
+	r.Use(internalMiddleware.RequestLogger(cfg.Env))
 	r.Use(middleware.Recoverer) // Protect against panics
+
+	// Fallback handlers with informative logging
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		slog.Warn("route not found (404)", "method", r.Method, "url", r.URL.RequestURI(), "remote_ip", r.RemoteAddr)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": fmt.Sprintf("endpoint não encontrado: %s %s", r.Method, r.URL.Path),
+		})
+	})
+
+	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		slog.Warn("method not allowed (405)", "method", r.Method, "url", r.URL.RequestURI(), "remote_ip", r.RemoteAddr)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": fmt.Sprintf("método %s não permitido para a rota %s", r.Method, r.URL.Path),
+		})
+	})
 
 	// 8. Register API routes
 	r.Route("/api/v1", func(r chi.Router) {

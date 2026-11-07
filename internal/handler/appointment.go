@@ -20,7 +20,19 @@ func NewAppointmentHandler(appointmentService *service.AppointmentService) *Appo
 	return &AppointmentHandler{appointmentService: appointmentService}
 }
 
-// ListByUnit handles GET /api/v1/reception/appointments?unit_id={id}&date={YYYY-MM-DD}.
+// ListByUnit handles GET /api/v1/reception/appointments.
+// @Summary Listar agendamentos da recepção
+// @Description Retorna a lista de agendamentos de uma unidade para a data informada (padrão: hoje).
+// @Tags Reception
+// @Security BearerAuth
+// @Produce json
+// @Param unit_id query string false "ID da unidade (opcional se usuário já vinculado a uma unidade)"
+// @Param date query string false "Data no formato YYYY-MM-DD (padrão: hoje)"
+// @Success 200 {array} domain.AppointmentDetails "Lista de agendamentos detalhados"
+// @Failure 401 {object} ErrorResponse "Não autenticado"
+// @Failure 403 {object} ErrorResponse "Acesso não permitido a esta unidade"
+// @Failure 500 {object} ErrorResponse "Erro interno do servidor"
+// @Router /reception/appointments [get]
 func (h *AppointmentHandler) ListByUnit(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.UserFromContext(r.Context())
 	if !ok || claims == nil {
@@ -61,6 +73,20 @@ func (h *AppointmentHandler) ListByUnit(w http.ResponseWriter, r *http.Request) 
 }
 
 // Create handles POST /api/v1/reception/appointments.
+// @Summary Criar novo agendamento ou encaixe
+// @Description Cria um agendamento na unidade para cliente novo ou existente, com validação de colisão de horário.
+// @Tags Reception
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body domain.CreateAppointmentInput true "Dados do agendamento"
+// @Success 201 {object} domain.Appointment "Agendamento criado com sucesso"
+// @Failure 400 {object} ErrorResponse "Dados inválidos ou corpo malformado"
+// @Failure 401 {object} ErrorResponse "Não autenticado"
+// @Failure 403 {object} ErrorResponse "Acesso não permitido"
+// @Failure 409 {object} ErrorResponse "Barbeiro já possui agendamento neste horário"
+// @Failure 500 {object} ErrorResponse "Erro interno do servidor"
+// @Router /reception/appointments [post]
 func (h *AppointmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.UserFromContext(r.Context())
 	if !ok || claims == nil {
@@ -93,6 +119,17 @@ func (h *AppointmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListMyQueue handles GET /api/v1/barber/my-queue.
+// @Summary Listar fila diária do barbeiro
+// @Description Retorna todos os agendamentos atribuídos ao barbeiro autenticado no dia selecionado.
+// @Tags Barber
+// @Security BearerAuth
+// @Produce json
+// @Param date query string false "Data no formato YYYY-MM-DD (padrão: hoje)"
+// @Success 200 {array} domain.AppointmentDetails "Fila de agendamentos do profissional"
+// @Failure 401 {object} ErrorResponse "Não autenticado"
+// @Failure 404 {object} ErrorResponse "Perfil de barbeiro não encontrado para o usuário"
+// @Failure 500 {object} ErrorResponse "Erro interno do servidor"
+// @Router /barber/my-queue [get]
 func (h *AppointmentHandler) ListMyQueue(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.UserFromContext(r.Context())
 	if !ok || claims == nil {
@@ -123,6 +160,19 @@ func (h *AppointmentHandler) ListMyQueue(w http.ResponseWriter, r *http.Request)
 }
 
 // CompleteCut handles POST /api/v1/barber/appointments/{id}/complete.
+// @Summary Concluir atendimento na cadeira
+// @Description Finaliza a execução do serviço pelo barbeiro responsável, liberando a cadeira.
+// @Tags Barber
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "ID do agendamento"
+// @Success 200 {object} map[string]string "Mensagem de confirmação"
+// @Failure 400 {object} ErrorResponse "ID inválido ou transição de status não permitida"
+// @Failure 401 {object} ErrorResponse "Não autenticado"
+// @Failure 403 {object} ErrorResponse "Atendimento não pertence a este barbeiro"
+// @Failure 404 {object} ErrorResponse "Agendamento não encontrado"
+// @Failure 500 {object} ErrorResponse "Erro interno do servidor"
+// @Router /barber/appointments/{id}/complete [post]
 func (h *AppointmentHandler) CompleteCut(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.UserFromContext(r.Context())
 	if !ok || claims == nil {

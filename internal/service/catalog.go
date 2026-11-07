@@ -45,3 +45,4 @@ func (s *CatalogService) GetUnitCatalog(ctx context.Context, unitID string) (*Ca
 		Services: services,
 	}, nil
 }
+
