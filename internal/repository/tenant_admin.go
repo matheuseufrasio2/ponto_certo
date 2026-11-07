@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,10 +15,14 @@ import (
 type TenantAdminRepository interface {
 	GetSaaSPlatformKPIs(ctx context.Context) (*domain.SaaSMetrics, error)
 	ListTenants(ctx context.Context, search, status, plan string, limit, offset int) ([]domain.Organization, int, error)
+	GetTenantOverview(ctx context.Context, tenantID string) (*domain.TenantOverview, error)
+	UpdateTenantPlan(ctx context.Context, tenantID, plan string, feeInCents int64) (*domain.Organization, error)
 	CreateTenantWithAdmin(ctx context.Context, input domain.CreateTenantInput, passwordHash string) (*domain.Organization, error)
 	ToggleTenantActiveStatus(ctx context.Context, tenantID string, isActive bool) error
 	GetTenantUsers(ctx context.Context, tenantID string) ([]domain.User, error)
 	GetTenantUnits(ctx context.Context, tenantID string) ([]domain.BarbershopUnit, error)
+	GetPrimaryOwnerByTenantID(ctx context.Context, tenantID string) (*domain.User, error)
+	UpdateUserPassword(ctx context.Context, userID, passwordHash string) error
 	GetUserByID(ctx context.Context, userID string) (*domain.User, error)
 }
 
@@ -59,32 +64,41 @@ func (r *PostgresTenantAdminRepository) GetSaaSPlatformKPIs(ctx context.Context)
 	return metrics, nil
 }
 
-// ListTenants retrieves organizations matching search, status, and plan filters with total count.
+// ListTenants retrieves organizations matching search, status, and plan filters with operational counters.
 func (r *PostgresTenantAdminRepository) ListTenants(ctx context.Context, search, status, plan string, limit, offset int) ([]domain.Organization, int, error) {
 	query := `
 		SELECT 
-			id::TEXT,
-			name,
-			COALESCE(trade_name, ''),
-			COALESCE(document, ''),
-			COALESCE(plan, 'BASIC'),
-			COALESCE(monthly_fee_in_cents, 19900),
-			COALESCE(subscription_status, 'ACTIVE'),
-			is_active,
-			created_at,
-			updated_at,
+			o.id::TEXT,
+			o.name,
+			COALESCE(o.trade_name, ''),
+			COALESCE(o.document, ''),
+			COALESCE(o.plan, 'BASIC'),
+			COALESCE(o.monthly_fee_in_cents, 19900),
+			COALESCE(o.subscription_status, 'ACTIVE'),
+			o.is_active,
+			(SELECT COUNT(*) FROM barbershop_units u WHERE u.organization_id = o.id)::INT AS units_count,
+			(SELECT COUNT(*) FROM users u WHERE u.organization_id = o.id AND u.is_active = TRUE)::INT AS active_users_count,
+			(
+				SELECT MAX(a.created_at)
+				FROM appointments a
+				JOIN barbershop_units bu ON a.unit_id = bu.id
+				WHERE bu.organization_id = o.id
+			) AS last_activity_at,
+			o.past_due_since,
+			o.created_at,
+			o.updated_at,
 			COUNT(*) OVER() AS total_count
-		FROM organizations
-		WHERE ($1 = '' OR name ILIKE '%' || $1 || '%' OR trade_name ILIKE '%' || $1 || '%' OR document ILIKE '%' || $1 || '%')
+		FROM organizations o
+		WHERE ($1 = '' OR o.name ILIKE '%' || $1 || '%' OR o.trade_name ILIKE '%' || $1 || '%' OR o.document ILIKE '%' || $1 || '%')
 		  AND (
 			$2 = '' OR 
-			($2 = 'BLOCKED' AND is_active = FALSE) OR
-			($2 = 'INACTIVE' AND is_active = FALSE) OR
-			($2 = 'ACTIVE' AND is_active = TRUE AND subscription_status = 'ACTIVE') OR
-			(subscription_status = $2)
+			($2 = 'BLOCKED' AND o.is_active = FALSE) OR
+			($2 = 'INACTIVE' AND o.is_active = FALSE) OR
+			($2 = 'ACTIVE' AND o.is_active = TRUE AND o.subscription_status = 'ACTIVE') OR
+			(o.subscription_status = $2)
 		  )
-		  AND ($3 = '' OR UPPER(plan) = UPPER($3))
-		ORDER BY created_at DESC
+		  AND ($3 = '' OR UPPER(o.plan) = UPPER($3))
+		ORDER BY o.created_at DESC
 		LIMIT $4 OFFSET $5;
 	`
 
@@ -94,7 +108,7 @@ func (r *PostgresTenantAdminRepository) ListTenants(ctx context.Context, search,
 	}
 	defer rows.Close()
 
-	var tenants []domain.Organization
+	tenants := make([]domain.Organization, 0)
 	var totalCount int
 
 	for rows.Next() {
@@ -109,6 +123,10 @@ func (r *PostgresTenantAdminRepository) ListTenants(ctx context.Context, search,
 			&o.MonthlyFeeInCents,
 			&statusStr,
 			&o.IsActive,
+			&o.UnitsCount,
+			&o.ActiveUsersCount,
+			&o.LastActivityAt,
+			&o.PastDueSince,
 			&o.CreatedAt,
 			&o.UpdatedAt,
 			&totalCount,
@@ -382,4 +400,210 @@ func (r *PostgresTenantAdminRepository) GetUserByID(ctx context.Context, userID 
 	u.Role = domain.Role(roleStr)
 
 	return &u, nil
+}
+
+// GetTenantOverview aggregates tenant info, 30-day GMV, 30-day appointments, total barbers, and days overdue.
+func (r *PostgresTenantAdminRepository) GetTenantOverview(ctx context.Context, tenantID string) (*domain.TenantOverview, error) {
+	query := `
+		SELECT 
+			o.id::TEXT,
+			o.name,
+			COALESCE(o.trade_name, ''),
+			COALESCE(o.document, ''),
+			COALESCE(o.plan, 'BASIC'),
+			COALESCE(o.monthly_fee_in_cents, 19900),
+			COALESCE(o.subscription_status, 'ACTIVE'),
+			o.is_active,
+			(SELECT COUNT(*) FROM barbershop_units u WHERE u.organization_id = o.id)::INT AS units_count,
+			(SELECT COUNT(*) FROM users u WHERE u.organization_id = o.id AND u.is_active = TRUE)::INT AS active_users_count,
+			(
+				SELECT MAX(a.created_at)
+				FROM appointments a
+				JOIN barbershop_units bu ON a.unit_id = bu.id
+				WHERE bu.organization_id = o.id
+			) AS last_activity_at,
+			o.past_due_since,
+			o.created_at,
+			o.updated_at,
+			COALESCE((
+				SELECT SUM(b.total_amount_in_cents)
+				FROM billings b
+				JOIN barbershop_units bu ON b.unit_id = bu.id
+				WHERE bu.organization_id = o.id
+				  AND b.status = 'PAID'
+				  AND b.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS gmv_30d,
+			COALESCE((
+				SELECT COUNT(*)
+				FROM appointments a
+				JOIN barbershop_units bu ON a.unit_id = bu.id
+				WHERE bu.organization_id = o.id
+				  AND a.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS appts_30d,
+			COALESCE((
+				SELECT COUNT(DISTINCT b.id)
+				FROM barbers b
+				JOIN barbershop_units bu ON b.unit_id = bu.id
+				WHERE bu.organization_id = o.id
+				  AND b.is_active = TRUE
+			), 0) AS barbers_count
+		FROM organizations o
+		WHERE o.id = $1;
+	`
+
+	var o domain.Organization
+	var statusStr string
+	var overview domain.TenantOverview
+
+	err := r.db.QueryRow(ctx, query, tenantID).Scan(
+		&o.ID,
+		&o.Name,
+		&o.TradeName,
+		&o.Document,
+		&o.Plan,
+		&o.MonthlyFeeInCents,
+		&statusStr,
+		&o.IsActive,
+		&o.UnitsCount,
+		&o.ActiveUsersCount,
+		&o.LastActivityAt,
+		&o.PastDueSince,
+		&o.CreatedAt,
+		&o.UpdatedAt,
+		&overview.GMVLast30DaysInCents,
+		&overview.AppointmentsLast30Days,
+		&overview.TotalBarbersCount,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrOrganizationNotFound
+		}
+		return nil, fmt.Errorf("query tenant overview: %w", err)
+	}
+
+	o.SubscriptionStatus = domain.SubscriptionStatus(statusStr)
+	overview.Organization = o
+
+	if o.SubscriptionStatus == domain.SubscriptionStatusPastDue {
+		refDate := o.UpdatedAt
+		if o.PastDueSince != nil {
+			refDate = *o.PastDueSince
+		}
+		days := int(time.Since(refDate).Hours() / 24)
+		if days < 1 {
+			days = 1
+		}
+		overview.DaysOverdue = days
+	}
+
+	return &overview, nil
+}
+
+// UpdateTenantPlan updates an organization's subscription plan and monthly fee.
+func (r *PostgresTenantAdminRepository) UpdateTenantPlan(ctx context.Context, tenantID, plan string, feeInCents int64) (*domain.Organization, error) {
+	query := `
+		UPDATE organizations
+		SET plan = $1, monthly_fee_in_cents = $2, updated_at = NOW()
+		WHERE id = $3
+		RETURNING 
+			id::TEXT,
+			name,
+			COALESCE(trade_name, ''),
+			COALESCE(document, ''),
+			plan,
+			monthly_fee_in_cents,
+			subscription_status,
+			is_active,
+			past_due_since,
+			created_at,
+			updated_at;
+	`
+
+	var o domain.Organization
+	var statusStr string
+	err := r.db.QueryRow(ctx, query, plan, feeInCents, tenantID).Scan(
+		&o.ID,
+		&o.Name,
+		&o.TradeName,
+		&o.Document,
+		&o.Plan,
+		&o.MonthlyFeeInCents,
+		&statusStr,
+		&o.IsActive,
+		&o.PastDueSince,
+		&o.CreatedAt,
+		&o.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrOrganizationNotFound
+		}
+		return nil, fmt.Errorf("update tenant plan: %w", err)
+	}
+
+	o.SubscriptionStatus = domain.SubscriptionStatus(statusStr)
+	return &o, nil
+}
+
+// GetPrimaryOwnerByTenantID finds the primary ORG_OWNER user of a tenant.
+func (r *PostgresTenantAdminRepository) GetPrimaryOwnerByTenantID(ctx context.Context, tenantID string) (*domain.User, error) {
+	query := `
+		SELECT 
+			id::TEXT,
+			COALESCE(organization_id::TEXT, ''),
+			COALESCE(unit_id::TEXT, ''),
+			name,
+			email,
+			role,
+			is_active,
+			created_at,
+			updated_at
+		FROM users
+		WHERE organization_id = $1 AND role = 'ORG_OWNER' AND is_active = TRUE
+		ORDER BY created_at ASC
+		LIMIT 1;
+	`
+
+	var u domain.User
+	var orgIDStr, unitIDStr, roleStr string
+	err := r.db.QueryRow(ctx, query, tenantID).Scan(
+		&u.ID,
+		&orgIDStr,
+		&unitIDStr,
+		&u.Name,
+		&u.Email,
+		&roleStr,
+		&u.IsActive,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("query primary owner: %w", err)
+	}
+
+	if orgIDStr != "" {
+		u.OrganizationID = &orgIDStr
+	}
+	if unitIDStr != "" {
+		u.UnitID = &unitIDStr
+	}
+	u.Role = domain.Role(roleStr)
+
+	return &u, nil
+}
+
+// UpdateUserPassword updates the password hash for a user.
+func (r *PostgresTenantAdminRepository) UpdateUserPassword(ctx context.Context, userID, passwordHash string) error {
+	query := `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2;`
+	tag, err := r.db.Exec(ctx, query, passwordHash, userID)
+	if err != nil {
+		return fmt.Errorf("update user password: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
+	}
+	return nil
 }
