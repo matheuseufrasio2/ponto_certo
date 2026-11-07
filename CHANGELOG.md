@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.6.0...ponto_certo-v0.7.0) (2026-11-07)
+
+
+### Features
+
+* **manager:** implement unit operational management endpoints for phase 2 ([5860d92](https://github.com/matheuseufrasio2/ponto_certo/commit/5860d92c68663e5986910310db37e63bea2b2709))
+
+
+### Bug Fixes
+
+* **repository:** handle rollback return value in unit operations ([248555f](https://github.com/matheuseufrasio2/ponto_certo/commit/248555f0c108e42917bcf69e2dbae231f579d0d7))
+
 ## [0.6.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.5.0...ponto_certo-v0.6.0) (2026-11-07)
 
 
