@@ -80,18 +80,21 @@ func main() {
 	catalogRepo := repository.NewPostgresCatalogRepository(dbPool)
 	appointmentRepo := repository.NewPostgresAppointmentRepository(dbPool)
 	billingRepo := repository.NewPostgresBillingRepository(dbPool)
+	unitOpsRepo := repository.NewPostgresUnitOperationsRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
 	catalogService := service.NewCatalogService(catalogRepo)
 	appointmentService := service.NewAppointmentService(appointmentRepo, catalogRepo)
 	billingService := service.NewBillingService(billingRepo)
+	unitOpsService := service.NewUnitOperationsService(unitOpsRepo)
 
 	// 6. Instantiate handlers
 	authHandler := handler.NewAuthHandler(authService)
 	catalogHandler := handler.NewCatalogHandler(catalogService)
 	appointmentHandler := handler.NewAppointmentHandler(appointmentService)
 	billingHandler := handler.NewBillingHandler(billingService)
+	unitOpsHandler := handler.NewUnitOperationsHandler(unitOpsService)
 
 	// 7. Initialize Chi router and standard middlewares
 	r := chi.NewRouter()
@@ -135,8 +138,19 @@ func main() {
 			})
 
 			// Owner and Manager routes
-			r.With(internalMiddleware.RequireRoles(domain.RoleSuperAdmin, domain.RoleOrgOwner, domain.RoleUnitManager)).Get("/manager/overview", func(w http.ResponseWriter, r *http.Request) {
-				_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido à gestão!"})
+			r.With(internalMiddleware.RequireRoles(
+				domain.RoleSuperAdmin,
+				domain.RoleOrgOwner,
+				domain.RoleUnitManager,
+			)).Route("/manager", func(r chi.Router) {
+				r.Get("/overview", func(w http.ResponseWriter, r *http.Request) {
+					_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido à gestão!"})
+				})
+				r.Get("/metrics", unitOpsHandler.GetMetrics)
+				r.Get("/cash-closing", unitOpsHandler.GetCashClosing)
+				r.Get("/barbers", unitOpsHandler.ListBarbers)
+				r.Patch("/barbers/{barber_id}/status", unitOpsHandler.UpdateBarberStatus)
+				r.Patch("/services/{service_id}/toggle", unitOpsHandler.ToggleService)
 			})
 
 			// Unit catalog lookup (accessible by staff)
