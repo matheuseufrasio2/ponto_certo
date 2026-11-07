@@ -216,6 +216,317 @@
                 }
             }
         },
+        "/owner/billings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns paginated financial transactions with optional unit and payment method filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "owner"
+                ],
+                "summary": "List consolidated billings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by unit UUID or ALL",
+                        "name": "unit_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Payment method (PIX, CREDIT_CARD, DEBIT_CARD, CASH)",
+                        "name": "method",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Items per page",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedBillings"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/owner/export/csv": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Streams a CSV file containing all billing records for the organization",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "owner"
+                ],
+                "summary": "Export consolidated billings as CSV",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by unit UUID or ALL",
+                        "name": "unit_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV file download",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/owner/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns gross revenue, net revenue, total commissions, average ticket and retention rate",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "owner"
+                ],
+                "summary": "Get executive network KPIs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by unit UUID or ALL",
+                        "name": "unit_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date YYYY-MM-DD",
+                        "name": "start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date YYYY-MM-DD",
+                        "name": "end",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/owner/revenue-by-unit": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Aggregates and ranks revenue by physical branch",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "owner"
+                ],
+                "summary": "Get revenue comparison across all units",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start date YYYY-MM-DD",
+                        "name": "start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date YYYY-MM-DD",
+                        "name": "end",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/owner/services-mix": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Ranks performed services by quantity and revenue generated",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "owner"
+                ],
+                "summary": "Get service mix analytics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by unit UUID or ALL",
+                        "name": "unit_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date YYYY-MM-DD",
+                        "name": "start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date YYYY-MM-DD",
+                        "name": "end",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceMixAnalytics"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/reception/appointments": {
             "get": {
                 "security": [
@@ -758,6 +1069,49 @@
                 }
             }
         },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs": {
+            "type": "object",
+            "properties": {
+                "average_ticket_in_cents": {
+                    "type": "integer"
+                },
+                "gross_revenue_in_cents": {
+                    "type": "integer"
+                },
+                "net_revenue_in_cents": {
+                    "type": "integer"
+                },
+                "retention_rate_percent": {
+                    "type": "number"
+                },
+                "total_appointments": {
+                    "type": "integer"
+                },
+                "total_commissions_in_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedBillings": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "per_page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod": {
             "type": "string",
             "enum": [
@@ -876,6 +1230,40 @@
                 "ServiceCategoryVisagismo",
                 "ServiceCategoryEsteticaFacial"
             ]
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceMixAnalytics": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "revenue_in_cents": {
+                    "type": "integer"
+                },
+                "service_id": {
+                    "type": "string"
+                },
+                "service_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison": {
+            "type": "object",
+            "properties": {
+                "revenue_in_cents": {
+                    "type": "integer"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "unit_name": {
+                    "type": "string"
+                }
+            }
         },
         "github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse": {
             "type": "object",
