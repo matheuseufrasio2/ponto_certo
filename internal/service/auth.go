@@ -17,13 +17,15 @@ type UserRepository interface {
 }
 
 type UserClaims struct {
-	UserID         string      `json:"user_id"`
-	Email          string      `json:"email"`
-	Role           domain.Role `json:"role"`
-	OrganizationID *string     `json:"organization_id,omitempty"`
-	UnitID         *string     `json:"unit_id,omitempty"`
-	IsImpersonated bool        `json:"is_impersonated,omitempty"`
-	ImpersonatedBy *string     `json:"impersonated_by,omitempty"`
+	UserID               string      `json:"user_id"`
+	Email                string      `json:"email"`
+	Role                 domain.Role `json:"role"`
+	OrganizationID       *string     `json:"organization_id,omitempty"`
+	UnitID               *string     `json:"unit_id,omitempty"`
+	OrganizationIsActive bool        `json:"organization_is_active"`
+	SubscriptionStatus   string      `json:"subscription_status,omitempty"`
+	IsImpersonated       bool        `json:"is_impersonated,omitempty"`
+	ImpersonatedBy       *string     `json:"impersonated_by,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -40,12 +42,14 @@ type LoginOutput struct {
 }
 
 type UserResponse struct {
-	ID             string      `json:"id"`
-	Name           string      `json:"name"`
-	Email          string      `json:"email"`
-	Role           domain.Role `json:"role"`
-	OrganizationID *string     `json:"organization_id,omitempty"`
-	UnitID         *string     `json:"unit_id,omitempty"`
+	ID                   string      `json:"id"`
+	Name                 string      `json:"name"`
+	Email                string      `json:"email"`
+	Role                 domain.Role `json:"role"`
+	OrganizationID       *string     `json:"organization_id,omitempty"`
+	UnitID               *string     `json:"unit_id,omitempty"`
+	OrganizationIsActive bool        `json:"organization_is_active"`
+	SubscriptionStatus   string      `json:"subscription_status,omitempty"`
 }
 
 type AuthService struct {
@@ -79,6 +83,17 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*LoginOutput
 		return nil, domain.ErrForbidden
 	}
 
+	orgIsActive := true
+	if user.OrganizationIsActive != nil {
+		orgIsActive = *user.OrganizationIsActive
+	}
+
+	if !orgIsActive {
+		if user.Role != domain.RoleOrgOwner && user.Role != domain.RoleSuperAdmin {
+			return nil, domain.ErrTenantInactive
+		}
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password))
 	if err != nil {
 		return nil, domain.ErrUnauthorized
@@ -87,12 +102,19 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*LoginOutput
 	now := time.Now().UTC()
 	expiresAt := now.Add(s.jwtExpires)
 
+	var subStatus string
+	if user.SubscriptionStatus != nil {
+		subStatus = string(*user.SubscriptionStatus)
+	}
+
 	claims := UserClaims{
-		UserID:         user.ID,
-		Email:          user.Email,
-		Role:           user.Role,
-		OrganizationID: user.OrganizationID,
-		UnitID:         user.UnitID,
+		UserID:               user.ID,
+		Email:                user.Email,
+		Role:                 user.Role,
+		OrganizationID:       user.OrganizationID,
+		UnitID:               user.UnitID,
+		OrganizationIsActive: orgIsActive,
+		SubscriptionStatus:   subStatus,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.ID,
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -111,12 +133,14 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*LoginOutput
 		TokenType: "Bearer",
 		ExpiresIn: int64(s.jwtExpires.Seconds()),
 		User: UserResponse{
-			ID:             user.ID,
-			Name:           user.Name,
-			Email:          user.Email,
-			Role:           user.Role,
-			OrganizationID: user.OrganizationID,
-			UnitID:         user.UnitID,
+			ID:                   user.ID,
+			Name:                 user.Name,
+			Email:                user.Email,
+			Role:                 user.Role,
+			OrganizationID:       user.OrganizationID,
+			UnitID:               user.UnitID,
+			OrganizationIsActive: orgIsActive,
+			SubscriptionStatus:   subStatus,
 		},
 	}, nil
 

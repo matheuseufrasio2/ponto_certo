@@ -112,6 +112,10 @@ func (m *mockTenantAdminRepo) GetUserByID(ctx context.Context, userID string) (*
 	return nil, domain.ErrUserNotFound
 }
 
+func (m *mockTenantAdminRepo) IsOrganizationActive(ctx context.Context, orgID string) (bool, error) {
+	return true, nil
+}
+
 func TestTenantAdminService_Impersonation(t *testing.T) {
 	secret := "test-super-secret-key-32-chars-long!"
 	adminClaims := &service.UserClaims{
