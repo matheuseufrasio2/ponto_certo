@@ -184,3 +184,17 @@ func (s *OwnerAnalyticsService) GetSubscription(ctx context.Context, claims *Use
 	}
 	return s.repo.GetOwnerSubscription(ctx, orgID)
 }
+
+// ListEmployees returns all employees for the organization, supporting status filtering (active, inactive, all) and unit scoping.
+func (s *OwnerAnalyticsService) ListEmployees(ctx context.Context, claims *UserClaims, status string, unitID *string) ([]domain.OrganizationEmployee, error) {
+	orgID, err := s.resolveOrgID(claims, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if unitID != nil && *unitID != "" && !claims.HasUnitAccess(*unitID) {
+		return nil, domain.ErrForbidden
+	}
+
+	return s.repo.ListEmployees(ctx, orgID, status, unitID)
+}

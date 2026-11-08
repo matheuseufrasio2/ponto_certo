@@ -147,4 +147,3 @@ func (s *AppointmentService) CompleteCut(ctx context.Context, appointmentID, bar
 
 	return s.appointmentRepo.UpdateStatus(ctx, appointmentID, domain.StatusCompleted)
 }
-

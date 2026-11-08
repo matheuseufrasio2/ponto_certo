@@ -10,12 +10,12 @@ import (
 )
 
 type mockUnitOpsRepo struct {
-	getCashClosingFn      func(ctx context.Context, unitID string, date time.Time) (*domain.CashClosingSummary, error)
-	getMetricsFn          func(ctx context.Context, unitID string, date time.Time) (*domain.ManagerDashboardMetrics, error)
-	updateBarberStatusFn  func(ctx context.Context, barberID string, status domain.BarberStatus, changedByUserID *string) error
-	toggleServiceFn       func(ctx context.Context, unitID, serviceID string, isActive bool) error
-	listBarbersFn         func(ctx context.Context, unitID string) ([]domain.Barber, error)
-	countFutureAptsFn     func(ctx context.Context, barberID string, fromTime time.Time) (int, error)
+	getCashClosingFn     func(ctx context.Context, unitID string, date time.Time) (*domain.CashClosingSummary, error)
+	getMetricsFn         func(ctx context.Context, unitID string, date time.Time) (*domain.ManagerDashboardMetrics, error)
+	updateBarberStatusFn func(ctx context.Context, barberID string, status domain.BarberStatus, changedByUserID *string) error
+	toggleServiceFn      func(ctx context.Context, unitID, serviceID string, isActive bool) error
+	listBarbersFn        func(ctx context.Context, unitID string, status string) ([]domain.Barber, error)
+	countFutureAptsFn    func(ctx context.Context, barberID string, fromTime time.Time) (int, error)
 }
 
 func (m *mockUnitOpsRepo) GetDailyCashClosing(ctx context.Context, unitID string, date time.Time) (*domain.CashClosingSummary, error) {
@@ -60,9 +60,9 @@ func (m *mockUnitOpsRepo) ToggleServiceUnitAvailability(ctx context.Context, uni
 	return nil
 }
 
-func (m *mockUnitOpsRepo) ListBarbersByUnit(ctx context.Context, unitID string) ([]domain.Barber, error) {
+func (m *mockUnitOpsRepo) ListBarbersByUnit(ctx context.Context, unitID string, status string) ([]domain.Barber, error) {
 	if m.listBarbersFn != nil {
-		return m.listBarbersFn(ctx, unitID)
+		return m.listBarbersFn(ctx, unitID, status)
 	}
 	return []domain.Barber{
 		{ID: "barber-1", UnitID: unitID, Name: "Barber One", Status: domain.BarberStatusAvailable, IsActive: true},
@@ -187,6 +187,47 @@ func TestUnitOperationsService_ToggleService(t *testing.T) {
 		err := svc.ToggleService(ctx, unitID, "svc-1", domain.ToggleServiceInput{IsActive: false}, claims)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
+
+func TestUnitOperationsService_ListBarbers(t *testing.T) {
+	ctx := context.Background()
+	unitID := "unit-a"
+	claims := &service.UserClaims{
+		UserID: "mgr-1",
+		Role:   domain.RoleUnitManager,
+		UnitID: &unitID,
+	}
+
+	repo := &mockUnitOpsRepo{
+		listBarbersFn: func(ctx context.Context, uID string, status string) ([]domain.Barber, error) {
+			if status == "inactive" {
+				return []domain.Barber{
+					{ID: "b-demitido", UnitID: uID, Name: "Ex Barbeiro", IsActive: false},
+				}, nil
+			}
+			return []domain.Barber{
+				{ID: "b-ativo", UnitID: uID, Name: "Barbeiro Ativo", IsActive: true},
+			}, nil
+		},
+	}
+	svc := service.NewUnitOperationsService(repo)
+
+	t.Run("successfully filters inactive barbers", func(t *testing.T) {
+		barbers, err := svc.ListBarbers(ctx, unitID, "inactive", claims)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(barbers) != 1 || barbers[0].ID != "b-demitido" {
+			t.Errorf("unexpected barbers: %+v", barbers)
+		}
+	})
+
+	t.Run("rejects unauthorized access to another unit", func(t *testing.T) {
+		_, err := svc.ListBarbers(ctx, "unit-other", "active", claims)
+		if err != domain.ErrForbidden {
+			t.Errorf("expected ErrForbidden, got %v", err)
 		}
 	})
 }
