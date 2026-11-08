@@ -20,14 +20,29 @@ func NewPostgresUserRepository(db *pgxpool.Pool) *PostgresUserRepository {
 
 func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
-		SELECT id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at
-		FROM users
-		WHERE email = $1
+		SELECT 
+			u.id, 
+			u.organization_id, 
+			u.unit_id, 
+			u.name, 
+			u.email, 
+			u.password_hash, 
+			u.role, 
+			u.is_active, 
+			u.created_at, 
+			u.updated_at,
+			o.is_active AS org_is_active,
+			o.subscription_status AS org_subscription_status
+		FROM users u
+		LEFT JOIN organizations o ON o.id = u.organization_id
+		WHERE u.email = $1
 		LIMIT 1;
 	`
 
 	var user domain.User
 	var roleStr string
+	var orgIsActive *bool
+	var orgSubStatus *string
 
 	err := r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID,
@@ -40,6 +55,8 @@ func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (
 		&user.IsActive,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&orgIsActive,
+		&orgSubStatus,
 	)
 
 	if err != nil {
@@ -50,19 +67,39 @@ func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (
 	}
 
 	user.Role = domain.Role(roleStr)
+	user.OrganizationIsActive = orgIsActive
+	if orgSubStatus != nil {
+		subStatus := domain.SubscriptionStatus(*orgSubStatus)
+		user.SubscriptionStatus = &subStatus
+	}
 	return &user, nil
 }
 
 func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	query := `
-		SELECT id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at
-		FROM users
-		WHERE id = $1
+		SELECT 
+			u.id, 
+			u.organization_id, 
+			u.unit_id, 
+			u.name, 
+			u.email, 
+			u.password_hash, 
+			u.role, 
+			u.is_active, 
+			u.created_at, 
+			u.updated_at,
+			o.is_active AS org_is_active,
+			o.subscription_status AS org_subscription_status
+		FROM users u
+		LEFT JOIN organizations o ON o.id = u.organization_id
+		WHERE u.id = $1
 		LIMIT 1;
 	`
 
 	var user domain.User
 	var roleStr string
+	var orgIsActive *bool
+	var orgSubStatus *string
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&user.ID,
@@ -75,6 +112,8 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domai
 		&user.IsActive,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&orgIsActive,
+		&orgSubStatus,
 	)
 
 	if err != nil {
@@ -85,5 +124,10 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domai
 	}
 
 	user.Role = domain.Role(roleStr)
+	user.OrganizationIsActive = orgIsActive
+	if orgSubStatus != nil {
+		subStatus := domain.SubscriptionStatus(*orgSubStatus)
+		user.SubscriptionStatus = &subStatus
+	}
 	return &user, nil
 }

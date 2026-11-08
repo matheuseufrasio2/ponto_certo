@@ -24,6 +24,7 @@ type TenantAdminRepository interface {
 	GetPrimaryOwnerByTenantID(ctx context.Context, tenantID string) (*domain.User, error)
 	UpdateUserPassword(ctx context.Context, userID, passwordHash string) error
 	GetUserByID(ctx context.Context, userID string) (*domain.User, error)
+	IsOrganizationActive(ctx context.Context, orgID string) (bool, error)
 }
 
 // PostgresTenantAdminRepository implements TenantAdminRepository with PostgreSQL.
@@ -222,18 +223,10 @@ func (r *PostgresTenantAdminRepository) CreateTenantWithAdmin(ctx context.Contex
 	return &org, nil
 }
 
-// ToggleTenantActiveStatus toggles active state and cascades login blocking if disabled.
+// ToggleTenantActiveStatus toggles active state of the organization.
 func (r *PostgresTenantAdminRepository) ToggleTenantActiveStatus(ctx context.Context, tenantID string, isActive bool) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-	defer func() {
-		_ = tx.Rollback(ctx)
-	}()
-
 	updateOrgQuery := `UPDATE organizations SET is_active = $1, updated_at = NOW() WHERE id = $2;`
-	tag, err := tx.Exec(ctx, updateOrgQuery, isActive, tenantID)
+	tag, err := r.db.Exec(ctx, updateOrgQuery, isActive, tenantID)
 	if err != nil {
 		return fmt.Errorf("update organization is_active: %w", err)
 	}
@@ -241,13 +234,21 @@ func (r *PostgresTenantAdminRepository) ToggleTenantActiveStatus(ctx context.Con
 		return domain.ErrOrganizationNotFound
 	}
 
-	// Cascade update users under this organization
-	updateUsersQuery := `UPDATE users SET is_active = $1, updated_at = NOW() WHERE organization_id = $2;`
-	if _, err := tx.Exec(ctx, updateUsersQuery, isActive, tenantID); err != nil {
-		return fmt.Errorf("cascade update users is_active: %w", err)
-	}
+	return nil
+}
 
-	return tx.Commit(ctx)
+// IsOrganizationActive checks if the organization is active in real-time.
+func (r *PostgresTenantAdminRepository) IsOrganizationActive(ctx context.Context, orgID string) (bool, error) {
+	query := `SELECT is_active FROM organizations WHERE id = $1 LIMIT 1;`
+	var isActive bool
+	err := r.db.QueryRow(ctx, query, orgID).Scan(&isActive)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, domain.ErrOrganizationNotFound
+		}
+		return false, fmt.Errorf("check organization is_active: %w", err)
+	}
+	return isActive, nil
 }
 
 // GetTenantUsers returns active users belonging to a tenant organization for impersonation.
