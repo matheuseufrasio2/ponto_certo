@@ -131,3 +131,79 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domai
 	}
 	return &user, nil
 }
+
+// ToggleActiveStatus updates user active status, cascading to barbers (status and is_active) and organizations if the user is an ORG_OWNER.
+// If an auditLog is provided, it is inserted atomically within the same transaction.
+func (r *PostgresUserRepository) ToggleActiveStatus(ctx context.Context, userID string, isActive bool, isBarber bool, ownerOrgID *string, auditLog *domain.AuditLog) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	userQuery := `UPDATE users SET is_active = $1, updated_at = NOW() WHERE id = $2;`
+	tag, err := tx.Exec(ctx, userQuery, isActive, userID)
+	if err != nil {
+		return fmt.Errorf("update user active status: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
+	}
+
+	if ownerOrgID != nil && *ownerOrgID != "" {
+		orgQuery := `UPDATE organizations SET is_active = $1, updated_at = NOW() WHERE id = $2;`
+		if _, err := tx.Exec(ctx, orgQuery, isActive, *ownerOrgID); err != nil {
+			return fmt.Errorf("update organization active status: %w", err)
+		}
+	}
+
+	if isBarber {
+		barberStatus := domain.BarberStatusOffDuty
+		if isActive {
+			barberStatus = domain.BarberStatusAvailable
+		}
+		barberQuery := `
+			UPDATE barbers 
+			SET is_active = $1, status = $2, updated_at = NOW() 
+			WHERE user_id = $3;
+		`
+		if _, err := tx.Exec(ctx, barberQuery, isActive, barberStatus, userID); err != nil {
+			return fmt.Errorf("update barber active status: %w", err)
+		}
+	}
+
+	if auditLog != nil {
+		auditQuery := `
+			INSERT INTO audit_logs (
+				organization_id, unit_id, actor_id, actor_role, action, target_entity, target_id,
+				details, ip_address, user_agent, created_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW());
+		`
+		detailsJSON := auditLog.Details
+		if len(detailsJSON) == 0 {
+			detailsJSON = []byte("{}")
+		}
+		if _, err := tx.Exec(ctx, auditQuery,
+			auditLog.OrganizationID,
+			auditLog.UnitID,
+			auditLog.ActorID,
+			string(auditLog.ActorRole),
+			auditLog.Action,
+			auditLog.TargetEntity,
+			auditLog.TargetID,
+			detailsJSON,
+			auditLog.IPAddress,
+			auditLog.UserAgent,
+		); err != nil {
+			return fmt.Errorf("insert audit log in toggle status: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit user toggle active status: %w", err)
+	}
+
+	return nil
+}

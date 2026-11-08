@@ -261,4 +261,3 @@ func (r *PostgresAppointmentRepository) UpdateStatus(ctx context.Context, id str
 	}
 	return nil
 }
-

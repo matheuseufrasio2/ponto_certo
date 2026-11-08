@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -19,7 +20,7 @@ type TenantAdminRepository interface {
 	UpdateTenantPlan(ctx context.Context, tenantID, plan string, feeInCents int64) (*domain.Organization, error)
 	CreateTenantWithAdmin(ctx context.Context, input domain.CreateTenantInput, passwordHash string) (*domain.Organization, error)
 	ToggleTenantActiveStatus(ctx context.Context, tenantID string, isActive bool) error
-	GetTenantUsers(ctx context.Context, tenantID string) ([]domain.User, error)
+	GetTenantUsers(ctx context.Context, tenantID string, status string) ([]domain.User, error)
 	GetTenantUnits(ctx context.Context, tenantID string) ([]domain.BarbershopUnit, error)
 	GetPrimaryOwnerByTenantID(ctx context.Context, tenantID string) (*domain.User, error)
 	UpdateUserPassword(ctx context.Context, userID, passwordHash string) error
@@ -79,6 +80,7 @@ func (r *PostgresTenantAdminRepository) ListTenants(ctx context.Context, search,
 			o.is_active,
 			(SELECT COUNT(*) FROM barbershop_units u WHERE u.organization_id = o.id)::INT AS units_count,
 			(SELECT COUNT(*) FROM users u WHERE u.organization_id = o.id AND u.is_active = TRUE)::INT AS active_users_count,
+			(SELECT COUNT(*) FROM users u WHERE u.organization_id = o.id)::INT AS total_users_count,
 			(
 				SELECT MAX(a.created_at)
 				FROM appointments a
@@ -126,6 +128,7 @@ func (r *PostgresTenantAdminRepository) ListTenants(ctx context.Context, search,
 			&o.IsActive,
 			&o.UnitsCount,
 			&o.ActiveUsersCount,
+			&o.TotalUsersCount,
 			&o.LastActivityAt,
 			&o.PastDueSince,
 			&o.CreatedAt,
@@ -251,8 +254,9 @@ func (r *PostgresTenantAdminRepository) IsOrganizationActive(ctx context.Context
 	return isActive, nil
 }
 
-// GetTenantUsers returns active users belonging to a tenant organization for impersonation.
-func (r *PostgresTenantAdminRepository) GetTenantUsers(ctx context.Context, tenantID string) ([]domain.User, error) {
+// GetTenantUsers returns users belonging to a tenant organization filtered by status (active, inactive, all).
+func (r *PostgresTenantAdminRepository) GetTenantUsers(ctx context.Context, tenantID string, status string) ([]domain.User, error) {
+	normStatus := strings.ToLower(strings.TrimSpace(status))
 	query := `
 		SELECT 
 			id::TEXT,
@@ -265,11 +269,16 @@ func (r *PostgresTenantAdminRepository) GetTenantUsers(ctx context.Context, tena
 			created_at,
 			updated_at
 		FROM users
-		WHERE organization_id = $1 AND is_active = TRUE
+		WHERE organization_id = $1
+		  AND (
+			($2 = 'all') OR
+			($2 = 'inactive' AND is_active = FALSE) OR
+			(($2 = 'active' OR $2 = '') AND is_active = TRUE)
+		  )
 		ORDER BY name ASC;
 	`
 
-	rows, err := r.db.Query(ctx, query, tenantID)
+	rows, err := r.db.Query(ctx, query, tenantID, normStatus)
 	if err != nil {
 		return nil, fmt.Errorf("query tenant users: %w", err)
 	}
@@ -417,6 +426,7 @@ func (r *PostgresTenantAdminRepository) GetTenantOverview(ctx context.Context, t
 			o.is_active,
 			(SELECT COUNT(*) FROM barbershop_units u WHERE u.organization_id = o.id)::INT AS units_count,
 			(SELECT COUNT(*) FROM users u WHERE u.organization_id = o.id AND u.is_active = TRUE)::INT AS active_users_count,
+			(SELECT COUNT(*) FROM users u WHERE u.organization_id = o.id)::INT AS total_users_count,
 			(
 				SELECT MAX(a.created_at)
 				FROM appointments a
@@ -467,6 +477,7 @@ func (r *PostgresTenantAdminRepository) GetTenantOverview(ctx context.Context, t
 		&o.IsActive,
 		&o.UnitsCount,
 		&o.ActiveUsersCount,
+		&o.TotalUsersCount,
 		&o.LastActivityAt,
 		&o.PastDueSince,
 		&o.CreatedAt,

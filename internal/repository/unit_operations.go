@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -17,7 +18,7 @@ type UnitOperationsRepository interface {
 	GetManagerLiveMetrics(ctx context.Context, unitID string, date time.Time) (*domain.ManagerDashboardMetrics, error)
 	UpdateBarberStatus(ctx context.Context, barberID string, status domain.BarberStatus, changedByUserID *string) error
 	ToggleServiceUnitAvailability(ctx context.Context, unitID, serviceID string, isActive bool) error
-	ListBarbersByUnit(ctx context.Context, unitID string) ([]domain.Barber, error)
+	ListBarbersByUnit(ctx context.Context, unitID string, status string) ([]domain.Barber, error)
 	CountFutureAppointmentsForBarber(ctx context.Context, barberID string, fromTime time.Time) (int, error)
 }
 
@@ -207,15 +208,21 @@ func (r *PostgresUnitOperationsRepository) ToggleServiceUnitAvailability(ctx con
 	return nil
 }
 
-// ListBarbersByUnit retrieves all barbers for a branch including their live shift status.
-func (r *PostgresUnitOperationsRepository) ListBarbersByUnit(ctx context.Context, unitID string) ([]domain.Barber, error) {
+// ListBarbersByUnit retrieves all barbers for a branch including their live shift status, filtered by active/inactive status.
+func (r *PostgresUnitOperationsRepository) ListBarbersByUnit(ctx context.Context, unitID string, status string) ([]domain.Barber, error) {
+	normStatus := strings.ToLower(strings.TrimSpace(status))
 	query := `
 		SELECT id, unit_id, user_id, name, phone, commission_percentage, status, is_active, created_at, updated_at
 		FROM barbers
-		WHERE unit_id = $1 AND is_active = TRUE
+		WHERE unit_id = $1
+		  AND (
+			($2 = 'all') OR
+			($2 = 'inactive' AND is_active = FALSE) OR
+			(($2 = 'active' OR $2 = '') AND is_active = TRUE)
+		  )
 		ORDER BY name ASC;
 	`
-	rows, err := r.db.Query(ctx, query, unitID)
+	rows, err := r.db.Query(ctx, query, unitID, normStatus)
 	if err != nil {
 		return nil, fmt.Errorf("query barbers by unit: %w", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -33,6 +34,7 @@ type OwnerAnalyticsRepository interface {
 	ListConsolidatedBillings(ctx context.Context, orgID string, unitID *string, paymentMethod *string, limit, offset int) ([]domain.Billing, int, error)
 	GetExportBillingsData(ctx context.Context, orgID string, unitID *string) ([]BillingExportRow, error)
 	GetOwnerSubscription(ctx context.Context, orgID string) (*domain.OwnerSubscription, error)
+	ListEmployees(ctx context.Context, orgID string, status string, unitID *string) ([]domain.OrganizationEmployee, error)
 }
 
 // PostgresOwnerAnalyticsRepository implements OwnerAnalyticsRepository using pgxpool.
@@ -361,4 +363,76 @@ func calculateSuspensionReason(isActive bool, subStatus domain.SubscriptionStatu
 	default:
 		return "MANUAL_SUSPENSION"
 	}
+}
+
+// ListEmployees retrieves all staff members belonging to an organization, filtered by active/inactive status and optional unit.
+func (r *PostgresOwnerAnalyticsRepository) ListEmployees(ctx context.Context, orgID string, status string, unitID *string) ([]domain.OrganizationEmployee, error) {
+	normStatus := strings.ToLower(strings.TrimSpace(status))
+	targetUnitID := ""
+	if unitID != nil {
+		targetUnitID = strings.TrimSpace(*unitID)
+	}
+
+	query := `
+		SELECT 
+			u.id::TEXT,
+			u.organization_id::TEXT,
+			COALESCE(u.unit_id::TEXT, ''),
+			COALESCE(bu.name, ''),
+			u.name,
+			u.email,
+			u.role,
+			u.is_active,
+			COALESCE(b.id::TEXT, ''),
+			u.created_at,
+			u.updated_at
+		FROM users u
+		LEFT JOIN barbershop_units bu ON bu.id = u.unit_id
+		LEFT JOIN barbers b ON b.user_id = u.id
+		WHERE u.organization_id = $1
+		  AND ($2 = '' OR u.unit_id::TEXT = $2)
+		  AND (
+			($3 = 'all') OR
+			($3 = 'inactive' AND u.is_active = FALSE) OR
+			(($3 = 'active' OR $3 = '') AND u.is_active = TRUE)
+		  )
+		ORDER BY u.name ASC;
+	`
+
+	rows, err := r.db.Query(ctx, query, orgID, targetUnitID, normStatus)
+	if err != nil {
+		return nil, fmt.Errorf("query employees: %w", err)
+	}
+	defer rows.Close()
+
+	var employees []domain.OrganizationEmployee
+	for rows.Next() {
+		var emp domain.OrganizationEmployee
+		var unitIDStr, barberIDStr, roleStr string
+		if err := rows.Scan(
+			&emp.ID,
+			&emp.OrganizationID,
+			&unitIDStr,
+			&emp.UnitName,
+			&emp.Name,
+			&emp.Email,
+			&roleStr,
+			&emp.IsActive,
+			&barberIDStr,
+			&emp.CreatedAt,
+			&emp.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan employee: %w", err)
+		}
+		if unitIDStr != "" {
+			emp.UnitID = &unitIDStr
+		}
+		if barberIDStr != "" {
+			emp.BarberID = &barberIDStr
+		}
+		emp.Role = domain.Role(roleStr)
+		employees = append(employees, emp)
+	}
+
+	return employees, rows.Err()
 }
