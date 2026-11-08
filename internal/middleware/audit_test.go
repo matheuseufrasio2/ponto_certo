@@ -86,8 +86,8 @@ func TestWithAuditMetadata(t *testing.T) {
 		t.Errorf("unexpected metadata: %+v", got)
 	}
 
-	nilGot := domain.GetAuditMetadata(nil)
-	if nilGot.IPAddress != "" || nilGot.UserAgent != "" {
-		t.Errorf("expected empty metadata for nil ctx, got %+v", nilGot)
+	emptyGot := domain.GetAuditMetadata(context.Background())
+	if emptyGot.IPAddress != "" || emptyGot.UserAgent != "" {
+		t.Errorf("expected empty metadata for empty ctx, got %+v", emptyGot)
 	}
 }
