@@ -55,7 +55,7 @@ func (s *TenantAdminService) ListTenants(ctx context.Context, claims *UserClaims
 		page = 1
 	}
 	if perPage < 1 || perPage > 100 {
-		perPage = 15
+		perPage = 10
 	}
 
 	offset := (page - 1) * perPage
