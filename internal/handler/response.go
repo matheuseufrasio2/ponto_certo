@@ -11,11 +11,15 @@ import (
 	"strings"
 
 	"github.com/matheuseufrasio2/ponto_certo/internal/domain"
+	"github.com/matheuseufrasio2/ponto_certo/internal/i18n"
 )
 
 // ErrorResponse represents the standardized JSON payload for API errors.
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error   string            `json:"error"`
+	Message string            `json:"message"`
+	Code    domain.ErrorCode  `json:"code,omitempty"`
+	Fields  map[string]string `json:"fields,omitempty"`
 }
 
 // WriteJSON sends a standardized JSON response with the provided HTTP status code.
@@ -36,13 +40,67 @@ func WriteNoContent(w http.ResponseWriter) {
 }
 
 // WriteError sends a standardized error JSON response with the provided HTTP status code.
-func WriteError(w http.ResponseWriter, status int, message string) {
-	_ = WriteJSON(w, status, ErrorResponse{Error: message})
+func WriteError(w http.ResponseWriter, status int, message string, code ...domain.ErrorCode) {
+	WriteErrorWithLocale(w, status, message, i18n.LocalePTBR, code...)
+}
+
+// WriteErrorWithLocale sends a standardized error JSON response resolving friendly message for the given locale.
+func WriteErrorWithLocale(w http.ResponseWriter, status int, message string, loc i18n.Locale, code ...domain.ErrorCode) {
+	var errCode domain.ErrorCode
+	if len(code) > 0 && code[0] != "" {
+		errCode = code[0]
+	} else {
+		errCode = domain.CodeForMessage(message)
+		if errCode == "" && status == http.StatusInternalServerError {
+			errCode = domain.ErrCodeInternalServerError
+		}
+	}
+
+	friendlyMsg := i18n.Translate(loc, errCode)
+	if friendlyMsg == "" || errCode == "" {
+		friendlyMsg = message
+	}
+
+	_ = WriteJSON(w, status, ErrorResponse{
+		Error:   message,
+		Message: friendlyMsg,
+		Code:    errCode,
+	})
+}
+
+// WriteValidationError sends a standardized 400 Bad Request response with structured field errors.
+func WriteValidationError(w http.ResponseWriter, valErr *domain.ValidationError, loc ...i18n.Locale) {
+	targetLoc := i18n.LocalePTBR
+	if len(loc) > 0 {
+		targetLoc = loc[0]
+	}
+
+	_ = WriteJSON(w, http.StatusBadRequest, ErrorResponse{
+		Error:   valErr.Error(),
+		Message: i18n.Translate(targetLoc, domain.ErrCodeValidationFailed),
+		Code:    domain.ErrCodeValidationFailed,
+		Fields:  valErr.Fields,
+	})
 }
 
 // HandleError maps domain and system errors to standardized HTTP status codes.
-// It securely masks unexpected 500 errors and logs them with structured context.
-func HandleError(w http.ResponseWriter, err error) {
+// It supports an optional *http.Request to automatically resolve the client locale via Accept-Language.
+func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
+	var req *http.Request
+	if len(r) > 0 {
+		req = r[0]
+	}
+	loc := i18n.ResolveLocale(req)
+
+	var valErr *domain.ValidationError
+	if errors.As(err, &valErr) {
+		slog.Warn("validation error (400)", "fields", valErr.Fields)
+		WriteValidationError(w, valErr, loc)
+		return
+	}
+
+	code := domain.CodeForError(err)
+
 	switch {
 	case errors.Is(err, domain.ErrNotFound),
 		errors.Is(err, domain.ErrBarberNotFound),
@@ -56,12 +114,12 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrScheduleBlockNotFound),
 		errors.Is(err, domain.ErrEmployeeLeaveNotFound),
 		errors.Is(err, domain.ErrUnitNotFound):
-		slog.Warn("resource not found (404)", "error", err.Error())
-		WriteError(w, http.StatusNotFound, err.Error())
+		slog.Warn("resource not found (404)", "error", err.Error(), "code", code)
+		WriteErrorWithLocale(w, http.StatusNotFound, err.Error(), loc, code)
 
 	case errors.Is(err, domain.ErrUnauthorized):
-		slog.Warn("unauthorized request (401)", "error", err.Error())
-		WriteError(w, http.StatusUnauthorized, err.Error())
+		slog.Warn("unauthorized request (401)", "error", err.Error(), "code", code)
+		WriteErrorWithLocale(w, http.StatusUnauthorized, err.Error(), loc, code)
 
 	case errors.Is(err, domain.ErrForbidden),
 		errors.Is(err, domain.ErrCannotImpersonateSelf),
@@ -71,16 +129,16 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrCannotDeactivateSuperAdmin),
 		errors.Is(err, domain.ErrCannotDeactivateSelf),
 		errors.Is(err, domain.ErrInsufficientRoleHierarchy):
-		slog.Warn("forbidden request (403)", "error", err.Error())
-		WriteError(w, http.StatusForbidden, err.Error())
+		slog.Warn("forbidden request (403)", "error", err.Error(), "code", code)
+		WriteErrorWithLocale(w, http.StatusForbidden, err.Error(), loc, code)
 
 	case errors.Is(err, domain.ErrAppointmentConflict),
 		errors.Is(err, domain.ErrBarberHasFutureAppointments),
 		errors.Is(err, domain.ErrScheduleBlockConflict),
 		errors.Is(err, domain.ErrEmployeeLeaveConflict),
 		errors.Is(err, domain.ErrBillingAlreadyProcessed):
-		slog.Warn("conflict detected (409)", "error", err.Error())
-		WriteError(w, http.StatusConflict, err.Error())
+		slog.Warn("conflict detected (409)", "error", err.Error(), "code", code)
+		WriteErrorWithLocale(w, http.StatusConflict, err.Error(), loc, code)
 
 	case errors.Is(err, domain.ErrInvalidTimeSlot),
 		errors.Is(err, domain.ErrInvalidPaymentMethod),
@@ -90,12 +148,12 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrInvalidAppointmentTime),
 		errors.Is(err, domain.ErrInvalidDateRange),
 		errors.Is(err, domain.ErrInvalidRole):
-		slog.Warn("bad request validation failed (400)", "error", err.Error())
-		WriteError(w, http.StatusBadRequest, err.Error())
+		slog.Warn("bad request validation failed (400)", "error", err.Error(), "code", code)
+		WriteErrorWithLocale(w, http.StatusBadRequest, err.Error(), loc, code)
 
 	default:
 		slog.Error("unhandled server error (500)", "error", err)
-		WriteError(w, http.StatusInternalServerError, "internal server error")
+		WriteErrorWithLocale(w, http.StatusInternalServerError, "internal server error", loc, domain.ErrCodeInternalServerError)
 	}
 }
 
