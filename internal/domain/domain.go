@@ -123,16 +123,31 @@ type BarbershopUnit struct {
 
 // User represents an authenticated system actor with specific RBAC role.
 type User struct {
-	ID             string    `json:"id"`
-	OrganizationID *string   `json:"organization_id,omitempty"` // NULL for SUPER_ADMIN
-	UnitID         *string   `json:"unit_id,omitempty"`         // NULL for SUPER_ADMIN & ORG_OWNER
-	Name           string    `json:"name"`
-	Email          string    `json:"email"`
-	PasswordHash   string    `json:"-"`
-	Role           Role      `json:"role"`
-	IsActive       bool      `json:"is_active"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID                   string              `json:"id"`
+	OrganizationID       *string             `json:"organization_id,omitempty"` // NULL for SUPER_ADMIN
+	UnitID               *string             `json:"unit_id,omitempty"`         // NULL for SUPER_ADMIN & ORG_OWNER
+	Name                 string              `json:"name"`
+	Email                string              `json:"email"`
+	PasswordHash         string              `json:"-"`
+	Role                 Role                `json:"role"`
+	IsActive             bool                `json:"is_active"`
+	OrganizationIsActive *bool               `json:"organization_is_active,omitempty"`
+	SubscriptionStatus   *SubscriptionStatus `json:"subscription_status,omitempty"`
+	CreatedAt            time.Time           `json:"created_at"`
+	UpdatedAt            time.Time           `json:"updated_at"`
+}
+
+// OwnerSubscription defines subscription status and commercial tier for an organization owner.
+type OwnerSubscription struct {
+	OrganizationID     string             `json:"organization_id"`
+	Name               string             `json:"name"`
+	TradeName          string             `json:"trade_name"`
+	Document           string             `json:"document"`
+	Plan               string             `json:"plan"`
+	MonthlyFeeInCents  int64              `json:"monthly_fee_in_cents"`
+	SubscriptionStatus SubscriptionStatus `json:"subscription_status"`
+	IsActive           bool               `json:"is_active"`
+	SuspensionReason   string             `json:"suspension_reason"` // NONE, FINANCIAL_PENDING, SUBSCRIPTION_CANCELLED, MANUAL_SUSPENSION
 }
 
 // Barber represents a barber professional linked to an optional user login.
@@ -615,6 +630,88 @@ type ResetPasswordResponse struct {
 	UserEmail         string `json:"user_email"`
 	TemporaryPassword string `json:"temporary_password"`
 }
+
+// DevSuperAdmin represents a super admin user for the developer authentication modal.
+type DevSuperAdmin struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
+}
+
+// DevTenantOwner represents the primary owner of a tenant for dev discovery.
+type DevTenantOwner struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// DevTenant represents a tenant summary for the dev modal.
+type DevTenant struct {
+	ID          string          `json:"id"`
+	TradeName   string          `json:"trade_name"`
+	Plan        string          `json:"plan"`
+	Status      string          `json:"status"`
+	DaysPastDue int             `json:"days_past_due"`
+	Owner       *DevTenantOwner `json:"owner,omitempty"`
+}
+
+// DevTenantsResponse represents the paginated response for dev tenants.
+type DevTenantsResponse struct {
+	Tenants []DevTenant `json:"tenants"`
+	Page    int         `json:"page"`
+	Limit   int         `json:"limit"`
+	Total   int         `json:"total"`
+	HasMore bool        `json:"has_more"`
+}
+
+// DevTenantUser represents a user belonging to a specific tenant.
+type DevTenantUser struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+	UnitName string `json:"unit_name"`
+}
+
+// DevUser represents a user categorized by role for dev discovery.
+type DevUser struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	Role       string `json:"role"`
+	TenantName string `json:"tenant_name"`
+}
+
+// DevUsersResponse represents the paginated response for dev users.
+type DevUsersResponse struct {
+	Users   []DevUser `json:"users"`
+	Page    int       `json:"page"`
+	Limit   int       `json:"limit"`
+	Total   int       `json:"total"`
+	HasMore bool      `json:"has_more"`
+}
+
+// IsValidUUID validates that a string is a standard 36-character canonical UUID (8-4-4-4-12 hex).
+func IsValidUUID(u string) bool {
+	if len(u) != 36 {
+		return false
+	}
+	for i, r := range u {
+		switch i {
+		case 8, 13, 18, 23:
+			if r != '-' {
+				return false
+			}
+		default:
+			if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+
 
 
 
