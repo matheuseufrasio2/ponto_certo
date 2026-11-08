@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matheuseufrasio2/ponto_certo/internal/domain"
 )
@@ -30,6 +32,7 @@ type OwnerAnalyticsRepository interface {
 	GetServicesMix(ctx context.Context, orgID string, unitID *string, start, end time.Time) ([]domain.ServiceMixAnalytics, error)
 	ListConsolidatedBillings(ctx context.Context, orgID string, unitID *string, paymentMethod *string, limit, offset int) ([]domain.Billing, int, error)
 	GetExportBillingsData(ctx context.Context, orgID string, unitID *string) ([]BillingExportRow, error)
+	GetOwnerSubscription(ctx context.Context, orgID string) (*domain.OwnerSubscription, error)
 }
 
 // PostgresOwnerAnalyticsRepository implements OwnerAnalyticsRepository using pgxpool.
@@ -304,4 +307,58 @@ func (r *PostgresOwnerAnalyticsRepository) GetExportBillingsData(ctx context.Con
 	}
 
 	return exportRows, rows.Err()
+}
+
+// GetOwnerSubscription queries the organization subscription and commercial tier for the owner.
+func (r *PostgresOwnerAnalyticsRepository) GetOwnerSubscription(ctx context.Context, orgID string) (*domain.OwnerSubscription, error) {
+	query := `
+		SELECT 
+			id::TEXT, 
+			name, 
+			trade_name, 
+			document, 
+			plan, 
+			monthly_fee_in_cents, 
+			COALESCE(subscription_status, 'ACTIVE'), 
+			is_active
+		FROM organizations
+		WHERE id = $1
+		LIMIT 1;
+	`
+	var sub domain.OwnerSubscription
+	var planStr, statusStr string
+	err := r.db.QueryRow(ctx, query, orgID).Scan(
+		&sub.OrganizationID,
+		&sub.Name,
+		&sub.TradeName,
+		&sub.Document,
+		&planStr,
+		&sub.MonthlyFeeInCents,
+		&statusStr,
+		&sub.IsActive,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrOrganizationNotFound
+		}
+		return nil, fmt.Errorf("query owner subscription: %w", err)
+	}
+	sub.Plan = planStr
+	sub.SubscriptionStatus = domain.SubscriptionStatus(statusStr)
+	sub.SuspensionReason = calculateSuspensionReason(sub.IsActive, sub.SubscriptionStatus)
+	return &sub, nil
+}
+
+func calculateSuspensionReason(isActive bool, subStatus domain.SubscriptionStatus) string {
+	if isActive {
+		return "NONE"
+	}
+	switch subStatus {
+	case domain.SubscriptionStatusPastDue:
+		return "FINANCIAL_PAST_DUE"
+	case domain.SubscriptionStatusCancelled:
+		return "SUBSCRIPTION_CANCELLED"
+	default:
+		return "MANUAL_SUSPENSION"
+	}
 }
