@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
+	"strings"
 
 	"github.com/matheuseufrasio2/ponto_certo/internal/domain"
 )
@@ -51,6 +53,8 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrUserNotFound),
 		errors.Is(err, domain.ErrOrganizationNotFound),
 		errors.Is(err, domain.ErrAppointmentNotFound),
+		errors.Is(err, domain.ErrScheduleBlockNotFound),
+		errors.Is(err, domain.ErrEmployeeLeaveNotFound),
 		errors.Is(err, domain.ErrUnitNotFound):
 		slog.Warn("resource not found (404)", "error", err.Error())
 		WriteError(w, http.StatusNotFound, err.Error())
@@ -63,12 +67,17 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrCannotImpersonateSelf),
 		errors.Is(err, domain.ErrCannotImpersonateSuperAdmin),
 		errors.Is(err, domain.ErrImpersonationActionBlocked),
-		errors.Is(err, domain.ErrTenantInactive):
+		errors.Is(err, domain.ErrTenantInactive),
+		errors.Is(err, domain.ErrCannotDeactivateSuperAdmin),
+		errors.Is(err, domain.ErrCannotDeactivateSelf),
+		errors.Is(err, domain.ErrInsufficientRoleHierarchy):
 		slog.Warn("forbidden request (403)", "error", err.Error())
 		WriteError(w, http.StatusForbidden, err.Error())
 
 	case errors.Is(err, domain.ErrAppointmentConflict),
 		errors.Is(err, domain.ErrBarberHasFutureAppointments),
+		errors.Is(err, domain.ErrScheduleBlockConflict),
+		errors.Is(err, domain.ErrEmployeeLeaveConflict),
 		errors.Is(err, domain.ErrBillingAlreadyProcessed):
 		slog.Warn("conflict detected (409)", "error", err.Error())
 		WriteError(w, http.StatusConflict, err.Error())
@@ -79,6 +88,7 @@ func HandleError(w http.ResponseWriter, err error) {
 		errors.Is(err, domain.ErrInvalidBarberStatus),
 		errors.Is(err, domain.ErrInvalidAppointmentTransition),
 		errors.Is(err, domain.ErrInvalidAppointmentTime),
+		errors.Is(err, domain.ErrInvalidDateRange),
 		errors.Is(err, domain.ErrInvalidRole):
 		slog.Warn("bad request validation failed (400)", "error", err.Error())
 		WriteError(w, http.StatusBadRequest, err.Error())
@@ -148,3 +158,23 @@ func IsValidUUID(u string) bool {
 	return true
 }
 
+// GetClientIP extracts client IP address checking X-Forwarded-For, X-Real-IP or RemoteAddr.
+func GetClientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		return strings.TrimSpace(parts[0])
+	}
+	if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+		return strings.TrimSpace(xrip)
+	}
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return ip
+}
+
+// GetUserAgent extracts the User-Agent header string.
+func GetUserAgent(r *http.Request) string {
+	return r.UserAgent()
+}

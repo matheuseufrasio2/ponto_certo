@@ -18,12 +18,13 @@ import (
 )
 
 type mockOwnerAnalyticsManager struct {
-	getMetricsFn      func(ctx context.Context, claims *service.UserClaims, unitID *string, start, end time.Time) (*domain.OwnerExecutiveKPIs, error)
+	getMetricsFn       func(ctx context.Context, claims *service.UserClaims, unitID *string, start, end time.Time) (*domain.OwnerExecutiveKPIs, error)
 	getRevenueByUnitFn func(ctx context.Context, claims *service.UserClaims, start, end time.Time) ([]domain.UnitRevenueComparison, error)
-	getServicesMixFn  func(ctx context.Context, claims *service.UserClaims, unitID *string, start, end time.Time) ([]domain.ServiceMixAnalytics, error)
-	listBillingsFn    func(ctx context.Context, claims *service.UserClaims, unitID *string, paymentMethod *string, page, perPage int) (*domain.PaginatedBillings, error)
-	exportCSVFn       func(ctx context.Context, claims *service.UserClaims, unitID *string, w io.Writer) error
-	getSubscriptionFn func(ctx context.Context, claims *service.UserClaims) (*domain.OwnerSubscription, error)
+	getServicesMixFn   func(ctx context.Context, claims *service.UserClaims, unitID *string, start, end time.Time) ([]domain.ServiceMixAnalytics, error)
+	listBillingsFn     func(ctx context.Context, claims *service.UserClaims, unitID *string, paymentMethod *string, page, perPage int) (*domain.PaginatedBillings, error)
+	exportCSVFn        func(ctx context.Context, claims *service.UserClaims, unitID *string, w io.Writer) error
+	getSubscriptionFn  func(ctx context.Context, claims *service.UserClaims) (*domain.OwnerSubscription, error)
+	listEmployeesFn    func(ctx context.Context, claims *service.UserClaims, status string, unitID *string) ([]domain.OrganizationEmployee, error)
 }
 
 func (m *mockOwnerAnalyticsManager) GetExecutiveKPIs(ctx context.Context, claims *service.UserClaims, unitID *string, start, end time.Time) (*domain.OwnerExecutiveKPIs, error) {
@@ -74,6 +75,15 @@ func (m *mockOwnerAnalyticsManager) GetSubscription(ctx context.Context, claims 
 		SubscriptionStatus: domain.SubscriptionStatusActive,
 		IsActive:           true,
 		SuspensionReason:   "NONE",
+	}, nil
+}
+
+func (m *mockOwnerAnalyticsManager) ListEmployees(ctx context.Context, claims *service.UserClaims, status string, unitID *string) ([]domain.OrganizationEmployee, error) {
+	if m.listEmployeesFn != nil {
+		return m.listEmployeesFn(ctx, claims, status, unitID)
+	}
+	return []domain.OrganizationEmployee{
+		{ID: "emp-1", Name: "Barbeiro Teste", Role: domain.RoleBarber, IsActive: true},
 	}, nil
 }
 
@@ -138,6 +148,7 @@ func TestOwnerAnalyticsHandler_Routes(t *testing.T) {
 			r.Get("/services-mix", h.GetServicesMix)
 			r.Get("/billings", h.ListBillings)
 			r.Get("/export/csv", h.ExportCSV)
+			r.Get("/employees", h.ListEmployees)
 		})
 	})
 
@@ -215,6 +226,25 @@ func TestOwnerAnalyticsHandler_Routes(t *testing.T) {
 		r.ServeHTTP(w, req)
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("expected 401, got %d", w.Code)
+		}
+	})
+
+	t.Run("GET /owner/employees returns 200 with list of employees", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/owner/employees?status=inactive", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		var emps []domain.OrganizationEmployee
+		if err := json.NewDecoder(w.Body).Decode(&emps); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if len(emps) != 1 || emps[0].ID != "emp-1" {
+			t.Errorf("unexpected employees: %+v", emps)
 		}
 	})
 }

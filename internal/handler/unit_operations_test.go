@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/golang-jwt/jwt/v5"
+	chi "github.com/go-chi/chi/v5"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/matheuseufrasio2/ponto_certo/internal/domain"
 	"github.com/matheuseufrasio2/ponto_certo/internal/handler"
 	"github.com/matheuseufrasio2/ponto_certo/internal/middleware"
@@ -22,7 +22,7 @@ type mockUnitOpsManager struct {
 	getCashClosingFn     func(ctx context.Context, unitID string, date time.Time, claims *service.UserClaims) (*domain.CashClosingSummary, error)
 	updateBarberStatusFn func(ctx context.Context, unitID, barberID string, input domain.UpdateBarberStatusInput, claims *service.UserClaims) error
 	toggleServiceFn      func(ctx context.Context, unitID, serviceID string, input domain.ToggleServiceInput, claims *service.UserClaims) error
-	listBarbersFn        func(ctx context.Context, unitID string, claims *service.UserClaims) ([]domain.Barber, error)
+	listBarbersFn        func(ctx context.Context, unitID string, status string, claims *service.UserClaims) ([]domain.Barber, error)
 }
 
 func (m *mockUnitOpsManager) GetManagerMetrics(ctx context.Context, unitID string, date time.Time, claims *service.UserClaims) (*domain.ManagerDashboardMetrics, error) {
@@ -69,9 +69,9 @@ func (m *mockUnitOpsManager) ToggleService(ctx context.Context, unitID, serviceI
 	return nil
 }
 
-func (m *mockUnitOpsManager) ListBarbers(ctx context.Context, unitID string, claims *service.UserClaims) ([]domain.Barber, error) {
+func (m *mockUnitOpsManager) ListBarbers(ctx context.Context, unitID string, status string, claims *service.UserClaims) ([]domain.Barber, error) {
 	if m.listBarbersFn != nil {
-		return m.listBarbersFn(ctx, unitID, claims)
+		return m.listBarbersFn(ctx, unitID, status, claims)
 	}
 	return []domain.Barber{
 		{ID: "b-1", UnitID: unitID, Name: "Barber 1", Status: domain.BarberStatusAvailable},

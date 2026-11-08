@@ -83,6 +83,9 @@ func main() {
 	unitOpsRepo := repository.NewPostgresUnitOperationsRepository(dbPool)
 	ownerAnalyticsRepo := repository.NewPostgresOwnerAnalyticsRepository(dbPool)
 	tenantAdminRepo := repository.NewPostgresTenantAdminRepository(dbPool)
+	auditLogRepo := repository.NewPostgresAuditLogRepository(dbPool)
+	scheduleBlockRepo := repository.NewPostgresScheduleBlockRepository(dbPool)
+	employeeLeaveRepo := repository.NewPostgresEmployeeLeaveRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
@@ -92,6 +95,15 @@ func main() {
 	unitOpsService := service.NewUnitOperationsService(unitOpsRepo)
 	ownerAnalyticsService := service.NewOwnerAnalyticsService(ownerAnalyticsRepo)
 	tenantAdminService := service.NewTenantAdminService(tenantAdminRepo, cfg.JWTSecret)
+	userGovService := service.NewUserGovernanceService(userRepo)
+	auditLogService := service.NewAuditLogService(auditLogRepo)
+	scheduleBlockService := service.NewScheduleBlockService(scheduleBlockRepo)
+	employeeLeaveService := service.NewEmployeeLeaveService(employeeLeaveRepo)
+
+	// Wire audit recorders for critical and sensitive actions
+	tenantAdminService.SetAuditRecorder(auditLogRepo)
+	unitOpsService.SetAuditRecorder(auditLogRepo)
+	billingService.SetAuditRecorder(auditLogRepo)
 
 	// 6. Instantiate handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -101,6 +113,10 @@ func main() {
 	unitOpsHandler := handler.NewUnitOperationsHandler(unitOpsService)
 	ownerAnalyticsHandler := handler.NewOwnerAnalyticsHandler(ownerAnalyticsService)
 	tenantAdminHandler := handler.NewTenantAdminHandler(tenantAdminService)
+	userGovHandler := handler.NewUserGovernanceHandler(userGovService)
+	auditLogHandler := handler.NewAuditLogHandler(auditLogService)
+	scheduleBlockHandler := handler.NewScheduleBlockHandler(scheduleBlockService)
+	employeeLeaveHandler := handler.NewEmployeeLeaveHandler(employeeLeaveService)
 
 	var devHandler *handler.DevHandler
 	if cfg.Env != "production" {
@@ -114,7 +130,8 @@ func main() {
 
 	r.Use(middleware.RequestID) // Request tracing ID
 	r.Use(internalMiddleware.RequestLogger(cfg.Env))
-	r.Use(middleware.Recoverer) // Protect against panics
+	r.Use(internalMiddleware.AuditMetadataMiddleware) // IP and User-Agent audit metadata
+	r.Use(middleware.Recoverer)                       // Protect against panics
 
 	// Fallback handlers with informative logging
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +184,15 @@ func main() {
 				r.Patch("/tenants/{id}/plan", tenantAdminHandler.UpdateTenantPlan)
 				r.Post("/tenants/{id}/reset-password", tenantAdminHandler.ResetTenantPassword)
 				r.Post("/users/{id}/impersonate", tenantAdminHandler.ImpersonateUser)
+				r.Get("/audit-logs", auditLogHandler.ListGlobalAuditLogs)
 			})
+
+			// User governance route (hierarchical active status toggle)
+			r.With(internalMiddleware.RequireRoles(
+				domain.RoleSuperAdmin,
+				domain.RoleOrgOwner,
+				domain.RoleUnitManager,
+			)).Patch("/users/{id}/toggle-status", userGovHandler.ToggleUserStatus)
 
 			// Owner Executive BI routes
 			r.With(internalMiddleware.RequireRoles(
@@ -176,6 +201,7 @@ func main() {
 			)).Route("/owner", func(r chi.Router) {
 				// Subscription status is accessible even if tenant is inactive/suspended
 				r.Get("/subscription", ownerAnalyticsHandler.GetSubscription)
+				r.Get("/audit-logs", auditLogHandler.ListOrgAuditLogs)
 
 				// Analytical and export routes require active tenant
 				r.Group(func(r chi.Router) {
@@ -185,6 +211,10 @@ func main() {
 					r.Get("/services-mix", ownerAnalyticsHandler.GetServicesMix)
 					r.Get("/billings", ownerAnalyticsHandler.ListBillings)
 					r.Get("/export/csv", ownerAnalyticsHandler.ExportCSV)
+					r.Get("/employees", ownerAnalyticsHandler.ListEmployees)
+					r.Get("/leaves", employeeLeaveHandler.ListLeaves)
+					r.Post("/leaves", employeeLeaveHandler.CreateLeave)
+					r.Delete("/leaves/{id}", employeeLeaveHandler.CancelLeave)
 				})
 			})
 
@@ -206,6 +236,9 @@ func main() {
 					r.Get("/barbers", unitOpsHandler.ListBarbers)
 					r.Patch("/barbers/{barber_id}/status", unitOpsHandler.UpdateBarberStatus)
 					r.Patch("/services/{service_id}/toggle", unitOpsHandler.ToggleService)
+					r.Get("/barbers/{id}/blocks", scheduleBlockHandler.ListBlocks)
+					r.Post("/barbers/{id}/blocks", scheduleBlockHandler.CreateBlock)
+					r.Delete("/barbers/blocks/{block_id}", scheduleBlockHandler.DeleteBlock)
 				})
 
 				// Unit catalog lookup (accessible by staff)

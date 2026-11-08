@@ -24,7 +24,7 @@ type mockTenantAdminManager struct {
 	updateTenantPlanFn    func(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.UpdateTenantPlanInput) (*domain.Organization, error)
 	createTenantFn        func(ctx context.Context, claims *service.UserClaims, input domain.CreateTenantInput) (*domain.Organization, error)
 	toggleTenantStatusFn  func(ctx context.Context, claims *service.UserClaims, tenantID string, isActive bool) error
-	getTenantUsersFn      func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.User, error)
+	getTenantUsersFn      func(ctx context.Context, claims *service.UserClaims, tenantID string, status string) ([]domain.User, error)
 	getTenantUnitsFn      func(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error)
 	resetTenantPasswordFn func(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.ResetTenantPasswordInput) (*domain.ResetPasswordResponse, error)
 	impersonateUserFn     func(ctx context.Context, claims *service.UserClaims, targetUserID string) (*domain.ImpersonateResponse, error)
@@ -73,9 +73,9 @@ func (m *mockTenantAdminManager) ToggleTenantStatus(ctx context.Context, claims 
 	return nil
 }
 
-func (m *mockTenantAdminManager) GetTenantUsers(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.User, error) {
+func (m *mockTenantAdminManager) GetTenantUsers(ctx context.Context, claims *service.UserClaims, tenantID string, status string) ([]domain.User, error) {
 	if m.getTenantUsersFn != nil {
-		return m.getTenantUsersFn(ctx, claims, tenantID)
+		return m.getTenantUsersFn(ctx, claims, tenantID, status)
 	}
 	return []domain.User{
 		{ID: "user-1", Name: "Carlos Silva", Role: domain.RoleOrgOwner},

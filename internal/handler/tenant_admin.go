@@ -19,7 +19,7 @@ type TenantAdminManager interface {
 	UpdateTenantPlan(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.UpdateTenantPlanInput) (*domain.Organization, error)
 	CreateTenant(ctx context.Context, claims *service.UserClaims, input domain.CreateTenantInput) (*domain.Organization, error)
 	ToggleTenantStatus(ctx context.Context, claims *service.UserClaims, tenantID string, isActive bool) error
-	GetTenantUsers(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.User, error)
+	GetTenantUsers(ctx context.Context, claims *service.UserClaims, tenantID string, status string) ([]domain.User, error)
 	GetTenantUnits(ctx context.Context, claims *service.UserClaims, tenantID string) ([]domain.BarbershopUnit, error)
 	ResetTenantPassword(ctx context.Context, claims *service.UserClaims, tenantID string, input domain.ResetTenantPasswordInput) (*domain.ResetPasswordResponse, error)
 	ImpersonateUser(ctx context.Context, claims *service.UserClaims, targetUserID string) (*domain.ImpersonateResponse, error)
@@ -202,11 +202,12 @@ func (h *TenantAdminHandler) ToggleTenantStatus(w http.ResponseWriter, r *http.R
 
 // GetTenantUsers godoc
 // @Summary List all users in a tenant organization
-// @Description Returns users of a tenant for diagnostic impersonation
+// @Description Returns users of a tenant for diagnostic impersonation filtered by status
 // @Tags admin
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Organization UUID"
+// @Param status query string false "Filter users by status: active, inactive, all"
 // @Success 200 {array} domain.User
 // @Failure 401 {object} ErrorResponse
 // @Failure 403 {object} ErrorResponse
@@ -226,7 +227,8 @@ func (h *TenantAdminHandler) GetTenantUsers(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	users, err := h.svc.GetTenantUsers(r.Context(), claims, tenantID)
+	status := r.URL.Query().Get("status")
+	users, err := h.svc.GetTenantUsers(r.Context(), claims, tenantID, status)
 	if err != nil {
 		HandleError(w, err)
 		return
