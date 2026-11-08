@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.10.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.9.0...ponto_certo-v0.10.0) (2026-11-08)
+
+
+### Features
+
+* **api:** implement tenant units endpoint with status plan filtering ([fc2f941](https://github.com/matheuseufrasio2/ponto_certo/commit/fc2f9417c1f94b64d38979502213cb073c44de15))
+* **api:** register tenant overview plan with password reset endpoints ([6a68ccd](https://github.com/matheuseufrasio2/ponto_certo/commit/6a68ccd89f99c32f1738b44962fcd110b94c6c0c))
+* **api:** register tenant units endpoint with filter params ([3bf325c](https://github.com/matheuseufrasio2/ponto_certo/commit/3bf325cbbdd685c02a3e9005d84bf2ca9aace206))
+* **cli:** add database seed runner with 45 tenants ([ce843d1](https://github.com/matheuseufrasio2/ponto_certo/commit/ce843d13abf42b1ce1bfdca50273978a74f9ef8d))
+* **cli:** introduce native go database migration runner ([9ba2ac5](https://github.com/matheuseufrasio2/ponto_certo/commit/9ba2ac5000d141a942cfa1c9b141effded4bd2ff))
+* **domain:** add tenant operational counters with overview structures ([cb1c642](https://github.com/matheuseufrasio2/ponto_certo/commit/cb1c6427c81e4461b3762fe0b3ffd9f9eb5e68fa))
+* **handler:** validate uuid format for tenant admin endpoints ([ce5a8b0](https://github.com/matheuseufrasio2/ponto_certo/commit/ce5a8b0d7bb0f8137f386741828433e5c6b54d02))
+* **migrations:** add past due since timestamp to organizations ([f109eed](https://github.com/matheuseufrasio2/ponto_certo/commit/f109eed63a60fd2ba148136b4070049262742974))
+* **repository:** implement tenant overview with plan update queries ([28e129c](https://github.com/matheuseufrasio2/ponto_certo/commit/28e129c4ba2f5d5c62ec10492da8fb1b5d0917ed))
+* **repository:** implement tenant units query with status plan filtering ([6d77aec](https://github.com/matheuseufrasio2/ponto_certo/commit/6d77aecb3cee17ea57e5b7e17c7602560be1a299))
+* **service:** implement tenant overview with administrative password reset ([4503131](https://github.com/matheuseufrasio2/ponto_certo/commit/45031316e554632d0d61f6a6fe19a87f6a920d47))
+* **service:** implement tenant units retrieval with filter forwarding ([8b9085a](https://github.com/matheuseufrasio2/ponto_certo/commit/8b9085ab48e5ae6e20c554917f08e5cb62d0771d))
+* **service:** update default tenant pagination limit to 10 ([3d2a5bd](https://github.com/matheuseufrasio2/ponto_certo/commit/3d2a5bd5b1c9a496481eabd2e42ee8b7ca7514d5))
+
 ## [0.9.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.8.0...ponto_certo-v0.9.0) (2026-11-07)
 
 
