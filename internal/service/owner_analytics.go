@@ -175,3 +175,12 @@ func (s *OwnerAnalyticsService) ExportBillingsCSV(ctx context.Context, claims *U
 	csvWriter.Flush()
 	return csvWriter.Error()
 }
+
+// GetSubscription returns current subscription and commercial tier for the organization.
+func (s *OwnerAnalyticsService) GetSubscription(ctx context.Context, claims *UserClaims) (*domain.OwnerSubscription, error) {
+	orgID, err := s.resolveOrgID(claims, nil)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.GetOwnerSubscription(ctx, orgID)
+}

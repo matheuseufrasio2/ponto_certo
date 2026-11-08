@@ -18,6 +18,7 @@ type mockOwnerAnalyticsRepo struct {
 	getServicesMixFn   func(ctx context.Context, orgID string, unitID *string, start, end time.Time) ([]domain.ServiceMixAnalytics, error)
 	listBillingsFn  func(ctx context.Context, orgID string, unitID *string, paymentMethod *string, limit, offset int) ([]domain.Billing, int, error)
 	getExportDataFn func(ctx context.Context, orgID string, unitID *string) ([]repository.BillingExportRow, error)
+	getSubscriptionFn func(ctx context.Context, orgID string) (*domain.OwnerSubscription, error)
 }
 
 func (m *mockOwnerAnalyticsRepo) GetExecutiveKPIs(ctx context.Context, orgID string, unitID *string, start, end time.Time) (*domain.OwnerExecutiveKPIs, error) {
@@ -53,6 +54,20 @@ func (m *mockOwnerAnalyticsRepo) GetExportBillingsData(ctx context.Context, orgI
 		return m.getExportDataFn(ctx, orgID, unitID)
 	}
 	return nil, nil
+}
+
+func (m *mockOwnerAnalyticsRepo) GetOwnerSubscription(ctx context.Context, orgID string) (*domain.OwnerSubscription, error) {
+	if m.getSubscriptionFn != nil {
+		return m.getSubscriptionFn(ctx, orgID)
+	}
+	return &domain.OwnerSubscription{
+		OrganizationID:     orgID,
+		Name:               "Barbearia Modelo",
+		Plan:               "PRO",
+		MonthlyFeeInCents:  19900,
+		SubscriptionStatus: domain.SubscriptionStatusActive,
+		IsActive:           true,
+	}, nil
 }
 
 func TestOwnerAnalyticsService_GetExecutiveKPIs(t *testing.T) {
@@ -205,4 +220,57 @@ func TestOwnerAnalyticsService_ListConsolidatedBillings(t *testing.T) {
 	if res.Total != 50 {
 		t.Errorf("expected total 50, got %d", res.Total)
 	}
+}
+
+func TestOwnerAnalyticsService_GetSubscription(t *testing.T) {
+	orgID := "org-subscription-test"
+
+	t.Run("successfully retrieves subscription for ORG_OWNER", func(t *testing.T) {
+		claims := &service.UserClaims{
+			UserID:         "owner-1",
+			Role:           domain.RoleOrgOwner,
+			OrganizationID: &orgID,
+		}
+
+		repo := &mockOwnerAnalyticsRepo{
+			getSubscriptionFn: func(ctx context.Context, o string) (*domain.OwnerSubscription, error) {
+				if o != orgID {
+					t.Errorf("expected orgID %s, got %s", orgID, o)
+				}
+				return &domain.OwnerSubscription{
+					OrganizationID:     o,
+					Name:               "Navalha de Ouro",
+					Plan:               "ENTERPRISE",
+					MonthlyFeeInCents:  49900,
+					SubscriptionStatus: domain.SubscriptionStatusPastDue,
+					IsActive:           false,
+					SuspensionReason:   "FINANCIAL_PAST_DUE",
+				}, nil
+			},
+		}
+
+		svc := service.NewOwnerAnalyticsService(repo)
+		sub, err := svc.GetSubscription(context.Background(), claims)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if sub.Name != "Navalha de Ouro" {
+			t.Errorf("expected name 'Navalha de Ouro', got %s", sub.Name)
+		}
+		if sub.IsActive {
+			t.Errorf("expected IsActive to be false")
+		}
+		if sub.SuspensionReason != "FINANCIAL_PAST_DUE" {
+			t.Errorf("expected SuspensionReason FINANCIAL_PAST_DUE, got %s", sub.SuspensionReason)
+		}
+	})
+
+	t.Run("rejects unauthorized caller without claims", func(t *testing.T) {
+		svc := service.NewOwnerAnalyticsService(&mockOwnerAnalyticsRepo{})
+		_, err := svc.GetSubscription(context.Background(), nil)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
 }
