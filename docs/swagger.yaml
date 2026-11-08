@@ -236,6 +236,95 @@ definitions:
       trade_name:
         type: string
     type: object
+  domain.DevSuperAdmin:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+  domain.DevTenant:
+    properties:
+      days_past_due:
+        type: integer
+      id:
+        type: string
+      owner:
+        $ref: '#/definitions/domain.DevTenantOwner'
+      plan:
+        type: string
+      status:
+        type: string
+      trade_name:
+        type: string
+    type: object
+  domain.DevTenantOwner:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    type: object
+  domain.DevTenantUser:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      unit_name:
+        type: string
+    type: object
+  domain.DevTenantsResponse:
+    properties:
+      has_more:
+        type: boolean
+      limit:
+        type: integer
+      page:
+        type: integer
+      tenants:
+        items:
+          $ref: '#/definitions/domain.DevTenant'
+        type: array
+      total:
+        type: integer
+    type: object
+  domain.DevUser:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      tenant_name:
+        type: string
+    type: object
+  domain.DevUsersResponse:
+    properties:
+      has_more:
+        type: boolean
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/domain.DevUser'
+        type: array
+    type: object
   domain.ImpersonateResponse:
     properties:
       expires_in:
@@ -295,6 +384,28 @@ definitions:
         type: integer
       total_commissions_in_cents:
         type: integer
+    type: object
+  domain.OwnerSubscription:
+    properties:
+      document:
+        type: string
+      is_active:
+        type: boolean
+      monthly_fee_in_cents:
+        type: integer
+      name:
+        type: string
+      organization_id:
+        type: string
+      plan:
+        type: string
+      subscription_status:
+        $ref: '#/definitions/domain.SubscriptionStatus'
+      suspension_reason:
+        description: NONE, FINANCIAL_PENDING, SUBSCRIPTION_CANCELLED, MANUAL_SUSPENSION
+        type: string
+      trade_name:
+        type: string
     type: object
   domain.PaginatedBillings:
     properties:
@@ -513,8 +624,12 @@ definitions:
       organization_id:
         description: NULL for SUPER_ADMIN
         type: string
+      organization_is_active:
+        type: boolean
       role:
         $ref: '#/definitions/domain.Role'
+      subscription_status:
+        $ref: '#/definitions/domain.SubscriptionStatus'
       unit_id:
         description: NULL for SUPER_ADMIN & ORG_OWNER
         type: string
@@ -579,8 +694,12 @@ definitions:
         type: string
       organization_id:
         type: string
+      organization_is_active:
+        type: boolean
       role:
         $ref: '#/definitions/domain.Role'
+      subscription_status:
+        type: string
       unit_id:
         type: string
     type: object
@@ -1147,6 +1266,121 @@ paths:
       summary: Listar fila diária do barbeiro
       tags:
       - Barber
+  /dev/super-admins:
+    get:
+      description: Retorna todos os usuários SUPER_ADMIN cadastrados para alimentar
+        a aba de Super Admin no Dev Auth Modal.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de super admins
+          schema:
+            items:
+              $ref: '#/definitions/domain.DevSuperAdmin'
+            type: array
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Listar super admins (Dev Only)
+      tags:
+      - Dev
+  /dev/tenants:
+    get:
+      description: Retorna barbearias/tenants para alimentar o select de empresas
+        e cenários no Dev Auth Modal.
+      parameters:
+      - description: Termo de busca textual
+        in: query
+        name: q
+        type: string
+      - description: 'Cenário de teste (ex: past_due)'
+        in: query
+        name: scenario
+        type: string
+      - description: Página (padrão 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limite por página (padrão 10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tenants paginados
+          schema:
+            $ref: '#/definitions/domain.DevTenantsResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Listar tenants paginados (Dev Only)
+      tags:
+      - Dev
+  /dev/tenants/{id}/users:
+    get:
+      description: Retorna todos os colaboradores vinculados a uma empresa selecionada.
+      parameters:
+      - description: ID do Tenant
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuários do tenant
+          schema:
+            items:
+              $ref: '#/definitions/domain.DevTenantUser'
+            type: array
+        "404":
+          description: Tenant não encontrado
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Listar usuários do tenant (Dev Only)
+      tags:
+      - Dev
+  /dev/users:
+    get:
+      description: Retorna usuários filtrados por cargo com scroll infinito / paginação
+        para o Dev Auth Modal.
+      parameters:
+      - description: Cargo do usuário (ORG_OWNER, UNIT_MANAGER, RECEPTIONIST, BARBER)
+        in: query
+        name: role
+        type: string
+      - description: Página (padrão 1)
+        in: query
+        name: page
+        type: integer
+      - description: Limite por página (padrão 10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuários paginados
+          schema:
+            $ref: '#/definitions/domain.DevUsersResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Listar usuários por cargo (Dev Only)
+      tags:
+      - Dev
   /health:
     get:
       description: HealthCheck is a handler function that checks the health of the
@@ -1363,6 +1597,38 @@ paths:
       security:
       - BearerAuth: []
       summary: Get service mix analytics
+      tags:
+      - owner
+  /owner/subscription:
+    get:
+      description: Returns current subscription plan, fee, and active status for the
+        authenticated owner
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.OwnerSubscription'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get organization subscription status
       tags:
       - owner
   /reception/appointments:

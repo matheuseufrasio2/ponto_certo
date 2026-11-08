@@ -114,5 +114,75 @@ func TestAuthService_Login(t *testing.T) {
 			t.Errorf("expected ErrUnauthorized, got %v", err)
 		}
 	})
+
+	t.Run("login with inactive organization rejects non-owner with ErrTenantInactive", func(t *testing.T) {
+		falseVal := false
+		barberUser := *testUser
+		barberUser.Role = domain.RoleBarber
+		barberUser.OrganizationIsActive = &falseVal
+
+		repo := &mockUserRepo{user: &barberUser}
+		authSvc := service.NewAuthService(repo, "test-secret-key-12345", 1*time.Hour)
+
+		_, err := authSvc.Login(context.Background(), service.LoginInput{
+			Email:    "barbeiro@barbearia.com",
+			Password: "senha123",
+		})
+
+		if err != domain.ErrTenantInactive {
+			t.Errorf("expected ErrTenantInactive, got %v", err)
+		}
+	})
+
+	t.Run("login with inactive organization allows ORG_OWNER with organization_is_active=false", func(t *testing.T) {
+		falseVal := false
+		subStatus := domain.SubscriptionStatusPastDue
+		ownerUser := *testUser
+		ownerUser.Role = domain.RoleOrgOwner
+		ownerUser.OrganizationIsActive = &falseVal
+		ownerUser.SubscriptionStatus = &subStatus
+
+		repo := &mockUserRepo{user: &ownerUser}
+		authSvc := service.NewAuthService(repo, "test-secret-key-12345", 1*time.Hour)
+
+		out, err := authSvc.Login(context.Background(), service.LoginInput{
+			Email:    "carlos@barbearia.com",
+			Password: "senha123",
+		})
+
+		if err != nil {
+			t.Fatalf("expected successful login for ORG_OWNER, got: %v", err)
+		}
+		if out.User.OrganizationIsActive {
+			t.Errorf("expected organization_is_active to be false")
+		}
+		if out.User.SubscriptionStatus != "PAST_DUE" {
+			t.Errorf("expected subscription_status to be PAST_DUE, got %s", out.User.SubscriptionStatus)
+		}
+	})
+
+	t.Run("login with active organization allows user and returns organization_is_active=true", func(t *testing.T) {
+		trueVal := true
+		subStatus := domain.SubscriptionStatusActive
+		ownerUser := *testUser
+		ownerUser.Role = domain.RoleOrgOwner
+		ownerUser.OrganizationIsActive = &trueVal
+		ownerUser.SubscriptionStatus = &subStatus
+
+		repo := &mockUserRepo{user: &ownerUser}
+		authSvc := service.NewAuthService(repo, "test-secret-key-12345", 1*time.Hour)
+
+		out, err := authSvc.Login(context.Background(), service.LoginInput{
+			Email:    "carlos@barbearia.com",
+			Password: "senha123",
+		})
+
+		if err != nil {
+			t.Fatalf("expected successful login, got: %v", err)
+		}
+		if !out.User.OrganizationIsActive {
+			t.Errorf("expected organization_is_active to be true")
+		}
+	})
 }
 

@@ -20,6 +20,7 @@ type OwnerAnalyticsManager interface {
 	GetServicesMix(ctx context.Context, claims *service.UserClaims, unitID *string, start, end time.Time) ([]domain.ServiceMixAnalytics, error)
 	ListConsolidatedBillings(ctx context.Context, claims *service.UserClaims, unitID *string, paymentMethod *string, page, perPage int) (*domain.PaginatedBillings, error)
 	ExportBillingsCSV(ctx context.Context, claims *service.UserClaims, unitID *string, w io.Writer) error
+	GetSubscription(ctx context.Context, claims *service.UserClaims) (*domain.OwnerSubscription, error)
 }
 
 // OwnerAnalyticsHandler manages HTTP endpoints for the organization owner BI.
@@ -247,4 +248,32 @@ func (h *OwnerAnalyticsHandler) ExportCSV(w http.ResponseWriter, r *http.Request
 		// Response status is already written, log error
 		return
 	}
+}
+
+// GetSubscription godoc
+// @Summary Get organization subscription status
+// @Description Returns current subscription plan, fee, and active status for the authenticated owner
+// @Tags owner
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} domain.OwnerSubscription
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /owner/subscription [get]
+func (h *OwnerAnalyticsHandler) GetSubscription(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.UserFromContext(r.Context())
+	if !ok || claims == nil {
+		HandleError(w, domain.ErrUnauthorized)
+		return
+	}
+
+	sub, err := h.svc.GetSubscription(r.Context(), claims)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	_ = WriteJSON(w, http.StatusOK, sub)
 }

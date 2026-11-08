@@ -142,7 +142,7 @@ VALUES
 -- 2. 45 Franchise Owners (ORG_OWNER)
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
-    ('c0000000-0000-0000-0000-' || LPAD((1 + s.idx)::TEXT, 12, '0'))::UUID,
+    gen_random_uuid(),
     o.id,
     NULL,
     'Dono ' || o.trade_name,
@@ -163,11 +163,14 @@ JOIN (SELECT generate_series(1, 45) AS idx) s
 -- 3. Managers for all units (UNIT_MANAGER)
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
-    ('c0000000-0000-0000-0000-' || LPAD((100 + ROW_NUMBER() OVER())::TEXT, 12, '0'))::UUID,
+    gen_random_uuid(),
     u.organization_id,
     u.id,
     'Gerente ' || u.name,
-    'gerente.unidade' || (ROW_NUMBER() OVER())::TEXT || '@pontocerto.com.br',
+    CASE 
+        WHEN (ROW_NUMBER() OVER()) = 1 THEN 'manager.matriz@pontocerto.com.br'
+        ELSE 'gerente.unidade' || (ROW_NUMBER() OVER())::TEXT || '@pontocerto.com.br'
+    END,
     '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
     'UNIT_MANAGER',
     u.is_active,
@@ -175,14 +178,35 @@ SELECT
     NOW()
 FROM barbershop_units u;
 
--- 4. Operational Barbers (BARBER)
+-- 4. Receptionists for all units (RECEPTIONIST)
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
-    ('c0000000-0000-0000-0000-' || LPAD((200 + ROW_NUMBER() OVER())::TEXT, 12, '0'))::UUID,
+    gen_random_uuid(),
+    u.organization_id,
+    u.id,
+    'Recepção ' || u.name,
+    CASE 
+        WHEN (ROW_NUMBER() OVER()) = 1 THEN 'recepcao.matriz@pontocerto.com.br'
+        ELSE 'recepcao.unidade' || (ROW_NUMBER() OVER())::TEXT || '@pontocerto.com.br'
+    END,
+    '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
+    'RECEPTIONIST',
+    u.is_active,
+    u.created_at,
+    NOW()
+FROM barbershop_units u;
+
+-- 5. Operational Barbers (BARBER)
+INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
+SELECT 
+    gen_random_uuid(),
     u.organization_id,
     u.id,
     'Barbeiro ' || u.name,
-    'barbeiro.unidade' || (ROW_NUMBER() OVER())::TEXT || '@pontocerto.com.br',
+    CASE 
+        WHEN (ROW_NUMBER() OVER()) = 1 THEN 'marcos.barbeiro@pontocerto.com.br'
+        ELSE 'barbeiro.unidade' || (ROW_NUMBER() OVER())::TEXT || '@pontocerto.com.br'
+    END,
     '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
     'BARBER',
     u.is_active,
@@ -191,7 +215,7 @@ SELECT
 FROM barbershop_units u;
 
 -- ============================================================================
--- 5. Barbers Profile
+-- 6. Barbers Profile
 -- ============================================================================
 INSERT INTO barbers (id, unit_id, user_id, name, phone, commission_percentage, is_active, created_at, updated_at)
 SELECT 

@@ -23,6 +23,7 @@ type mockOwnerAnalyticsManager struct {
 	getServicesMixFn  func(ctx context.Context, claims *service.UserClaims, unitID *string, start, end time.Time) ([]domain.ServiceMixAnalytics, error)
 	listBillingsFn    func(ctx context.Context, claims *service.UserClaims, unitID *string, paymentMethod *string, page, perPage int) (*domain.PaginatedBillings, error)
 	exportCSVFn       func(ctx context.Context, claims *service.UserClaims, unitID *string, w io.Writer) error
+	getSubscriptionFn func(ctx context.Context, claims *service.UserClaims) (*domain.OwnerSubscription, error)
 }
 
 func (m *mockOwnerAnalyticsManager) GetExecutiveKPIs(ctx context.Context, claims *service.UserClaims, unitID *string, start, end time.Time) (*domain.OwnerExecutiveKPIs, error) {
@@ -59,6 +60,21 @@ func (m *mockOwnerAnalyticsManager) ExportBillingsCSV(ctx context.Context, claim
 	}
 	_, err := w.Write([]byte("ID,Data\n1,2026-11-06\n"))
 	return err
+}
+
+func (m *mockOwnerAnalyticsManager) GetSubscription(ctx context.Context, claims *service.UserClaims) (*domain.OwnerSubscription, error) {
+	if m.getSubscriptionFn != nil {
+		return m.getSubscriptionFn(ctx, claims)
+	}
+	return &domain.OwnerSubscription{
+		OrganizationID:     "org-123",
+		Name:               "Navalha de Ouro",
+		Plan:               "ENTERPRISE",
+		MonthlyFeeInCents:  49900,
+		SubscriptionStatus: domain.SubscriptionStatusActive,
+		IsActive:           true,
+		SuspensionReason:   "NONE",
+	}, nil
 }
 
 func generateOwnerTestToken(userID, orgID string, role domain.Role, secret string) string {
@@ -116,6 +132,7 @@ func TestOwnerAnalyticsHandler_Routes(t *testing.T) {
 		r.Use(middleware.RequireRoles(domain.RoleOrgOwner, domain.RoleSuperAdmin))
 
 		r.Route("/owner", func(r chi.Router) {
+			r.Get("/subscription", h.GetSubscription)
 			r.Get("/metrics", h.GetMetrics)
 			r.Get("/revenue-by-unit", h.GetRevenueByUnit)
 			r.Get("/services-mix", h.GetServicesMix)
@@ -166,6 +183,28 @@ func TestOwnerAnalyticsHandler_Routes(t *testing.T) {
 		ct := w.Header().Get("Content-Type")
 		if ct != "text/csv; charset=utf-8" {
 			t.Errorf("expected text/csv; charset=utf-8, got %s", ct)
+		}
+	})
+
+	t.Run("GET /owner/subscription returns 200 with subscription details", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/owner/subscription", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		var sub domain.OwnerSubscription
+		if err := json.NewDecoder(w.Body).Decode(&sub); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+		if sub.Name != "Navalha de Ouro" {
+			t.Errorf("expected name 'Navalha de Ouro', got %s", sub.Name)
+		}
+		if sub.Plan != "ENTERPRISE" {
+			t.Errorf("expected plan ENTERPRISE, got %s", sub.Plan)
 		}
 	})
 
