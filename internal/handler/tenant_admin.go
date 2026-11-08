@@ -77,7 +77,7 @@ func (h *TenantAdminHandler) GetPlatformMetrics(w http.ResponseWriter, r *http.R
 // @Param status query string false "Filter by subscription status (ACTIVE, PAST_DUE, TRIAL, CANCELLED) or BLOCKED"
 // @Param plan query string false "Filter by plan (BASIC, PRO, ENTERPRISE)"
 // @Param page query int false "Page number (default 1)"
-// @Param per_page query int false "Items per page (default 15)"
+// @Param per_page query int false "Items per page (default 10)"
 // @Success 200 {object} domain.PaginatedOrganizations
 // @Failure 401 {object} ErrorResponse
 // @Failure 403 {object} ErrorResponse
@@ -94,7 +94,7 @@ func (h *TenantAdminHandler) ListTenants(w http.ResponseWriter, r *http.Request)
 	status := r.URL.Query().Get("status")
 	plan := r.URL.Query().Get("plan")
 	page := 1
-	perPage := 15
+	perPage := 10
 
 	if p := r.URL.Query().Get("page"); p != "" {
 		if val, err := strconv.Atoi(p); err == nil && val > 0 {
@@ -177,8 +177,8 @@ func (h *TenantAdminHandler) ToggleTenantStatus(w http.ResponseWriter, r *http.R
 	}
 
 	tenantID := chi.URLParam(r, "id")
-	if tenantID == "" {
-		WriteError(w, http.StatusBadRequest, "tenant id is required")
+	if tenantID == "" || !IsValidUUID(tenantID) {
+		WriteError(w, http.StatusBadRequest, "invalid tenant id format, expected uuid")
 		return
 	}
 
@@ -221,8 +221,8 @@ func (h *TenantAdminHandler) GetTenantUsers(w http.ResponseWriter, r *http.Reque
 	}
 
 	tenantID := chi.URLParam(r, "id")
-	if tenantID == "" {
-		WriteError(w, http.StatusBadRequest, "tenant id is required")
+	if tenantID == "" || !IsValidUUID(tenantID) {
+		WriteError(w, http.StatusBadRequest, "invalid tenant id format, expected uuid")
 		return
 	}
 
@@ -256,8 +256,8 @@ func (h *TenantAdminHandler) GetTenantUnits(w http.ResponseWriter, r *http.Reque
 	}
 
 	tenantID := chi.URLParam(r, "id")
-	if tenantID == "" {
-		WriteError(w, http.StatusBadRequest, "tenant id is required")
+	if tenantID == "" || !IsValidUUID(tenantID) {
+		WriteError(w, http.StatusBadRequest, "invalid tenant id format, expected uuid")
 		return
 	}
 
@@ -296,8 +296,8 @@ func (h *TenantAdminHandler) GetTenantOverview(w http.ResponseWriter, r *http.Re
 	}
 
 	tenantID := chi.URLParam(r, "id")
-	if tenantID == "" {
-		WriteError(w, http.StatusBadRequest, "tenant id is required")
+	if tenantID == "" || !IsValidUUID(tenantID) {
+		WriteError(w, http.StatusBadRequest, "invalid tenant id format, expected uuid")
 		return
 	}
 
@@ -334,8 +334,8 @@ func (h *TenantAdminHandler) UpdateTenantPlan(w http.ResponseWriter, r *http.Req
 	}
 
 	tenantID := chi.URLParam(r, "id")
-	if tenantID == "" {
-		WriteError(w, http.StatusBadRequest, "tenant id is required")
+	if tenantID == "" || !IsValidUUID(tenantID) {
+		WriteError(w, http.StatusBadRequest, "invalid tenant id format, expected uuid")
 		return
 	}
 
@@ -378,8 +378,8 @@ func (h *TenantAdminHandler) ResetTenantPassword(w http.ResponseWriter, r *http.
 	}
 
 	tenantID := chi.URLParam(r, "id")
-	if tenantID == "" {
-		WriteError(w, http.StatusBadRequest, "tenant id is required")
+	if tenantID == "" || !IsValidUUID(tenantID) {
+		WriteError(w, http.StatusBadRequest, "invalid tenant id format, expected uuid")
 		return
 	}
 
@@ -418,8 +418,8 @@ func (h *TenantAdminHandler) ImpersonateUser(w http.ResponseWriter, r *http.Requ
 	}
 
 	targetUserID := chi.URLParam(r, "id")
-	if targetUserID == "" {
-		WriteError(w, http.StatusBadRequest, "target user id is required")
+	if targetUserID == "" || !IsValidUUID(targetUserID) {
+		WriteError(w, http.StatusBadRequest, "invalid user id format, expected uuid")
 		return
 	}
 

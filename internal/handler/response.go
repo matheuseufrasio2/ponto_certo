@@ -127,3 +127,24 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 
 	return nil
 }
+
+// IsValidUUID validates that a string is a standard 36-character canonical UUID (8-4-4-4-12 hex).
+func IsValidUUID(u string) bool {
+	if len(u) != 36 {
+		return false
+	}
+	for i, r := range u {
+		switch i {
+		case 8, 13, 18, 23:
+			if r != '-' {
+				return false
+			}
+		default:
+			if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
+				return false
+			}
+		}
+	}
+	return true
+}
+

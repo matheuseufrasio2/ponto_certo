@@ -179,8 +179,8 @@ func setupTenantAdminTestRouter(mgr *mockTenantAdminManager, secret string) http
 
 func TestTenantAdminHandler_Routes(t *testing.T) {
 	secret := "test-superadmin-secret"
-	adminToken := generateAdminToken("admin-1", domain.RoleSuperAdmin, secret)
-	barberToken := generateAdminToken("barber-1", domain.RoleBarber, secret)
+	adminToken := generateAdminToken("c0000000-0000-0000-0000-000000000001", domain.RoleSuperAdmin, secret)
+	barberToken := generateAdminToken("c0000000-0000-0000-0000-000000000005", domain.RoleBarber, secret)
 
 	mockMgr := &mockTenantAdminManager{}
 	router := setupTenantAdminTestRouter(mockMgr, secret)
@@ -273,7 +273,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 		payload := map[string]bool{"is_active": false}
 		data, _ := json.Marshal(payload)
 
-		req := httptest.NewRequest(http.MethodPatch, "/api/v1/admin/tenants/org-123/toggle-status", bytes.NewReader(data))
+		req := httptest.NewRequest(http.MethodPatch, "/api/v1/admin/tenants/a0000000-0000-0000-0000-000000000001/toggle-status", bytes.NewReader(data))
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rec := httptest.NewRecorder()
 
@@ -285,7 +285,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/tenants/{id}/users returns tenant users", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/org-123/users", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/a0000000-0000-0000-0000-000000000001/users", nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rec := httptest.NewRecorder()
 
@@ -305,7 +305,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 	})
 
 	t.Run("POST /api/v1/admin/users/{id}/impersonate returns impersonation token", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/user-123/impersonate", nil)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/c0000000-0000-0000-0000-000000000001/impersonate", nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rec := httptest.NewRecorder()
 
@@ -329,7 +329,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 			return nil, domain.ErrCannotImpersonateSelf
 		}
 
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/admin-1/impersonate", nil)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/c0000000-0000-0000-0000-000000000001/impersonate", nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rec := httptest.NewRecorder()
 
@@ -348,7 +348,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 			}, nil
 		}
 
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/org-123/units", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/a0000000-0000-0000-0000-000000000001/units", nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rec := httptest.NewRecorder()
 
@@ -368,7 +368,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/tenants/{id}/units forbidden for non-superadmin", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/org-123/units", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/a0000000-0000-0000-0000-000000000001/units", nil)
 		req.Header.Set("Authorization", "Bearer "+barberToken)
 		rec := httptest.NewRecorder()
 
@@ -407,7 +407,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/admin/tenants/{id}/overview returns 200 with metrics", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/org-123/overview", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/admin/tenants/a0000000-0000-0000-0000-000000000001/overview", nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		rec := httptest.NewRecorder()
 
@@ -432,7 +432,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 			MonthlyFeeInCents: 59900,
 		}
 		body, _ := json.Marshal(payload)
-		req := httptest.NewRequest(http.MethodPatch, "/api/v1/admin/tenants/org-123/plan", bytes.NewReader(body))
+		req := httptest.NewRequest(http.MethodPatch, "/api/v1/admin/tenants/a0000000-0000-0000-0000-000000000001/plan", bytes.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -455,7 +455,7 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 	t.Run("POST /api/v1/admin/tenants/{id}/reset-password resets owner password", func(t *testing.T) {
 		payload := domain.ResetTenantPasswordInput{NewPassword: "NovaSenhaAdmin123"}
 		body, _ := json.Marshal(payload)
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/tenants/org-123/reset-password", bytes.NewReader(body))
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/tenants/a0000000-0000-0000-0000-000000000001/reset-password", bytes.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -472,6 +472,47 @@ func TestTenantAdminHandler_Routes(t *testing.T) {
 		}
 		if resp.UserEmail != "owner@navalha.com" || resp.TemporaryPassword != "GeneratedPassword123" {
 			t.Errorf("unexpected reset response: %+v", resp)
+		}
+	})
+
+	t.Run("Rejects non-UUID tenant id with 400 Bad Request", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPatch, "/api/v1/admin/tenants/org-1/toggle-status", bytes.NewReader([]byte(`{"is_active":false}`)))
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d. Body: %s", rec.Code, rec.Body.String())
+		}
+
+		var errResp handler.ErrorResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
+			t.Fatalf("failed to decode error response: %v", err)
+		}
+		if errResp.Error != "invalid tenant id format, expected uuid" {
+			t.Errorf("expected error %q, got %q", "invalid tenant id format, expected uuid", errResp.Error)
+		}
+	})
+
+	t.Run("Rejects non-UUID user id for impersonation with 400 Bad Request", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/users/user-1/impersonate", nil)
+		req.Header.Set("Authorization", "Bearer "+adminToken)
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d. Body: %s", rec.Code, rec.Body.String())
+		}
+
+		var errResp handler.ErrorResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
+			t.Fatalf("failed to decode error response: %v", err)
+		}
+		if errResp.Error != "invalid user id format, expected uuid" {
+			t.Errorf("expected error %q, got %q", "invalid user id format, expected uuid", errResp.Error)
 		}
 	})
 }
