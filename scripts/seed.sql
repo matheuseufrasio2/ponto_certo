@@ -1,5 +1,5 @@
 -- ============================================================================
--- Ponto Certo - Development & Testing Realistic Database Seed (45 Tenants)
+-- Ponto Certo - Development & Testing Realistic Database Seed (90 Tenants)
 -- ============================================================================
 
 -- Clean existing data cleanly with cascade
@@ -21,7 +21,7 @@ TRUNCATE
 CASCADE;
 
 -- ============================================================================
--- 1. Organizations (45 Multi-Tenant Franchises & Barbershops)
+-- 1. Organizations (90 Multi-Tenant Franchises & Barbershops)
 -- ============================================================================
 WITH tenant_data (idx, name, trade_name, plan, fee, sub_status, past_due_days, is_active) AS (
     VALUES
@@ -69,7 +69,52 @@ WITH tenant_data (idx, name, trade_name, plan, fee, sub_status, past_due_days, i
     (42, 'Texas Longhorn Barbershop LTDA', 'Texas Longhorn Barber', 'PRO', 24900, 'PAST_DUE', 3, TRUE),
     (43, 'Barbearia do Porto Marítima ME', 'Barbearia do Porto', 'BASIC', 19900, 'ACTIVE', NULL, TRUE),
     (44, 'Golden Blade Grooming Club LTDA', 'Golden Blade Club', 'ENTERPRISE', 49900, 'ACTIVE', NULL, TRUE),
-    (45, 'Amnesia Barber Studio Night ME', 'Amnesia Barber Studio', 'BASIC', 19900, 'CANCELLED', NULL, FALSE)
+    (45, 'Amnesia Barber Studio Night ME', 'Amnesia Barber Studio', 'BASIC', 19900, 'CANCELLED', NULL, FALSE),
+    (46, 'Barbearia Al Capone & Whisky ME', 'Al Capone Barber & Whisky', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (47, 'Clube da Navalha & Café LTDA', 'Clube da Navalha Café', 'BASIC', 19900, 'ACTIVE', NULL, TRUE),
+    (48, 'Soberano Grooming Barbershop EIRELI', 'Soberano Barbershop', 'ENTERPRISE', 49900, 'ACTIVE', NULL, TRUE),
+    (49, 'Barbearia O Padrinho Cuts ME', 'O Padrinho Cuts', 'PRO', 24900, 'PAST_DUE', 11, TRUE),
+    (50, 'Barba Urbana Studio & Pub LTDA', 'Barba Urbana Studio', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (51, 'Barbearia Machado de Ouro ME', 'Machado de Ouro Barber', 'BASIC', 14900, 'ACTIVE', NULL, TRUE),
+    (52, 'Manhattan Classic Barbershop LTDA', 'Manhattan Classic Barber', 'ENTERPRISE', 59900, 'ACTIVE', NULL, TRUE),
+    (53, 'Barbearia Maverick Rock & Beard ME', 'Maverick Rock Barbers', 'PRO', 24900, 'TRIAL', NULL, TRUE),
+    (54, 'Barbearia Dom Casmurro Imperial', 'Dom Casmurro Barbershop', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (55, 'Espaço Homem Moderno Barbearia LTDA', 'Espaço Homem Moderno', 'BASIC', 19900, 'ACTIVE', NULL, TRUE),
+    (56, 'Vanguarda Barber Lounge ME', 'Vanguarda Barber Lounge', 'ENTERPRISE', 49900, 'ACTIVE', NULL, TRUE),
+    (57, 'Barbearia Rota do Sol Litoral ME', 'Rota do Sol Barbearia', 'BASIC', 14900, 'ACTIVE', NULL, TRUE),
+    (58, 'London Bridge Barbershop LTDA', 'London Bridge Barber', 'PRO', 24900, 'PAST_DUE', 9, TRUE),
+    (59, 'Barbearia Tradição & Estilo ME', 'Tradição & Estilo Barber', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (60, 'Fênix Cortes & Barba Prime EIRELI', 'Fênix Barber Prime', 'BASIC', 19900, 'CANCELLED', NULL, FALSE),
+    (61, 'Barbearia Viking Valhalla Club LTDA', 'Valhalla Barber Club', 'ENTERPRISE', 59900, 'ACTIVE', NULL, TRUE),
+    (62, 'Estação da Barba & Cerveja ME', 'Estação da Barba', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (63, 'Barbearia Black Sheep Urban ME', 'Black Sheep Barbershop', 'PRO', 24900, 'TRIAL', NULL, TRUE),
+    (64, 'Bárbaros Barber Studio Brasil LTDA', 'Bárbaros Barber Studio', 'ENTERPRISE', 49900, 'ACTIVE', NULL, TRUE),
+    (65, 'Barbearia da Esquina Popular ME', 'Barbearia da Esquina', 'BASIC', 14900, 'ACTIVE', NULL, TRUE),
+    (66, 'Gentlemen & Co. Premium Shave LTDA', 'Gentlemen & Co. Shave', 'ENTERPRISE', 59900, 'ACTIVE', NULL, TRUE),
+    (67, 'Barbearia Tabacaria & Navalha ME', 'Tabacaria & Navalha Barber', 'PRO', 24900, 'PAST_DUE', 15, TRUE),
+    (68, 'Ponto Alto Barbearia Executiva ME', 'Ponto Alto Barbershop', 'BASIC', 19900, 'ACTIVE', NULL, TRUE),
+    (69, 'Barbearia Old Harley Davidson ME', 'Old Harley Barbershop', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (70, 'Sublime Corte & Estética Masculina', 'Sublime Barbearia VIP', 'ENTERPRISE', 49900, 'ACTIVE', NULL, TRUE),
+    (71, 'Barbearia Roots 77 Vintage ME', 'Roots 77 Vintage Barber', 'BASIC', 14900, 'ACTIVE', NULL, TRUE),
+    (72, 'Il Maestro Barberia Italiana LTDA', 'Il Maestro Barbershop', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (73, 'Barbearia Gran Reserva Lounge ME', 'Gran Reserva Barbershop', 'PRO', 24900, 'PAST_DUE', 6, TRUE),
+    (74, 'Centurion Barber Club SP LTDA', 'Centurion Barber Club', 'ENTERPRISE', 59900, 'ACTIVE', NULL, TRUE),
+    (75, 'Barbearia Universitária Express ME', 'Universitária Express Barber', 'BASIC', 14900, 'ACTIVE', NULL, TRUE),
+    (76, 'Barba & Bigode do Interior ME', 'Barba & Bigode do Interior', 'BASIC', 19900, 'ACTIVE', NULL, TRUE),
+    (77, 'The Boss Barber Executive Lounge', 'The Boss Barber Lounge', 'ENTERPRISE', 49900, 'TRIAL', NULL, TRUE),
+    (78, 'Barbearia Vintage Blues & Jazz ME', 'Vintage Blues Barbershop', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (79, 'Legado Barbeiro Confraria LTDA', 'Legado Barbeiro Confraria', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (80, 'Barbearia Nova Era Futurista EIRELI', 'Nova Era Barber Studio', 'BASIC', 19900, 'CANCELLED', NULL, FALSE),
+    (81, 'Barbearia Três Irmãos Tradicional', 'Três Irmãos Barbershop', 'BASIC', 14900, 'ACTIVE', NULL, TRUE),
+    (82, 'The Barber King Deluxe Studio LTDA', 'The Barber King Deluxe', 'ENTERPRISE', 59900, 'ACTIVE', NULL, TRUE),
+    (83, 'Barbearia Faroeste Caboclo ME', 'Faroeste Caboclo Barber', 'PRO', 24900, 'PAST_DUE', 25, TRUE),
+    (84, 'Metrópole Hair & Shave Club LTDA', 'Metrópole Barbershop', 'ENTERPRISE', 49900, 'ACTIVE', NULL, TRUE),
+    (85, 'Barbearia Alquimia dos Fios ME', 'Alquimia dos Fios Barber', 'BASIC', 19900, 'ACTIVE', NULL, TRUE),
+    (86, 'Signature Cut Male Grooming ME', 'Signature Cut Barbershop', 'PRO', 24900, 'ACTIVE', NULL, TRUE),
+    (87, 'Barbearia do Silva & Cabelo ME', 'Barbearia do Silva', 'BASIC', 14900, 'ACTIVE', NULL, TRUE),
+    (88, 'Cavalheiros de Sangue Azul LTDA', 'Sangue Azul Barber Club', 'ENTERPRISE', 59900, 'ACTIVE', NULL, TRUE),
+    (89, 'Barbearia Old Town Shave Shop ME', 'Old Town Shave Shop', 'PRO', 24900, 'PAST_DUE', 4, TRUE),
+    (90, 'Zero Hora Night Barber Club ME', 'Zero Hora Night Barber', 'BASIC', 19900, 'CANCELLED', NULL, FALSE)
 )
 INSERT INTO organizations (
     id, name, trade_name, document, plan, monthly_fee_in_cents, subscription_status, past_due_since, is_active, created_at, updated_at
@@ -84,15 +129,15 @@ SELECT
     sub_status,
     CASE WHEN past_due_days IS NOT NULL THEN NOW() - (past_due_days * INTERVAL '1 day') ELSE NULL END,
     is_active,
-    NOW() - ((46 - idx) * INTERVAL '6 days'),
+    NOW() - ((91 - idx) * INTERVAL '3 days'),
     NOW()
 FROM tenant_data;
 
 -- ============================================================================
--- 2. Barbershop Units (Branches for all 45 Franchises)
+-- 2. Barbershop Units (Branches for all 90 Franchises)
 -- Multi-unit for top franchises, single unit for boutique barbershops
 -- ============================================================================
--- Main Branches (Unit 1 for all 45 tenants)
+-- Main Branches (Unit 1 for all 90 tenants)
 INSERT INTO barbershop_units (id, organization_id, name, phone, address, is_active, created_at, updated_at)
 SELECT 
     ('b0000000-0000-0000-0000-' || LPAD(idx::TEXT, 12, '0'))::UUID,
@@ -104,13 +149,13 @@ SELECT
     o.created_at,
     NOW()
 FROM organizations o
-JOIN (SELECT generate_series(1, 45) AS idx) s 
+JOIN (SELECT generate_series(1, 90) AS idx) s 
   ON o.id = ('a0000000-0000-0000-0000-' || LPAD(s.idx::TEXT, 12, '0'))::UUID;
 
--- Additional Secondary Branches for ENTERPRISE and top PRO franchises (15 additional units)
+-- Additional Secondary Branches for ENTERPRISE and top PRO franchises (30 additional units)
 INSERT INTO barbershop_units (id, organization_id, name, phone, address, is_active, created_at, updated_at)
 SELECT 
-    ('b0000000-0000-0000-0000-' || LPAD((45 + idx)::TEXT, 12, '0'))::UUID,
+    ('b0000000-0000-0000-0000-' || LPAD((90 + idx)::TEXT, 12, '0'))::UUID,
     ('a0000000-0000-0000-0000-' || LPAD(idx::TEXT, 12, '0'))::UUID,
     o.trade_name || ' - Filial Shopping',
     '1198' || LPAD(idx::TEXT, 7, '0'),
@@ -119,7 +164,7 @@ SELECT
     o.created_at + INTERVAL '10 days',
     NOW()
 FROM organizations o
-JOIN (SELECT generate_series(1, 15) AS idx) s 
+JOIN (SELECT generate_series(1, 30) AS idx) s 
   ON o.id = ('a0000000-0000-0000-0000-' || LPAD(s.idx::TEXT, 12, '0'))::UUID;
 
 -- ============================================================================
@@ -131,7 +176,7 @@ FROM barbershop_units u
 CROSS JOIN (SELECT generate_series(0, 6) AS day) d;
 
 -- ============================================================================
--- 4. Users (Super Admin, 45 Franchise Owners, Managers, Receptionists & Barbers)
+-- 4. Users (Super Admin, 90 Franchise Owners, Managers, Receptionists & Barbers)
 -- Bcrypt Hash for 'admin123': $2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.
 -- ============================================================================
 -- 1. Global Super Admin
@@ -139,7 +184,7 @@ INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, rol
 VALUES 
 ('c0000000-0000-0000-0000-000000000001', NULL, NULL, 'Carlos Super Admin', 'superadmin@pontocerto.com.br', '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.', 'SUPER_ADMIN', TRUE, NOW(), NOW());
 
--- 2. 45 Franchise Owners (ORG_OWNER) - 100% ATIVOS em todas as organizações
+-- 2. 90 Franchise Owners (ORG_OWNER) - 100% ATIVOS em todas as organizações
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
     gen_random_uuid(),
@@ -157,10 +202,10 @@ SELECT
     o.created_at,
     NOW()
 FROM organizations o
-JOIN (SELECT generate_series(1, 45) AS idx) s 
+JOIN (SELECT generate_series(1, 90) AS idx) s 
   ON o.id = ('a0000000-0000-0000-0000-' || LPAD(s.idx::TEXT, 12, '0'))::UUID;
 
--- 3. Managers for all units (UNIT_MANAGER) - 60 gerentes de filial
+-- 3. Managers for all units (UNIT_MANAGER) - 120 gerentes de filial
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
     gen_random_uuid(),
@@ -178,7 +223,7 @@ SELECT
     NOW()
 FROM barbershop_units u;
 
--- 4. Receptionists for units (RECEPTIONIST) - 80 recepcionistas (10% demitidas/inativas)
+-- 4. Receptionists for units (RECEPTIONIST) - 160 recepcionistas (10% demitidas/inativas)
 WITH unit_ranked AS (
     SELECT id, organization_id, name, created_at, ROW_NUMBER() OVER(ORDER BY id) AS u_idx
     FROM barbershop_units
@@ -187,7 +232,7 @@ rec_slots AS (
     SELECT u.id AS unit_id, u.organization_id, u.name AS unit_name, u.created_at, u.u_idx, s.n AS rec_num
     FROM unit_ranked u
     CROSS JOIN (SELECT 1 AS n UNION ALL SELECT 2) s
-    WHERE s.n = 1 OR u.u_idx <= 20
+    WHERE s.n = 1 OR u.u_idx <= 40
 )
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
@@ -209,7 +254,7 @@ SELECT
     NOW()
 FROM rec_slots rs;
 
--- 5. Operational Barbers (BARBER) - 300 barbeiros (5 por unidade, 10% demitidos/inativos)
+-- 5. Operational Barbers (BARBER) - 600 barbeiros (5 por unidade, 10% demitidos/inativos)
 WITH unit_ranked AS (
     SELECT id, organization_id, name, created_at, ROW_NUMBER() OVER(ORDER BY id) AS u_idx
     FROM barbershop_units
