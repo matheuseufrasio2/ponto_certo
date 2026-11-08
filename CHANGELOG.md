@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.12.0...ponto_certo-v0.13.0) (2026-11-08)
+
+
+### Features
+
+* **domain:** define canonical error codes ([85b9ea0](https://github.com/matheuseufrasio2/ponto_certo/commit/85b9ea08ac3fa7ffd7842b367fe8fb57fe6510ae))
+* **handler:** add client message localization support ([0eb6844](https://github.com/matheuseufrasio2/ponto_certo/commit/0eb68445db1137fa59e71c5f8db06a2c06c74922))
+* **i18n:** implement multilingual error localization with embedded json ([f2f5753](https://github.com/matheuseufrasio2/ponto_certo/commit/f2f5753bfa8921d1244c705680e196b6df32c1ca))
+* **i18n:** implement multilingual error localization with embedded json ([39d6c46](https://github.com/matheuseufrasio2/ponto_certo/commit/39d6c46a9334eefff6c1864b811221af7938e581))
+
 ## [0.12.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.11.0...ponto_certo-v0.12.0) (2026-11-08)
 
 
