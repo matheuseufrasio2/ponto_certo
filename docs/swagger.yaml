@@ -86,6 +86,33 @@ definitions:
     - StatusCompleted
     - StatusCancelled
     - StatusNoShow
+  domain.AuditLog:
+    properties:
+      action:
+        type: string
+      actor_id:
+        type: string
+      actor_role:
+        $ref: '#/definitions/domain.Role'
+      created_at:
+        type: string
+      details:
+        type: object
+      id:
+        type: string
+      ip_address:
+        type: string
+      organization_id:
+        type: string
+      target_entity:
+        type: string
+      target_id:
+        type: string
+      unit_id:
+        type: string
+      user_agent:
+        type: string
+    type: object
   domain.Barber:
     properties:
       commission_percentage:
@@ -108,6 +135,25 @@ definitions:
         type: string
       user_id:
         description: Linked if barber has system login
+        type: string
+    type: object
+  domain.BarberScheduleBlock:
+    properties:
+      barber_id:
+        type: string
+      created_at:
+        type: string
+      created_by_user_id:
+        type: string
+      end_time:
+        type: string
+      id:
+        type: string
+      reason:
+        type: string
+      start_time:
+        type: string
+      updated_at:
         type: string
     type: object
   domain.BarberStatus:
@@ -214,6 +260,32 @@ definitions:
       start_time:
         type: string
       unit_id:
+        type: string
+    type: object
+  domain.CreateEmployeeLeaveInput:
+    properties:
+      end_date:
+        description: YYYY-MM-DD
+        type: string
+      leave_type:
+        $ref: '#/definitions/domain.LeaveType'
+      reason:
+        type: string
+      start_date:
+        description: YYYY-MM-DD
+        type: string
+      unit_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  domain.CreateScheduleBlockInput:
+    properties:
+      end_time:
+        type: string
+      reason:
+        type: string
+      start_time:
         type: string
     type: object
   domain.CreateTenantInput:
@@ -325,6 +397,37 @@ definitions:
           $ref: '#/definitions/domain.DevUser'
         type: array
     type: object
+  domain.EmployeeLeave:
+    properties:
+      created_at:
+        type: string
+      created_by_user_id:
+        type: string
+      end_date:
+        description: YYYY-MM-DD
+        type: string
+      id:
+        type: string
+      leave_type:
+        $ref: '#/definitions/domain.LeaveType'
+      organization_id:
+        type: string
+      reason:
+        type: string
+      start_date:
+        description: YYYY-MM-DD
+        type: string
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+      user_role:
+        $ref: '#/definitions/domain.Role'
+    type: object
   domain.ImpersonateResponse:
     properties:
       expires_in:
@@ -339,6 +442,18 @@ definitions:
       token:
         type: string
     type: object
+  domain.LeaveType:
+    enum:
+    - VACATION
+    - MEDICAL_LEAVE
+    - PERSONAL
+    - OTHER
+    type: string
+    x-enum-varnames:
+    - LeaveTypeVacation
+    - LeaveTypeMedicalLeave
+    - LeaveTypePersonal
+    - LeaveTypeOther
   domain.Organization:
     properties:
       active_users_count:
@@ -363,10 +478,37 @@ definitions:
         type: string
       subscription_status:
         $ref: '#/definitions/domain.SubscriptionStatus'
+      total_users_count:
+        type: integer
       trade_name:
         type: string
       units_count:
         type: integer
+      updated_at:
+        type: string
+    type: object
+  domain.OrganizationEmployee:
+    properties:
+      barber_id:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      organization_id:
+        type: string
+      role:
+        $ref: '#/definitions/domain.Role'
+      unit_id:
+        type: string
+      unit_name:
+        type: string
       updated_at:
         type: string
     type: object
@@ -593,6 +735,24 @@ definitions:
       total_barbers_count:
         type: integer
     type: object
+  domain.ToggleUserStatusInput:
+    properties:
+      is_active:
+        type: boolean
+    type: object
+  domain.ToggleUserStatusResponse:
+    properties:
+      is_active:
+        type: boolean
+      organization_id:
+        type: string
+      organization_is_active:
+        type: boolean
+      role:
+        $ref: '#/definitions/domain.Role'
+      user_id:
+        type: string
+    type: object
   domain.UnitRevenueComparison:
     properties:
       revenue_in_cents:
@@ -724,6 +884,45 @@ info:
   title: Ponto Certo API
   version: "1.0"
 paths:
+  /admin/audit-logs:
+    get:
+      description: Returns global platform-wide audit trail across all tenants (Super
+        Admin only)
+      parameters:
+      - description: 'Maximum number of records to return (default: 50)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Pagination offset (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.AuditLog'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List global SaaS audit logs
+      tags:
+      - admin
   /admin/metrics:
     get:
       description: Returns platform-wide MRR, ARR, active tenants, churn rate, and
@@ -1074,12 +1273,17 @@ paths:
       - admin
   /admin/tenants/{id}/users:
     get:
-      description: Returns users of a tenant for diagnostic impersonation
+      description: Returns users of a tenant for diagnostic impersonation filtered
+        by status
       parameters:
       - description: Organization UUID
         in: path
         name: id
         required: true
+        type: string
+      - description: 'Filter users by status: active, inactive, all'
+        in: query
+        name: status
         type: string
       produces:
       - application/json
@@ -1399,6 +1603,223 @@ paths:
       summary: Health check endpoint
       tags:
       - health
+  /manager/barbers:
+    get:
+      description: Returns active or inactive barbers assigned to a specific branch
+        unit
+      parameters:
+      - description: Unit UUID (defaults to manager's assigned unit)
+        in: query
+        name: unit_id
+        type: string
+      - description: 'Filter barbers by status: active, inactive, all'
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Barber'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List barbers of a branch
+      tags:
+      - manager
+  /manager/barbers/{id}/blocks:
+    get:
+      description: Retrieves all agenda blockages for a barber, optionally filtered
+        by date range
+      parameters:
+      - description: Barber UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Filter start (RFC3339 format)
+        in: query
+        name: from
+        type: string
+      - description: Filter end (RFC3339 format)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.BarberScheduleBlock'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List barber schedule blocks
+      tags:
+      - manager
+    post:
+      consumes:
+      - application/json
+      description: Blocks a time interval on a barber's schedule (e.g. lunch, medical
+        appointment, vacation)
+      parameters:
+      - description: Barber UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Block details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateScheduleBlockInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.BarberScheduleBlock'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create barber schedule block
+      tags:
+      - manager
+  /manager/barbers/blocks/{block_id}:
+    delete:
+      description: Removes an agenda blockage, freeing up time slots for appointment
+        scheduling
+      parameters:
+      - description: Schedule Block UUID
+        in: path
+        name: block_id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete barber schedule block
+      tags:
+      - manager
+  /owner/audit-logs:
+    get:
+      description: Returns audit trail of actions within the caller's organization
+        (Owner / Super Admin)
+      parameters:
+      - description: 'Maximum number of records to return (default: 50)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Pagination offset (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.AuditLog'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List organization audit logs
+      tags:
+      - owner
   /owner/billings:
     get:
       description: Returns paginated financial transactions with optional unit and
@@ -1446,6 +1867,45 @@ paths:
       summary: List consolidated billings
       tags:
       - owner
+  /owner/employees:
+    get:
+      description: Returns all staff members for the owner's organization, with optional
+        status filter (active, inactive, all)
+      parameters:
+      - description: 'Filter status: active, inactive, all'
+        in: query
+        name: status
+        type: string
+      - description: Filter by specific barbershop unit UUID
+        in: query
+        name: unit_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.OrganizationEmployee'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List organization employees and dismissed staff history
+      tags:
+      - owner
   /owner/export/csv:
     get:
       description: Streams a CSV file containing all billing records for the organization
@@ -1476,6 +1936,127 @@ paths:
       security:
       - BearerAuth: []
       summary: Export consolidated billings as CSV
+      tags:
+      - owner
+  /owner/leaves:
+    get:
+      description: Retrieves all employee leaves in the organization, with optional
+        status and unit filters
+      parameters:
+      - description: Filter by unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: 'Filter status: all, active, upcoming, past (default: all)'
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.EmployeeLeave'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List employee vacations and leaves
+      tags:
+      - owner
+    post:
+      consumes:
+      - application/json
+      description: Creates a vacation or absence period for any staff member (barber,
+        receptionist, manager, owner)
+      parameters:
+      - description: Leave details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateEmployeeLeaveInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.EmployeeLeave'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Schedule vacation or leave for an employee
+      tags:
+      - owner
+  /owner/leaves/{id}:
+    delete:
+      description: Cancels a vacation or absence period, restoring barber availability
+        if applicable
+      parameters:
+      - description: Employee Leave UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel an employee leave
       tags:
       - owner
   /owner/metrics:
@@ -1797,6 +2378,56 @@ paths:
       summary: Obter catálogo da unidade
       tags:
       - Catalog
+  /users/{id}/toggle-status:
+    patch:
+      consumes:
+      - application/json
+      description: Updates user active status based on strict hierarchical RBAC rules
+        (Super Admin > Owner > Manager)
+      parameters:
+      - description: Target User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Toggle status payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ToggleUserStatusInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ToggleUserStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate or deactivate a user
+      tags:
+      - users
 securityDefinitions:
   BearerAuth:
     description: Digite "Bearer " seguido pelo token JWT.

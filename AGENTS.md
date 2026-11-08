@@ -55,6 +55,8 @@ This document defines the **non-negotiable system invariants and architectural g
 - **State Machine Transitions**: Appointments start in `SCHEDULED`. Valid transitions are only:
   - `SCHEDULED` $\rightarrow$ `COMPLETED`
   - `SCHEDULED` $\rightarrow$ `CANCELLED`
+- **Organization & Owner Invariant**: An active organization must always have an active `ORG_OWNER`. Deactivating an `ORG_OWNER` atomically deactivates their organization (`organizations.is_active = false`).
+- **Audit Logging Invariant**: Critical and sensitive operations (`IMPERSONATE_USER`, `RESET_TENANT_PASSWORD`, `TOGGLE_TENANT_STATUS`, `UPDATE_TENANT_PLAN`, `USER_DEACTIVATED`, `CHECKOUT_PROCESSED`, agenda blocks, leaves) must record an immutable entry in `audit_logs` capturing actor, target, IP address, and details snapshot.
 
 ### 5. Structured Logging & Production Telemetry (`log/slog`)
 - **NEVER** use `fmt.Println` or standard `log.Print` in production code.
