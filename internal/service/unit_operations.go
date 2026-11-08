@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -22,12 +23,18 @@ func (c *UserClaims) HasUnitAccess(targetUnitID string) bool {
 
 // UnitOperationsService coordinates branch management operations with strict RBAC.
 type UnitOperationsService struct {
-	repo repository.UnitOperationsRepository
+	repo          repository.UnitOperationsRepository
+	auditRecorder AuditLogRecorder
 }
 
 // NewUnitOperationsService instantiates a unit operations service.
 func NewUnitOperationsService(repo repository.UnitOperationsRepository) *UnitOperationsService {
 	return &UnitOperationsService{repo: repo}
+}
+
+// SetAuditRecorder assigns the audit log recorder.
+func (s *UnitOperationsService) SetAuditRecorder(recorder AuditLogRecorder) {
+	s.auditRecorder = recorder
 }
 
 // GetManagerMetrics retrieves live branch KPIs, verifying unit authorization.
@@ -72,7 +79,29 @@ func (s *UnitOperationsService) UpdateBarberStatus(ctx context.Context, unitID, 
 		changedBy = &claims.UserID
 	}
 
-	return s.repo.UpdateBarberStatus(ctx, barberID, input.Status, changedBy)
+	if err := s.repo.UpdateBarberStatus(ctx, barberID, input.Status, changedBy); err != nil {
+		return err
+	}
+
+	if s.auditRecorder != nil {
+		meta := domain.GetAuditMetadata(ctx)
+		details, _ := json.Marshal(map[string]any{
+			"new_status": input.Status,
+		})
+		_ = s.auditRecorder.Record(ctx, domain.AuditLog{
+			UnitID:       &unitID,
+			ActorID:      changedBy,
+			ActorRole:    claims.Role,
+			Action:       "BARBER_STATUS_CHANGE",
+			TargetEntity: "barbers",
+			TargetID:     barberID,
+			Details:      details,
+			IPAddress:    meta.IPAddress,
+			UserAgent:    meta.UserAgent,
+		})
+	}
+
+	return nil
 }
 
 // ToggleService toggles availability of a service for a branch.
@@ -80,13 +109,39 @@ func (s *UnitOperationsService) ToggleService(ctx context.Context, unitID, servi
 	if !claims.HasUnitAccess(unitID) {
 		return domain.ErrForbidden
 	}
-	return s.repo.ToggleServiceUnitAvailability(ctx, unitID, serviceID, input.IsActive)
+	if err := s.repo.ToggleServiceUnitAvailability(ctx, unitID, serviceID, input.IsActive); err != nil {
+		return err
+	}
+
+	if s.auditRecorder != nil {
+		meta := domain.GetAuditMetadata(ctx)
+		var actorID *string
+		if claims != nil && claims.UserID != "" {
+			actorID = &claims.UserID
+		}
+		details, _ := json.Marshal(map[string]any{
+			"is_active": input.IsActive,
+		})
+		_ = s.auditRecorder.Record(ctx, domain.AuditLog{
+			UnitID:       &unitID,
+			ActorID:      actorID,
+			ActorRole:    claims.Role,
+			Action:       "TOGGLE_SERVICE_UNIT",
+			TargetEntity: "services",
+			TargetID:     serviceID,
+			Details:      details,
+			IPAddress:    meta.IPAddress,
+			UserAgent:    meta.UserAgent,
+		})
+	}
+
+	return nil
 }
 
-// ListBarbers retrieves all active barbers for a branch.
-func (s *UnitOperationsService) ListBarbers(ctx context.Context, unitID string, claims *UserClaims) ([]domain.Barber, error) {
+// ListBarbers retrieves barbers for a branch, optionally filtered by status (active, inactive, all).
+func (s *UnitOperationsService) ListBarbers(ctx context.Context, unitID string, status string, claims *UserClaims) ([]domain.Barber, error) {
 	if !claims.HasUnitAccess(unitID) {
 		return nil, domain.ErrForbidden
 	}
-	return s.repo.ListBarbersByUnit(ctx, unitID)
+	return s.repo.ListBarbersByUnit(ctx, unitID, status)
 }

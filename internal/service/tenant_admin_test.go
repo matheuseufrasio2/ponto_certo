@@ -15,7 +15,7 @@ type mockTenantAdminRepo struct {
 	updateTenantPlanFn   func(ctx context.Context, tenantID, plan string, feeInCents int64) (*domain.Organization, error)
 	createTenantFn       func(ctx context.Context, input domain.CreateTenantInput, passwordHash string) (*domain.Organization, error)
 	toggleStatusFn       func(ctx context.Context, tenantID string, isActive bool) error
-	getUsersFn           func(ctx context.Context, tenantID string) ([]domain.User, error)
+	getUsersFn           func(ctx context.Context, tenantID string, status string) ([]domain.User, error)
 	getUnitsFn           func(ctx context.Context, tenantID string) ([]domain.BarbershopUnit, error)
 	getPrimaryOwnerFn    func(ctx context.Context, tenantID string) (*domain.User, error)
 	updateUserPasswordFn func(ctx context.Context, userID, passwordHash string) error
@@ -50,9 +50,9 @@ func (m *mockTenantAdminRepo) ToggleTenantActiveStatus(ctx context.Context, tena
 	return nil
 }
 
-func (m *mockTenantAdminRepo) GetTenantUsers(ctx context.Context, tenantID string) ([]domain.User, error) {
+func (m *mockTenantAdminRepo) GetTenantUsers(ctx context.Context, tenantID string, status string) ([]domain.User, error) {
 	if m.getUsersFn != nil {
-		return m.getUsersFn(ctx, tenantID)
+		return m.getUsersFn(ctx, tenantID, status)
 	}
 	return nil, nil
 }
@@ -463,6 +463,48 @@ func TestTenantAdminService_ResetTenantPassword(t *testing.T) {
 		}
 		if len(res.TemporaryPassword) < 8 {
 			t.Errorf("expected generated password >= 8 chars, got: %s", res.TemporaryPassword)
+		}
+	})
+}
+
+func TestTenantAdminService_GetTenantUsers(t *testing.T) {
+	ctx := context.Background()
+	secret := "test-secret"
+	adminClaims := &service.UserClaims{
+		UserID: "super-admin-1",
+		Role:   domain.RoleSuperAdmin,
+	}
+
+	repo := &mockTenantAdminRepo{
+		getUsersFn: func(ctx context.Context, tenantID string, status string) ([]domain.User, error) {
+			if status == "inactive" {
+				return []domain.User{
+					{ID: "u-demitido", Name: "Ex Funcionario", IsActive: false},
+				}, nil
+			}
+			return []domain.User{
+				{ID: "u-ativo", Name: "Funcionario Ativo", IsActive: true},
+			}, nil
+		},
+	}
+
+	svc := service.NewTenantAdminService(repo, secret)
+
+	t.Run("successfully filters inactive users for super admin", func(t *testing.T) {
+		users, err := svc.GetTenantUsers(ctx, adminClaims, "org-1", "inactive")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(users) != 1 || users[0].ID != "u-demitido" {
+			t.Errorf("expected inactive user, got %+v", users)
+		}
+	})
+
+	t.Run("rejects non-superadmin caller", func(t *testing.T) {
+		ownerClaims := &service.UserClaims{UserID: "o-1", Role: domain.RoleOrgOwner}
+		_, err := svc.GetTenantUsers(ctx, ownerClaims, "org-1", "active")
+		if err != domain.ErrForbidden {
+			t.Errorf("expected ErrForbidden, got %v", err)
 		}
 	})
 }

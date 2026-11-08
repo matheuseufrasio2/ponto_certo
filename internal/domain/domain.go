@@ -1,41 +1,51 @@
 package domain
 
 import (
+	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 )
 
 // Common domain errors for the barbershop system
 var (
-	ErrNotFound                   = errors.New("resource not found")
-	ErrBarberNotFound             = errors.New("barber not found")
-	ErrCustomerNotFound           = errors.New("customer not found")
-	ErrClientNotFound             = errors.New("client not found")
-	ErrServiceNotFound            = errors.New("service not found")
-	ErrBillingNotFound            = errors.New("billing record not found")
-	ErrUserNotFound               = errors.New("user not found")
-	ErrOrganizationNotFound       = errors.New("organization not found")
-	ErrUnitNotFound               = errors.New("unit not found")
-	ErrProductNotFound            = errors.New("product not found")
-	ErrAppointmentNotFound        = errors.New("appointment not found")
-	ErrAppointmentConflict        = errors.New("barber already has an appointment scheduled at this time")
-	ErrInvalidTimeSlot            = errors.New("invalid appointment time slot")
-	ErrInvalidPaymentMethod       = errors.New("invalid payment method")
-	ErrInvalidBillingStatus       = errors.New("invalid billing status")
-	ErrInvalidRole                = errors.New("invalid user role")
-	ErrUnauthorized               = errors.New("unauthorized")
-	ErrForbidden                  = errors.New("access forbidden")
-	ErrInvalidProductPrice        = errors.New("product price must be greater than or equal to zero")
-	ErrInvalidProductStock        = errors.New("product stock quantity must be greater than or equal to zero")
+	ErrNotFound                     = errors.New("resource not found")
+	ErrBarberNotFound               = errors.New("barber not found")
+	ErrCustomerNotFound             = errors.New("customer not found")
+	ErrClientNotFound               = errors.New("client not found")
+	ErrServiceNotFound              = errors.New("service not found")
+	ErrBillingNotFound              = errors.New("billing record not found")
+	ErrUserNotFound                 = errors.New("user not found")
+	ErrOrganizationNotFound         = errors.New("organization not found")
+	ErrUnitNotFound                 = errors.New("unit not found")
+	ErrProductNotFound              = errors.New("product not found")
+	ErrAppointmentNotFound          = errors.New("appointment not found")
+	ErrAppointmentConflict          = errors.New("barber already has an appointment scheduled at this time")
+	ErrInvalidTimeSlot              = errors.New("invalid appointment time slot")
+	ErrInvalidPaymentMethod         = errors.New("invalid payment method")
+	ErrInvalidBillingStatus         = errors.New("invalid billing status")
+	ErrInvalidRole                  = errors.New("invalid user role")
+	ErrUnauthorized                 = errors.New("unauthorized")
+	ErrForbidden                    = errors.New("access forbidden")
+	ErrInvalidProductPrice          = errors.New("product price must be greater than or equal to zero")
+	ErrInvalidProductStock          = errors.New("product stock quantity must be greater than or equal to zero")
 	ErrInvalidAppointmentTransition = errors.New("invalid appointment status transition")
-	ErrInvalidAppointmentTime     = errors.New("appointment start time must be before end time")
-	ErrBillingAlreadyProcessed    = errors.New("appointment has already been paid and processed")
-	ErrBarberHasFutureAppointments = errors.New("cannot change barber status to off duty or vacation while future appointments exist")
-	ErrInvalidBarberStatus         = errors.New("invalid barber operational status")
-	ErrCannotImpersonateSelf       = errors.New("cannot impersonate yourself")
-	ErrCannotImpersonateSuperAdmin = errors.New("cannot impersonate another super admin")
-	ErrImpersonationActionBlocked  = errors.New("action blocked during user impersonation")
-	ErrTenantInactive              = errors.New("organization blocked due to registration or financial pending issues")
+	ErrInvalidAppointmentTime       = errors.New("appointment start time must be before end time")
+	ErrBillingAlreadyProcessed      = errors.New("appointment has already been paid and processed")
+	ErrBarberHasFutureAppointments  = errors.New("cannot change barber status to off duty or vacation while future appointments exist")
+	ErrInvalidBarberStatus          = errors.New("invalid barber operational status")
+	ErrCannotImpersonateSelf        = errors.New("cannot impersonate yourself")
+	ErrCannotImpersonateSuperAdmin  = errors.New("cannot impersonate another super admin")
+	ErrImpersonationActionBlocked   = errors.New("action blocked during user impersonation")
+	ErrTenantInactive               = errors.New("organization blocked due to registration or financial pending issues")
+	ErrCannotDeactivateSuperAdmin   = errors.New("super admin cannot be deactivated")
+	ErrCannotDeactivateSelf         = errors.New("cannot change your own active status")
+	ErrInsufficientRoleHierarchy    = errors.New("insufficient role hierarchy to change this user status")
+	ErrScheduleBlockConflict        = errors.New("schedule block conflicts with existing appointments")
+	ErrScheduleBlockNotFound        = errors.New("schedule block not found")
+	ErrEmployeeLeaveNotFound        = errors.New("employee leave not found")
+	ErrInvalidDateRange             = errors.New("invalid date range: start date must be before or equal to end date")
+	ErrEmployeeLeaveConflict        = errors.New("employee already has a leave scheduled for this period")
 )
 
 // BarberStatus defines live operational shift state for a barber.
@@ -102,6 +112,7 @@ type Organization struct {
 	IsActive           bool               `json:"is_active"`
 	UnitsCount         int                `json:"units_count"`
 	ActiveUsersCount   int                `json:"active_users_count"`
+	TotalUsersCount    int                `json:"total_users_count"`
 	LastActivityAt     *time.Time         `json:"last_activity_at,omitempty"`
 	PastDueSince       *time.Time         `json:"past_due_since,omitempty"`
 	CreatedAt          time.Time          `json:"created_at"`
@@ -135,6 +146,35 @@ type User struct {
 	SubscriptionStatus   *SubscriptionStatus `json:"subscription_status,omitempty"`
 	CreatedAt            time.Time           `json:"created_at"`
 	UpdatedAt            time.Time           `json:"updated_at"`
+}
+
+// OrganizationEmployee represents a staff member (manager, receptionist, barber) in an organization.
+type OrganizationEmployee struct {
+	ID             string    `json:"id"`
+	OrganizationID string    `json:"organization_id"`
+	UnitID         *string   `json:"unit_id,omitempty"`
+	UnitName       string    `json:"unit_name,omitempty"`
+	Name           string    `json:"name"`
+	Email          string    `json:"email"`
+	Role           Role      `json:"role"`
+	IsActive       bool      `json:"is_active"`
+	BarberID       *string   `json:"barber_id,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+// ToggleUserStatusInput models payload for toggling user active status.
+type ToggleUserStatusInput struct {
+	IsActive bool `json:"is_active"`
+}
+
+// ToggleUserStatusResponse carries updated user status and any cascaded organization status.
+type ToggleUserStatusResponse struct {
+	UserID               string  `json:"user_id"`
+	IsActive             bool    `json:"is_active"`
+	Role                 Role    `json:"role"`
+	OrganizationID       *string `json:"organization_id,omitempty"`
+	OrganizationIsActive *bool   `json:"organization_is_active,omitempty"`
 }
 
 // OwnerSubscription defines subscription status and commercial tier for an organization owner.
@@ -184,7 +224,7 @@ const (
 	ServiceCategoryCabeloEBarba      ServiceCategory = "CABELO_E_BARBA"
 	ServiceCategoryCombos            ServiceCategory = "COMBOS"
 	ServiceCategoryTratamentos       ServiceCategory = "TRATAMENTOS_CAPILARES"
-	ServiceCategoryCuidadosEspeciais  ServiceCategory = "CUIDADOS_ESPECIAIS"
+	ServiceCategoryCuidadosEspeciais ServiceCategory = "CUIDADOS_ESPECIAIS"
 	ServiceCategoryQuimicas          ServiceCategory = "QUIMICAS_CAPILARES"
 	ServiceCategoryVisagismo         ServiceCategory = "VISAGISMO"
 	ServiceCategoryEsteticaFacial    ServiceCategory = "ESTETICA_FACIAL"
@@ -314,13 +354,14 @@ type BarberWorkingHour struct {
 
 // BarberScheduleBlock represents temporary agenda block (e.g. time off, doctor, vacation).
 type BarberScheduleBlock struct {
-	ID        string    `json:"id"`
-	BarberID  string    `json:"barber_id"`
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
-	Reason    string    `json:"reason"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID              string    `json:"id"`
+	BarberID        string    `json:"barber_id"`
+	StartTime       time.Time `json:"start_time"`
+	EndTime         time.Time `json:"end_time"`
+	Reason          string    `json:"reason"`
+	CreatedByUserID *string   `json:"created_by_user_id,omitempty"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 // BarberService associates a barber with a service they are qualified to perform.
@@ -711,7 +752,120 @@ func IsValidUUID(u string) bool {
 	return true
 }
 
+// AuditLog represents an immutable compliance log entry.
+type AuditLog struct {
+	ID             string          `json:"id"`
+	OrganizationID *string         `json:"organization_id,omitempty"`
+	UnitID         *string         `json:"unit_id,omitempty"`
+	ActorID        *string         `json:"actor_id,omitempty"`
+	ActorRole      Role            `json:"actor_role"`
+	Action         string          `json:"action"`
+	TargetEntity   string          `json:"target_entity"`
+	TargetID       string          `json:"target_id"`
+	Details        json.RawMessage `json:"details" swaggertype:"object"`
+	IPAddress      string          `json:"ip_address,omitempty"`
+	UserAgent      string          `json:"user_agent,omitempty"`
+	CreatedAt      time.Time       `json:"created_at"`
+}
 
+// LeaveType defines accepted types of employee leaves.
+type LeaveType string
 
+const (
+	LeaveTypeVacation     LeaveType = "VACATION"
+	LeaveTypeMedicalLeave LeaveType = "MEDICAL_LEAVE"
+	LeaveTypePersonal     LeaveType = "PERSONAL"
+	LeaveTypeOther        LeaveType = "OTHER"
+)
 
+// IsValid validates whether the leave type is supported.
+func (l LeaveType) IsValid() bool {
+	switch l {
+	case LeaveTypeVacation, LeaveTypeMedicalLeave, LeaveTypePersonal, LeaveTypeOther:
+		return true
+	default:
+		return false
+	}
+}
 
+// UserLeaveContext models user organizational and role data for leave management.
+type UserLeaveContext struct {
+	UserName       string  `json:"user_name"`
+	UserRole       Role    `json:"user_role"`
+	OrganizationID string  `json:"organization_id"`
+	UnitID         *string `json:"unit_id,omitempty"`
+	BarberID       *string `json:"barber_id,omitempty"`
+}
+
+// EmployeeLeave models employee vacations and leaves across all roles.
+type EmployeeLeave struct {
+	ID              string    `json:"id"`
+	OrganizationID  string    `json:"organization_id"`
+	UnitID          *string   `json:"unit_id,omitempty"`
+	UserID          string    `json:"user_id"`
+	UserName        string    `json:"user_name,omitempty"`
+	UserRole        Role      `json:"user_role,omitempty"`
+	LeaveType       LeaveType `json:"leave_type"`
+	StartDate       string    `json:"start_date"` // YYYY-MM-DD
+	EndDate         string    `json:"end_date"`   // YYYY-MM-DD
+	Reason          string    `json:"reason"`
+	CreatedByUserID *string   `json:"created_by_user_id,omitempty"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+// CreateScheduleBlockInput models payload for creating a schedule block for a barber.
+type CreateScheduleBlockInput struct {
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+	Reason    string    `json:"reason"`
+}
+
+// Validate checks required fields and chronological consistency.
+func (i CreateScheduleBlockInput) Validate() error {
+	if i.StartTime.IsZero() || i.EndTime.IsZero() {
+		return errors.New("start_time and end_time are required")
+	}
+	if !i.StartTime.Before(i.EndTime) {
+		return ErrInvalidAppointmentTime
+	}
+	if strings.TrimSpace(i.Reason) == "" {
+		return errors.New("reason is required")
+	}
+	return nil
+}
+
+// CreateEmployeeLeaveInput models payload for scheduling employee leave or vacation.
+type CreateEmployeeLeaveInput struct {
+	UserID    string    `json:"user_id"`
+	UnitID    *string   `json:"unit_id,omitempty"`
+	LeaveType LeaveType `json:"leave_type"`
+	StartDate string    `json:"start_date"` // YYYY-MM-DD
+	EndDate   string    `json:"end_date"`   // YYYY-MM-DD
+	Reason    string    `json:"reason"`
+}
+
+// Validate checks date ranges and required fields.
+func (i CreateEmployeeLeaveInput) Validate() error {
+	if strings.TrimSpace(i.UserID) == "" {
+		return errors.New("user_id is required")
+	}
+	if !i.LeaveType.IsValid() {
+		return errors.New("invalid leave_type")
+	}
+	start, err := time.Parse("2006-01-02", i.StartDate)
+	if err != nil {
+		return errors.New("invalid start_date format, must be YYYY-MM-DD")
+	}
+	end, err := time.Parse("2006-01-02", i.EndDate)
+	if err != nil {
+		return errors.New("invalid end_date format, must be YYYY-MM-DD")
+	}
+	if start.After(end) {
+		return ErrInvalidDateRange
+	}
+	if strings.TrimSpace(i.Reason) == "" {
+		return errors.New("reason is required")
+	}
+	return nil
+}

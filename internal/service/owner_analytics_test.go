@@ -13,12 +13,13 @@ import (
 )
 
 type mockOwnerAnalyticsRepo struct {
-	getKPIsFn       func(ctx context.Context, orgID string, unitID *string, start, end time.Time) (*domain.OwnerExecutiveKPIs, error)
+	getKPIsFn          func(ctx context.Context, orgID string, unitID *string, start, end time.Time) (*domain.OwnerExecutiveKPIs, error)
 	getRevenueByUnitFn func(ctx context.Context, orgID string, start, end time.Time) ([]domain.UnitRevenueComparison, error)
 	getServicesMixFn   func(ctx context.Context, orgID string, unitID *string, start, end time.Time) ([]domain.ServiceMixAnalytics, error)
-	listBillingsFn  func(ctx context.Context, orgID string, unitID *string, paymentMethod *string, limit, offset int) ([]domain.Billing, int, error)
-	getExportDataFn func(ctx context.Context, orgID string, unitID *string) ([]repository.BillingExportRow, error)
-	getSubscriptionFn func(ctx context.Context, orgID string) (*domain.OwnerSubscription, error)
+	listBillingsFn     func(ctx context.Context, orgID string, unitID *string, paymentMethod *string, limit, offset int) ([]domain.Billing, int, error)
+	getExportDataFn    func(ctx context.Context, orgID string, unitID *string) ([]repository.BillingExportRow, error)
+	getSubscriptionFn  func(ctx context.Context, orgID string) (*domain.OwnerSubscription, error)
+	listEmployeesFn    func(ctx context.Context, orgID string, status string, unitID *string) ([]domain.OrganizationEmployee, error)
 }
 
 func (m *mockOwnerAnalyticsRepo) GetExecutiveKPIs(ctx context.Context, orgID string, unitID *string, start, end time.Time) (*domain.OwnerExecutiveKPIs, error) {
@@ -68,6 +69,13 @@ func (m *mockOwnerAnalyticsRepo) GetOwnerSubscription(ctx context.Context, orgID
 		SubscriptionStatus: domain.SubscriptionStatusActive,
 		IsActive:           true,
 	}, nil
+}
+
+func (m *mockOwnerAnalyticsRepo) ListEmployees(ctx context.Context, orgID string, status string, unitID *string) ([]domain.OrganizationEmployee, error) {
+	if m.listEmployeesFn != nil {
+		return m.listEmployeesFn(ctx, orgID, status, unitID)
+	}
+	return nil, nil
 }
 
 func TestOwnerAnalyticsService_GetExecutiveKPIs(t *testing.T) {
@@ -271,6 +279,47 @@ func TestOwnerAnalyticsService_GetSubscription(t *testing.T) {
 		_, err := svc.GetSubscription(context.Background(), nil)
 		if err == nil {
 			t.Fatal("expected error, got nil")
+		}
+	})
+}
+
+func TestOwnerAnalyticsService_ListEmployees(t *testing.T) {
+	orgID := "org-123"
+	claims := &service.UserClaims{
+		UserID:         "owner-1",
+		Role:           domain.RoleOrgOwner,
+		OrganizationID: &orgID,
+	}
+
+	repo := &mockOwnerAnalyticsRepo{
+		listEmployeesFn: func(ctx context.Context, oID string, status string, unitID *string) ([]domain.OrganizationEmployee, error) {
+			if status == "inactive" {
+				return []domain.OrganizationEmployee{
+					{ID: "e-demitido", Name: "Ex Barbeiro", Role: domain.RoleBarber, IsActive: false},
+				}, nil
+			}
+			return []domain.OrganizationEmployee{
+				{ID: "e-ativo", Name: "Barbeiro Ativo", Role: domain.RoleBarber, IsActive: true},
+			}, nil
+		},
+	}
+
+	svc := service.NewOwnerAnalyticsService(repo)
+
+	t.Run("returns inactive employees for owner with status=inactive", func(t *testing.T) {
+		emps, err := svc.ListEmployees(context.Background(), claims, "inactive", nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(emps) != 1 || emps[0].ID != "e-demitido" {
+			t.Errorf("unexpected employees: %+v", emps)
+		}
+	})
+
+	t.Run("rejects unauthorized caller without claims", func(t *testing.T) {
+		_, err := svc.ListEmployees(context.Background(), nil, "active", nil)
+		if err != domain.ErrUnauthorized {
+			t.Errorf("expected ErrUnauthorized, got %v", err)
 		}
 	})
 }

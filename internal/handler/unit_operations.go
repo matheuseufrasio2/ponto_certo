@@ -17,7 +17,7 @@ type UnitOperationsManager interface {
 	GetDailyCashClosing(ctx context.Context, unitID string, date time.Time, claims *service.UserClaims) (*domain.CashClosingSummary, error)
 	UpdateBarberStatus(ctx context.Context, unitID, barberID string, input domain.UpdateBarberStatusInput, claims *service.UserClaims) error
 	ToggleService(ctx context.Context, unitID, serviceID string, input domain.ToggleServiceInput, claims *service.UserClaims) error
-	ListBarbers(ctx context.Context, unitID string, claims *service.UserClaims) ([]domain.Barber, error)
+	ListBarbers(ctx context.Context, unitID string, status string, claims *service.UserClaims) ([]domain.Barber, error)
 }
 
 // UnitOperationsHandler manages unit manager endpoints.
@@ -100,6 +100,19 @@ func (h *UnitOperationsHandler) GetCashClosing(w http.ResponseWriter, r *http.Re
 }
 
 // ListBarbers handles GET /api/v1/manager/barbers.
+// @Summary List barbers of a branch
+// @Description Returns active or inactive barbers assigned to a specific branch unit
+// @Tags manager
+// @Produce json
+// @Security BearerAuth
+// @Param unit_id query string false "Unit UUID (defaults to manager's assigned unit)"
+// @Param status query string false "Filter barbers by status: active, inactive, all"
+// @Success 200 {array} domain.Barber
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /manager/barbers [get]
 func (h *UnitOperationsHandler) ListBarbers(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.UserFromContext(r.Context())
 	if !ok || claims == nil {
@@ -113,7 +126,8 @@ func (h *UnitOperationsHandler) ListBarbers(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	barbers, err := h.svc.ListBarbers(r.Context(), unitID, claims)
+	status := r.URL.Query().Get("status")
+	barbers, err := h.svc.ListBarbers(r.Context(), unitID, status, claims)
 	if err != nil {
 		HandleError(w, err)
 		return

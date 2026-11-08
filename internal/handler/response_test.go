@@ -173,4 +173,3 @@ func TestReadJSON(t *testing.T) {
 		}
 	})
 }
-

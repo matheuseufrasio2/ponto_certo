@@ -21,6 +21,7 @@ type OwnerAnalyticsManager interface {
 	ListConsolidatedBillings(ctx context.Context, claims *service.UserClaims, unitID *string, paymentMethod *string, page, perPage int) (*domain.PaginatedBillings, error)
 	ExportBillingsCSV(ctx context.Context, claims *service.UserClaims, unitID *string, w io.Writer) error
 	GetSubscription(ctx context.Context, claims *service.UserClaims) (*domain.OwnerSubscription, error)
+	ListEmployees(ctx context.Context, claims *service.UserClaims, status string, unitID *string) ([]domain.OrganizationEmployee, error)
 }
 
 // OwnerAnalyticsHandler manages HTTP endpoints for the organization owner BI.
@@ -276,4 +277,39 @@ func (h *OwnerAnalyticsHandler) GetSubscription(w http.ResponseWriter, r *http.R
 	}
 
 	_ = WriteJSON(w, http.StatusOK, sub)
+}
+
+// ListEmployees godoc
+// @Summary List organization employees and dismissed staff history
+// @Description Returns all staff members for the owner's organization, with optional status filter (active, inactive, all)
+// @Tags owner
+// @Produce json
+// @Security BearerAuth
+// @Param status query string false "Filter status: active, inactive, all"
+// @Param unit_id query string false "Filter by specific barbershop unit UUID"
+// @Success 200 {array} domain.OrganizationEmployee
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /owner/employees [get]
+func (h *OwnerAnalyticsHandler) ListEmployees(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.UserFromContext(r.Context())
+	if !ok || claims == nil {
+		HandleError(w, domain.ErrUnauthorized)
+		return
+	}
+
+	status := r.URL.Query().Get("status")
+	var unitID *string
+	if u := r.URL.Query().Get("unit_id"); u != "" {
+		unitID = &u
+	}
+
+	employees, err := h.svc.ListEmployees(r.Context(), claims, status, unitID)
+	if err != nil {
+		HandleError(w, err)
+		return
+	}
+
+	_ = WriteJSON(w, http.StatusOK, employees)
 }

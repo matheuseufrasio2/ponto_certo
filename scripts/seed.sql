@@ -139,7 +139,7 @@ INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, rol
 VALUES 
 ('c0000000-0000-0000-0000-000000000001', NULL, NULL, 'Carlos Super Admin', 'superadmin@pontocerto.com.br', '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.', 'SUPER_ADMIN', TRUE, NOW(), NOW());
 
--- 2. 45 Franchise Owners (ORG_OWNER)
+-- 2. 45 Franchise Owners (ORG_OWNER) - 100% ATIVOS em todas as organizações
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
     gen_random_uuid(),
@@ -153,14 +153,14 @@ SELECT
     END,
     '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
     'ORG_OWNER',
-    o.is_active,
+    TRUE,
     o.created_at,
     NOW()
 FROM organizations o
 JOIN (SELECT generate_series(1, 45) AS idx) s 
   ON o.id = ('a0000000-0000-0000-0000-' || LPAD(s.idx::TEXT, 12, '0'))::UUID;
 
--- 3. Managers for all units (UNIT_MANAGER)
+-- 3. Managers for all units (UNIT_MANAGER) - 60 gerentes de filial
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
     gen_random_uuid(),
@@ -173,58 +173,84 @@ SELECT
     END,
     '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
     'UNIT_MANAGER',
-    u.is_active,
+    TRUE,
     u.created_at,
     NOW()
 FROM barbershop_units u;
 
--- 4. Receptionists for all units (RECEPTIONIST)
+-- 4. Receptionists for units (RECEPTIONIST) - 80 recepcionistas (10% demitidas/inativas)
+WITH unit_ranked AS (
+    SELECT id, organization_id, name, created_at, ROW_NUMBER() OVER(ORDER BY id) AS u_idx
+    FROM barbershop_units
+),
+rec_slots AS (
+    SELECT u.id AS unit_id, u.organization_id, u.name AS unit_name, u.created_at, u.u_idx, s.n AS rec_num
+    FROM unit_ranked u
+    CROSS JOIN (SELECT 1 AS n UNION ALL SELECT 2) s
+    WHERE s.n = 1 OR u.u_idx <= 20
+)
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
     gen_random_uuid(),
-    u.organization_id,
-    u.id,
-    'Recepção ' || u.name,
+    rs.organization_id,
+    rs.unit_id,
+    CASE 
+        WHEN (ROW_NUMBER() OVER()) % 10 = 0 THEN 'Ex-Recepcionista Demitida ' || (ROW_NUMBER() OVER())::TEXT
+        ELSE 'Recepcionista ' || rs.unit_name || ' ' || rs.rec_num::TEXT
+    END,
     CASE 
         WHEN (ROW_NUMBER() OVER()) = 1 THEN 'recepcao.matriz@pontocerto.com.br'
-        ELSE 'recepcao.unidade' || (ROW_NUMBER() OVER())::TEXT || '@pontocerto.com.br'
+        ELSE 'recepcao.u' || rs.u_idx::TEXT || '.r' || rs.rec_num::TEXT || '@pontocerto.com.br'
     END,
     '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
     'RECEPTIONIST',
-    u.is_active,
-    u.created_at,
+    ((ROW_NUMBER() OVER()) % 10 != 0),
+    rs.created_at,
     NOW()
-FROM barbershop_units u;
+FROM rec_slots rs;
 
--- 5. Operational Barbers (BARBER)
+-- 5. Operational Barbers (BARBER) - 300 barbeiros (5 por unidade, 10% demitidos/inativos)
+WITH unit_ranked AS (
+    SELECT id, organization_id, name, created_at, ROW_NUMBER() OVER(ORDER BY id) AS u_idx
+    FROM barbershop_units
+),
+barber_slots AS (
+    SELECT u.id AS unit_id, u.organization_id, u.name AS unit_name, u.created_at, u.u_idx, s.n AS barber_num
+    FROM unit_ranked u
+    CROSS JOIN (SELECT generate_series(1, 5) AS n) s
+)
 INSERT INTO users (id, organization_id, unit_id, name, email, password_hash, role, is_active, created_at, updated_at)
 SELECT 
     gen_random_uuid(),
-    u.organization_id,
-    u.id,
-    'Barbeiro ' || u.name,
+    bs.organization_id,
+    bs.unit_id,
+    CASE 
+        WHEN (ROW_NUMBER() OVER()) % 10 = 0 THEN 'Ex-Barbeiro Demitido ' || (ROW_NUMBER() OVER())::TEXT
+        ELSE 'Barbeiro ' || bs.unit_name || ' ' || bs.barber_num::TEXT
+    END,
     CASE 
         WHEN (ROW_NUMBER() OVER()) = 1 THEN 'marcos.barbeiro@pontocerto.com.br'
-        ELSE 'barbeiro.unidade' || (ROW_NUMBER() OVER())::TEXT || '@pontocerto.com.br'
+        ELSE 'barbeiro.u' || bs.u_idx::TEXT || '.b' || bs.barber_num::TEXT || '@pontocerto.com.br'
     END,
     '$2a$10$PsMR5of1qqLgzvViL.JF0ONjpxiVl.T4.dfRoGsPRL.j.8n2gq3t.',
     'BARBER',
-    u.is_active,
-    u.created_at,
+    ((ROW_NUMBER() OVER()) % 10 != 0),
+    bs.created_at,
     NOW()
-FROM barbershop_units u;
+FROM barber_slots bs;
 
 -- ============================================================================
 -- 6. Barbers Profile
 -- ============================================================================
-INSERT INTO barbers (id, unit_id, user_id, name, phone, commission_percentage, is_active, created_at, updated_at)
+INSERT INTO barbers (id, unit_id, user_id, name, phone, commission_percentage, status, is_active, created_at, updated_at)
 SELECT 
     ('d0000000-0000-0000-0000-' || LPAD((ROW_NUMBER() OVER())::TEXT, 12, '0'))::UUID,
     usr.unit_id,
     usr.id,
     usr.name,
-    '1198888' || LPAD((ROW_NUMBER() OVER())::TEXT, 4, '0'),
+    '11988' || LPAD((ROW_NUMBER() OVER())::TEXT, 6, '0'),
     60,
+    CASE WHEN usr.is_active THEN 'AVAILABLE' ELSE 'OFF_DUTY' END,
     usr.is_active,
     usr.created_at,
     NOW()
@@ -310,7 +336,7 @@ SELECT
     NOW() - (seq.n * INTERVAL '2 days')
 FROM barbershop_units u
 CROSS JOIN (SELECT generate_series(0, 3) AS n) seq
-JOIN LATERAL (SELECT id FROM barbers WHERE unit_id = u.id LIMIT 1) b ON true
+JOIN LATERAL (SELECT id FROM barbers WHERE unit_id = u.id AND is_active = TRUE LIMIT 1) b ON true
 JOIN LATERAL (SELECT id FROM clients WHERE unit_id = u.id LIMIT 1) c ON true
 JOIN LATERAL (SELECT id, price_in_cents FROM services WHERE unit_id = u.id LIMIT 1) s ON true
 WHERE u.is_active = TRUE;

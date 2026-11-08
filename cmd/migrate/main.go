@@ -19,9 +19,9 @@ import (
 )
 
 type migrationFile struct {
-	version int
-	name    string
-	upPath  string
+	version  int
+	name     string
+	upPath   string
 	downPath string
 }
 

@@ -331,8 +331,8 @@ func TestHasScheduleConflict(t *testing.T) {
 		},
 		{
 			name:      "immediately adjacent after (no conflict)",
-			startB:    end,                        // 14:30
-			endB:      end.Add(30 * time.Minute),  // 15:00
+			startB:    end,                       // 14:30
+			endB:      end.Add(30 * time.Minute), // 15:00
 			conflicts: false,
 		},
 		{
@@ -528,6 +528,173 @@ func TestUpdateTenantPlanInput_Validate(t *testing.T) {
 		{
 			name:        "negative fee fails",
 			input:       domain.UpdateTenantPlanInput{Plan: "PRO", MonthlyFeeInCents: -100},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.input.Validate()
+			if tt.expectError && err == nil {
+				t.Errorf("expected error, got nil")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestLeaveType_IsValid(t *testing.T) {
+	tests := []struct {
+		name     string
+		lt       domain.LeaveType
+		expected bool
+	}{
+		{"vacation", domain.LeaveTypeVacation, true},
+		{"medical_leave", domain.LeaveTypeMedicalLeave, true},
+		{"personal", domain.LeaveTypePersonal, true},
+		{"other", domain.LeaveTypeOther, true},
+		{"invalid", domain.LeaveType("UNPAID"), false},
+		{"empty", domain.LeaveType(""), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.lt.IsValid(); got != tt.expected {
+				t.Errorf("expected %v, got %v", tt.expected, got)
+			}
+		})
+	}
+}
+
+func TestCreateScheduleBlockInput_Validate(t *testing.T) {
+	now := time.Now()
+	tests := []struct {
+		name        string
+		input       domain.CreateScheduleBlockInput
+		expectError bool
+	}{
+		{
+			name: "valid schedule block",
+			input: domain.CreateScheduleBlockInput{
+				StartTime: now.Add(time.Hour),
+				EndTime:   now.Add(2 * time.Hour),
+				Reason:    "Dentist appointment",
+			},
+			expectError: false,
+		},
+		{
+			name: "zero start time fails",
+			input: domain.CreateScheduleBlockInput{
+				EndTime: now.Add(2 * time.Hour),
+				Reason:  "Doctor",
+			},
+			expectError: true,
+		},
+		{
+			name: "start time after end time fails",
+			input: domain.CreateScheduleBlockInput{
+				StartTime: now.Add(2 * time.Hour),
+				EndTime:   now.Add(time.Hour),
+				Reason:    "Doctor",
+			},
+			expectError: true,
+		},
+		{
+			name: "empty reason fails",
+			input: domain.CreateScheduleBlockInput{
+				StartTime: now.Add(time.Hour),
+				EndTime:   now.Add(2 * time.Hour),
+				Reason:    "  ",
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.input.Validate()
+			if tt.expectError && err == nil {
+				t.Errorf("expected error, got nil")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestCreateEmployeeLeaveInput_Validate(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       domain.CreateEmployeeLeaveInput
+		expectError bool
+	}{
+		{
+			name: "valid employee leave",
+			input: domain.CreateEmployeeLeaveInput{
+				UserID:    "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+				LeaveType: domain.LeaveTypeVacation,
+				StartDate: "2026-12-01",
+				EndDate:   "2026-12-20",
+				Reason:    "End of year vacation",
+			},
+			expectError: false,
+		},
+		{
+			name: "empty user_id fails",
+			input: domain.CreateEmployeeLeaveInput{
+				UserID:    "",
+				LeaveType: domain.LeaveTypeVacation,
+				StartDate: "2026-12-01",
+				EndDate:   "2026-12-20",
+				Reason:    "Vacation",
+			},
+			expectError: true,
+		},
+		{
+			name: "invalid leave_type fails",
+			input: domain.CreateEmployeeLeaveInput{
+				UserID:    "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+				LeaveType: domain.LeaveType("INVALID"),
+				StartDate: "2026-12-01",
+				EndDate:   "2026-12-20",
+				Reason:    "Vacation",
+			},
+			expectError: true,
+		},
+		{
+			name: "invalid start_date format fails",
+			input: domain.CreateEmployeeLeaveInput{
+				UserID:    "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+				LeaveType: domain.LeaveTypeVacation,
+				StartDate: "01/12/2026",
+				EndDate:   "2026-12-20",
+				Reason:    "Vacation",
+			},
+			expectError: true,
+		},
+		{
+			name: "start_date after end_date fails",
+			input: domain.CreateEmployeeLeaveInput{
+				UserID:    "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+				LeaveType: domain.LeaveTypeVacation,
+				StartDate: "2026-12-25",
+				EndDate:   "2026-12-10",
+				Reason:    "Vacation",
+			},
+			expectError: true,
+		},
+		{
+			name: "empty reason fails",
+			input: domain.CreateEmployeeLeaveInput{
+				UserID:    "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+				LeaveType: domain.LeaveTypeVacation,
+				StartDate: "2026-12-01",
+				EndDate:   "2026-12-20",
+				Reason:    "  ",
+			},
 			expectError: true,
 		},
 	}

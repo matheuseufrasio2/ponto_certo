@@ -153,11 +153,11 @@ func TestAppointmentService_CreateAppointment(t *testing.T) {
 	t.Run("fails when barber has schedule conflict", func(t *testing.T) {
 		aptRepo.conflictResult = true
 		_, err := svc.CreateAppointment(ctx, domain.CreateAppointmentInput{
-			UnitID:     "unit-1",
-			BarberID:   "barber-1",
-			ClientID:   "client-1",
-			ServiceID:  "svc-1",
-			StartTime:  now,
+			UnitID:    "unit-1",
+			BarberID:  "barber-1",
+			ClientID:  "client-1",
+			ServiceID: "svc-1",
+			StartTime: now,
 		})
 		if err != domain.ErrAppointmentConflict {
 			t.Fatalf("expected ErrAppointmentConflict, got %v", err)
@@ -211,4 +211,3 @@ func TestAppointmentService_CompleteCut(t *testing.T) {
 		}
 	})
 }
-

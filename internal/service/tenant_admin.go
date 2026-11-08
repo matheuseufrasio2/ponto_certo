@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -13,10 +14,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// AuditLogRecorder records compliance and security audit logs.
+type AuditLogRecorder interface {
+	Record(ctx context.Context, log domain.AuditLog) error
+}
+
 // TenantAdminService orchestrates SaaS multi-tenancy operations and diagnostic impersonation.
 type TenantAdminService struct {
-	repo      repository.TenantAdminRepository
-	jwtSecret string
+	repo          repository.TenantAdminRepository
+	jwtSecret     string
+	auditRecorder AuditLogRecorder
 }
 
 // NewTenantAdminService instantiates a new TenantAdminService.
@@ -25,6 +32,11 @@ func NewTenantAdminService(repo repository.TenantAdminRepository, jwtSecret stri
 		repo:      repo,
 		jwtSecret: jwtSecret,
 	}
+}
+
+// SetAuditRecorder assigns the audit log recorder.
+func (s *TenantAdminService) SetAuditRecorder(recorder AuditLogRecorder) {
+	s.auditRecorder = recorder
 }
 
 func requireSuperAdmin(claims *UserClaims) error {
@@ -101,15 +113,35 @@ func (s *TenantAdminService) ToggleTenantStatus(ctx context.Context, claims *Use
 	if err := requireSuperAdmin(claims); err != nil {
 		return err
 	}
-	return s.repo.ToggleTenantActiveStatus(ctx, tenantID, isActive)
+	if err := s.repo.ToggleTenantActiveStatus(ctx, tenantID, isActive); err != nil {
+		return err
+	}
+
+	if s.auditRecorder != nil {
+		meta := domain.GetAuditMetadata(ctx)
+		details, _ := json.Marshal(map[string]any{"is_active": isActive})
+		_ = s.auditRecorder.Record(ctx, domain.AuditLog{
+			OrganizationID: &tenantID,
+			ActorID:        &claims.UserID,
+			ActorRole:      claims.Role,
+			Action:         "TOGGLE_TENANT_STATUS",
+			TargetEntity:   "organizations",
+			TargetID:       tenantID,
+			Details:        details,
+			IPAddress:      meta.IPAddress,
+			UserAgent:      meta.UserAgent,
+		})
+	}
+
+	return nil
 }
 
-// GetTenantUsers returns users belonging to a tenant organization for impersonation.
-func (s *TenantAdminService) GetTenantUsers(ctx context.Context, claims *UserClaims, tenantID string) ([]domain.User, error) {
+// GetTenantUsers returns users belonging to a tenant organization for impersonation filtered by status.
+func (s *TenantAdminService) GetTenantUsers(ctx context.Context, claims *UserClaims, tenantID string, status string) ([]domain.User, error) {
 	if err := requireSuperAdmin(claims); err != nil {
 		return nil, err
 	}
-	return s.repo.GetTenantUsers(ctx, tenantID)
+	return s.repo.GetTenantUsers(ctx, tenantID, status)
 }
 
 // GetTenantUnits returns physical units/branches belonging to a tenant organization.
@@ -145,7 +177,31 @@ func (s *TenantAdminService) UpdateTenantPlan(ctx context.Context, claims *UserC
 	if err := input.Validate(); err != nil {
 		return nil, err
 	}
-	return s.repo.UpdateTenantPlan(ctx, tenantID, input.Plan, input.MonthlyFeeInCents)
+	org, err := s.repo.UpdateTenantPlan(ctx, tenantID, input.Plan, input.MonthlyFeeInCents)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.auditRecorder != nil {
+		meta := domain.GetAuditMetadata(ctx)
+		details, _ := json.Marshal(map[string]any{
+			"plan":                 input.Plan,
+			"monthly_fee_in_cents": input.MonthlyFeeInCents,
+		})
+		_ = s.auditRecorder.Record(ctx, domain.AuditLog{
+			OrganizationID: &tenantID,
+			ActorID:        &claims.UserID,
+			ActorRole:      claims.Role,
+			Action:         "UPDATE_TENANT_PLAN",
+			TargetEntity:   "organizations",
+			TargetID:       tenantID,
+			Details:        details,
+			IPAddress:      meta.IPAddress,
+			UserAgent:      meta.UserAgent,
+		})
+	}
+
+	return org, nil
 }
 
 // ResetTenantPassword assists franchise owners who lost system access by setting a new or temporary password.
@@ -185,6 +241,22 @@ func (s *TenantAdminService) ResetTenantPassword(ctx context.Context, claims *Us
 		"owner_id", owner.ID,
 		"owner_email", owner.Email,
 	)
+
+	if s.auditRecorder != nil {
+		meta := domain.GetAuditMetadata(ctx)
+		details, _ := json.Marshal(map[string]any{"owner_id": owner.ID, "owner_email": owner.Email})
+		_ = s.auditRecorder.Record(ctx, domain.AuditLog{
+			OrganizationID: &tenantID,
+			ActorID:        &claims.UserID,
+			ActorRole:      claims.Role,
+			Action:         "RESET_TENANT_PASSWORD",
+			TargetEntity:   "users",
+			TargetID:       owner.ID,
+			Details:        details,
+			IPAddress:      meta.IPAddress,
+			UserAgent:      meta.UserAgent,
+		})
+	}
 
 	return &domain.ResetPasswordResponse{
 		UserID:            owner.ID,
@@ -248,6 +320,27 @@ func (s *TenantAdminService) ImpersonateUser(ctx context.Context, claims *UserCl
 		"target_role", targetUser.Role,
 		"target_org_id", targetUser.OrganizationID,
 	)
+
+	if s.auditRecorder != nil {
+		meta := domain.GetAuditMetadata(ctx)
+		details, _ := json.Marshal(map[string]any{
+			"target_user_id":    targetUser.ID,
+			"target_user_email": targetUser.Email,
+			"target_role":       targetUser.Role,
+		})
+		_ = s.auditRecorder.Record(ctx, domain.AuditLog{
+			OrganizationID: targetUser.OrganizationID,
+			UnitID:         targetUser.UnitID,
+			ActorID:        &claims.UserID,
+			ActorRole:      claims.Role,
+			Action:         "IMPERSONATE_USER",
+			TargetEntity:   "users",
+			TargetID:       targetUser.ID,
+			Details:        details,
+			IPAddress:      meta.IPAddress,
+			UserAgent:      meta.UserAgent,
+		})
+	}
 
 	return &domain.ImpersonateResponse{
 		Token:          tokenString,
