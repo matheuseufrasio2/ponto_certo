@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.10.0...ponto_certo-v0.11.0) (2026-11-08)
+
+
+### Features
+
+* **admin:** implement phase 4 saas superadmin platform ([5ced9e2](https://github.com/matheuseufrasio2/ponto_certo/commit/5ced9e23bbe07048a2c46e19ae084a57bec50928))
+* **api:** register dev routes with tenant status protection ([5d23594](https://github.com/matheuseufrasio2/ponto_certo/commit/5d235941d8ffd9dd66a38812f91af6b827d9c67e))
+* **domain:** add subscription models with dev discovery structures ([ccbcc6a](https://github.com/matheuseufrasio2/ponto_certo/commit/ccbcc6a4e2d828896d549cdfc32c4b34ece4ce79))
+* **handler:** add dev discovery endpoints ([82954d2](https://github.com/matheuseufrasio2/ponto_certo/commit/82954d25fba9ab74f048dbd7d383554c80ae5a73))
+* **handler:** add owner subscription endpoint ([ac9ce89](https://github.com/matheuseufrasio2/ponto_certo/commit/ac9ce89ee7a33d353b00dfd08efb5adba2f1a874))
+* **middleware:** enforce active tenant check on operational routes ([481b7d6](https://github.com/matheuseufrasio2/ponto_certo/commit/481b7d6cbe6627f9e10f333042697bc48f62ebd1))
+* **repo:** add organization active status queries ([f17a4e1](https://github.com/matheuseufrasio2/ponto_certo/commit/f17a4e1d91181e123e907b1193afe8b6665db3d3))
+* **repo:** implement developer discovery queries ([4f24fa9](https://github.com/matheuseufrasio2/ponto_certo/commit/4f24fa96d61882a9cc2e5d95ab759da143552779))
+* **repo:** implement owner subscription query ([656b7ab](https://github.com/matheuseufrasio2/ponto_certo/commit/656b7abdbb4df27d21d7e720bcef51ab11827657))
+* **service:** block non-owner logins for inactive organizations ([e976cfc](https://github.com/matheuseufrasio2/ponto_certo/commit/e976cfc85b5622fa35bd2e15eca68afc815ab5de))
+* **service:** implement developer discovery service ([79929ca](https://github.com/matheuseufrasio2/ponto_certo/commit/79929ca490b663abf95ce1cb58a4afac80efe2bf))
+* **service:** implement owner subscription retrieval ([87a35d2](https://github.com/matheuseufrasio2/ponto_certo/commit/87a35d28ff4cd45b1037677c35f7d402c846bf52))
+
 ## [0.10.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.9.0...ponto_certo-v0.10.0) (2026-11-08)
 
 
