@@ -37,25 +37,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SaaSMetrics"
+                            "$ref": "#/definitions/domain.SaaSMetrics"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -68,7 +68,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns paginated organizations matching search term",
+                "description": "Returns paginated organizations matching search term, status, and plan filters",
                 "produces": [
                     "application/json"
                 ],
@@ -84,6 +84,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Filter by subscription status (ACTIVE, PAST_DUE, TRIAL, CANCELLED) or BLOCKED",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by plan (BASIC, PRO, ENTERPRISE)",
+                        "name": "plan",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "Page number (default 1)",
                         "name": "page",
@@ -91,7 +103,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page (default 15)",
+                        "description": "Items per page (default 10)",
                         "name": "per_page",
                         "in": "query"
                     }
@@ -100,25 +112,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedOrganizations"
+                            "$ref": "#/definitions/domain.PaginatedOrganizations"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -147,7 +159,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateTenantInput"
+                            "$ref": "#/definitions/domain.CreateTenantInput"
                         }
                     }
                 ],
@@ -155,31 +167,246 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization"
+                            "$ref": "#/definitions/domain.Organization"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns 30-day GMV, 30-day appointment volume, total barbers, and overdue status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get aggregated engagement and financial metrics for a tenant",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.TenantOverview"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/plan": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates organization plan tier (BASIC, PRO, ENTERPRISE) and monthly fee",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Upgrade or downgrade a tenant's subscription plan and fee",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Plan update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.UpdateTenantPlanInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Organization"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/reset-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sets a specified password or generates a temporary credential for tenant owner",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Administratively reset franchise owner's password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Optional custom password payload",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ResetTenantPasswordInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ResetPasswordResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -217,7 +444,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ToggleStatusRequest"
+                            "$ref": "#/definitions/handler.ToggleStatusRequest"
                         }
                     }
                 ],
@@ -232,31 +459,92 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/tenants/{id}/units": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns branches/units belonging to an organization for Super Admin inspection",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List all physical branches/units in a tenant organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.BarbershopUnit"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -292,32 +580,32 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.User"
+                                "$ref": "#/definitions/domain.User"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -351,31 +639,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ImpersonateResponse"
+                            "$ref": "#/definitions/domain.ImpersonateResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -401,7 +689,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.LoginInput"
+                            "$ref": "#/definitions/service.LoginInput"
                         }
                     }
                 ],
@@ -409,31 +697,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Token de acesso e dados do usuário",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.LoginOutput"
+                            "$ref": "#/definitions/service.LoginOutput"
                         }
                     },
                     "400": {
                         "description": "Requisição malformada ou inválida",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Credenciais incorretas",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Usuário desativado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -476,31 +764,31 @@ const docTemplate = `{
                     "400": {
                         "description": "ID inválido ou transição de status não permitida",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Não autenticado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Atendimento não pertence a este barbeiro",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Agendamento não encontrado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -535,26 +823,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails"
+                                "$ref": "#/definitions/domain.AppointmentDetails"
                             }
                         }
                     },
                     "401": {
                         "description": "Não autenticado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Perfil de barbeiro não encontrado para o usuário",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -574,13 +862,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.HealthResponse"
+                            "$ref": "#/definitions/handler.HealthResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -633,25 +921,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedBillings"
+                            "$ref": "#/definitions/domain.PaginatedBillings"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -690,19 +978,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -747,25 +1035,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs"
+                            "$ref": "#/definitions/domain.OwnerExecutiveKPIs"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -806,26 +1094,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison"
+                                "$ref": "#/definitions/domain.UnitRevenueComparison"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -872,26 +1160,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceMixAnalytics"
+                                "$ref": "#/definitions/domain.ServiceMixAnalytics"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -932,26 +1220,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails"
+                                "$ref": "#/definitions/domain.AppointmentDetails"
                             }
                         }
                     },
                     "401": {
                         "description": "Não autenticado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Acesso não permitido a esta unidade",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -980,7 +1268,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateAppointmentInput"
+                            "$ref": "#/definitions/domain.CreateAppointmentInput"
                         }
                     }
                 ],
@@ -988,37 +1276,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Agendamento criado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Appointment"
+                            "$ref": "#/definitions/domain.Appointment"
                         }
                     },
                     "400": {
                         "description": "Dados inválidos ou corpo malformado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Não autenticado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Acesso não permitido",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Barbeiro já possui agendamento neste horário",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -1049,7 +1337,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CheckoutInput"
+                            "$ref": "#/definitions/domain.CheckoutInput"
                         }
                     }
                 ],
@@ -1057,37 +1345,37 @@ const docTemplate = `{
                     "200": {
                         "description": "Faturamento registrado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing"
+                            "$ref": "#/definitions/domain.Billing"
                         }
                     },
                     "400": {
                         "description": "Método de pagamento inválido ou corpo malformado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Não autenticado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Agendamento não encontrado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Agendamento já foi liquidado anteriormente",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -1121,31 +1409,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Catálogo com lista de barbeiros e serviços",
                         "schema": {
-                            "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse"
+                            "$ref": "#/definitions/service.CatalogResponse"
                         }
                     },
                     "401": {
                         "description": "Não autenticado",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Acesso não permitido à unidade informada",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Unidade não encontrada",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler.ErrorResponse"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -1153,7 +1441,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Appointment": {
+        "domain.Appointment": {
             "type": "object",
             "properties": {
                 "barber_id": {
@@ -1179,7 +1467,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_status": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus"
+                    "$ref": "#/definitions/domain.PaymentStatus"
                 },
                 "price_in_cents": {
                     "type": "integer"
@@ -1191,7 +1479,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus"
+                    "$ref": "#/definitions/domain.AppointmentStatus"
                 },
                 "unit_id": {
                     "type": "string"
@@ -1201,7 +1489,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails": {
+        "domain.AppointmentDetails": {
             "type": "object",
             "properties": {
                 "barber_id": {
@@ -1236,7 +1524,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_status": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus"
+                    "$ref": "#/definitions/domain.PaymentStatus"
                 },
                 "price_in_cents": {
                     "type": "integer"
@@ -1251,7 +1539,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus"
+                    "$ref": "#/definitions/domain.AppointmentStatus"
                 },
                 "time_slot": {
                     "type": "string"
@@ -1264,7 +1552,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus": {
+        "domain.AppointmentStatus": {
             "type": "string",
             "enum": [
                 "SCHEDULED",
@@ -1279,7 +1567,7 @@ const docTemplate = `{
                 "StatusNoShow"
             ]
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Barber": {
+        "domain.Barber": {
             "type": "object",
             "properties": {
                 "commission_percentage": {
@@ -1301,7 +1589,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BarberStatus"
+                    "$ref": "#/definitions/domain.BarberStatus"
                 },
                 "unit_id": {
                     "type": "string"
@@ -1315,7 +1603,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.BarberStatus": {
+        "domain.BarberStatus": {
             "type": "string",
             "enum": [
                 "AVAILABLE",
@@ -1332,7 +1620,39 @@ const docTemplate = `{
                 "BarberStatusVacation"
             ]
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing": {
+        "domain.BarbershopUnit": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "chair_count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.Billing": {
             "type": "object",
             "properties": {
                 "amount_in_cents": {
@@ -1360,7 +1680,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_method": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod"
+                    "$ref": "#/definitions/domain.PaymentMethod"
                 },
                 "product_id": {
                     "type": "string"
@@ -1372,7 +1692,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BillingStatus"
+                    "$ref": "#/definitions/domain.BillingStatus"
                 },
                 "unit_id": {
                     "type": "string"
@@ -1382,7 +1702,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.BillingStatus": {
+        "domain.BillingStatus": {
             "type": "string",
             "enum": [
                 "PAID",
@@ -1393,7 +1713,7 @@ const docTemplate = `{
                 "BillingStatusCancelled"
             ]
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.CheckoutInput": {
+        "domain.CheckoutInput": {
             "type": "object",
             "properties": {
                 "appointment_id": {
@@ -1403,11 +1723,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_method": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod"
+                    "$ref": "#/definitions/domain.PaymentMethod"
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateAppointmentInput": {
+        "domain.CreateAppointmentInput": {
             "type": "object",
             "properties": {
                 "barber_id": {
@@ -1439,7 +1759,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateTenantInput": {
+        "domain.CreateTenantInput": {
             "type": "object",
             "properties": {
                 "admin_email": {
@@ -1469,7 +1789,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.ImpersonateResponse": {
+        "domain.ImpersonateResponse": {
             "type": "object",
             "properties": {
                 "expires_in": {
@@ -1490,9 +1810,12 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization": {
+        "domain.Organization": {
             "type": "object",
             "properties": {
+                "active_users_count": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1505,27 +1828,36 @@ const docTemplate = `{
                 "is_active": {
                     "type": "boolean"
                 },
+                "last_activity_at": {
+                    "type": "string"
+                },
                 "monthly_fee_in_cents": {
                     "type": "integer"
                 },
                 "name": {
                     "type": "string"
                 },
+                "past_due_since": {
+                    "type": "string"
+                },
                 "plan": {
                     "type": "string"
                 },
                 "subscription_status": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus"
+                    "$ref": "#/definitions/domain.SubscriptionStatus"
                 },
                 "trade_name": {
                     "type": "string"
+                },
+                "units_count": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs": {
+        "domain.OwnerExecutiveKPIs": {
             "type": "object",
             "properties": {
                 "average_ticket_in_cents": {
@@ -1548,13 +1880,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedBillings": {
+        "domain.PaginatedBillings": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing"
+                        "$ref": "#/definitions/domain.Billing"
                     }
                 },
                 "page": {
@@ -1568,13 +1900,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedOrganizations": {
+        "domain.PaginatedOrganizations": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization"
+                        "$ref": "#/definitions/domain.Organization"
                     }
                 },
                 "page": {
@@ -1588,7 +1920,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod": {
+        "domain.PaymentMethod": {
             "type": "string",
             "enum": [
                 "CREDIT_CARD",
@@ -1618,7 +1950,7 @@ const docTemplate = `{
                 "PaymentMethodCard"
             ]
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus": {
+        "domain.PaymentStatus": {
             "type": "string",
             "enum": [
                 "PENDING",
@@ -1629,7 +1961,29 @@ const docTemplate = `{
                 "PaymentStatusPaid"
             ]
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Role": {
+        "domain.ResetPasswordResponse": {
+            "type": "object",
+            "properties": {
+                "temporary_password": {
+                    "type": "string"
+                },
+                "user_email": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.ResetTenantPasswordInput": {
+            "type": "object",
+            "properties": {
+                "new_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.Role": {
             "type": "string",
             "enum": [
                 "SUPER_ADMIN",
@@ -1646,7 +2000,7 @@ const docTemplate = `{
                 "RoleBarber"
             ]
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.SaaSMetrics": {
+        "domain.SaaSMetrics": {
             "type": "object",
             "properties": {
                 "active_tenants": {
@@ -1669,11 +2023,11 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.Service": {
+        "domain.Service": {
             "type": "object",
             "properties": {
                 "category": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceCategory"
+                    "$ref": "#/definitions/domain.ServiceCategory"
                 },
                 "created_at": {
                     "type": "string"
@@ -1705,7 +2059,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceCategory": {
+        "domain.ServiceCategory": {
             "type": "string",
             "enum": [
                 "CABELO",
@@ -1730,7 +2084,7 @@ const docTemplate = `{
                 "ServiceCategoryEsteticaFacial"
             ]
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceMixAnalytics": {
+        "domain.ServiceMixAnalytics": {
             "type": "object",
             "properties": {
                 "category": {
@@ -1750,7 +2104,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus": {
+        "domain.SubscriptionStatus": {
             "type": "string",
             "enum": [
                 "ACTIVE",
@@ -1765,7 +2119,27 @@ const docTemplate = `{
                 "SubscriptionStatusCancelled"
             ]
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison": {
+        "domain.TenantOverview": {
+            "type": "object",
+            "properties": {
+                "appointments_last_30_days": {
+                    "type": "integer"
+                },
+                "days_overdue": {
+                    "type": "integer"
+                },
+                "gmv_last_30_days_in_cents": {
+                    "type": "integer"
+                },
+                "organization": {
+                    "$ref": "#/definitions/domain.Organization"
+                },
+                "total_barbers_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.UnitRevenueComparison": {
             "type": "object",
             "properties": {
                 "revenue_in_cents": {
@@ -1779,7 +2153,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_domain.User": {
+        "domain.UpdateTenantPlanInput": {
+            "type": "object",
+            "properties": {
+                "monthly_fee_in_cents": {
+                    "type": "integer"
+                },
+                "plan": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.User": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -1802,7 +2187,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Role"
+                    "$ref": "#/definitions/domain.Role"
                 },
                 "unit_id": {
                     "description": "NULL for SUPER_ADMIN \u0026 ORG_OWNER",
@@ -1813,24 +2198,51 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse": {
+        "handler.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.ToggleStatusRequest": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "service.CatalogResponse": {
             "type": "object",
             "properties": {
                 "barbers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Barber"
+                        "$ref": "#/definitions/domain.Barber"
                     }
                 },
                 "services": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Service"
+                        "$ref": "#/definitions/domain.Service"
                     }
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_service.LoginInput": {
+        "service.LoginInput": {
             "type": "object",
             "properties": {
                 "email": {
@@ -1841,7 +2253,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_service.LoginOutput": {
+        "service.LoginOutput": {
             "type": "object",
             "properties": {
                 "expires_in": {
@@ -1856,11 +2268,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.UserResponse"
+                    "$ref": "#/definitions/service.UserResponse"
                 }
             }
         },
-        "github_com_matheuseufrasio2_ponto_certo_internal_service.UserResponse": {
+        "service.UserResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -1876,37 +2288,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
-                    "$ref": "#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Role"
+                    "$ref": "#/definitions/domain.Role"
                 },
                 "unit_id": {
                     "type": "string"
-                }
-            }
-        },
-        "internal_handler.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler.HealthResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler.ToggleStatusRequest": {
-            "type": "object",
-            "properties": {
-                "is_active": {
-                    "type": "boolean"
                 }
             }
         }

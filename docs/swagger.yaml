@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.Appointment:
+  domain.Appointment:
     properties:
       barber_id:
         type: string
@@ -18,7 +18,7 @@ definitions:
       notes:
         type: string
       payment_status:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus'
+        $ref: '#/definitions/domain.PaymentStatus'
       price_in_cents:
         type: integer
       service_id:
@@ -26,13 +26,13 @@ definitions:
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus'
+        $ref: '#/definitions/domain.AppointmentStatus'
       unit_id:
         type: string
       updated_at:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails:
+  domain.AppointmentDetails:
     properties:
       barber_id:
         type: string
@@ -56,7 +56,7 @@ definitions:
       notes:
         type: string
       payment_status:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus'
+        $ref: '#/definitions/domain.PaymentStatus'
       price_in_cents:
         type: integer
       service_id:
@@ -66,7 +66,7 @@ definitions:
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus'
+        $ref: '#/definitions/domain.AppointmentStatus'
       time_slot:
         type: string
       unit_id:
@@ -74,7 +74,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentStatus:
+  domain.AppointmentStatus:
     enum:
     - SCHEDULED
     - COMPLETED
@@ -86,7 +86,7 @@ definitions:
     - StatusCompleted
     - StatusCancelled
     - StatusNoShow
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.Barber:
+  domain.Barber:
     properties:
       commission_percentage:
         type: integer
@@ -101,7 +101,7 @@ definitions:
       phone:
         type: string
       status:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BarberStatus'
+        $ref: '#/definitions/domain.BarberStatus'
       unit_id:
         type: string
       updated_at:
@@ -110,7 +110,7 @@ definitions:
         description: Linked if barber has system login
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.BarberStatus:
+  domain.BarberStatus:
     enum:
     - AVAILABLE
     - BUSY
@@ -124,7 +124,28 @@ definitions:
     - BarberStatusLunch
     - BarberStatusOffDuty
     - BarberStatusVacation
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing:
+  domain.BarbershopUnit:
+    properties:
+      address:
+        type: string
+      chair_count:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      organization_id:
+        type: string
+      phone:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.Billing:
     properties:
       amount_in_cents:
         type: integer
@@ -143,7 +164,7 @@ definitions:
       notes:
         type: string
       payment_method:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod'
+        $ref: '#/definitions/domain.PaymentMethod'
       product_id:
         type: string
       quantity:
@@ -151,13 +172,13 @@ definitions:
       service_id:
         type: string
       status:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.BillingStatus'
+        $ref: '#/definitions/domain.BillingStatus'
       unit_id:
         type: string
       updated_at:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.BillingStatus:
+  domain.BillingStatus:
     enum:
     - PAID
     - CANCELLED
@@ -165,16 +186,16 @@ definitions:
     x-enum-varnames:
     - BillingStatusPaid
     - BillingStatusCancelled
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.CheckoutInput:
+  domain.CheckoutInput:
     properties:
       appointment_id:
         type: string
       notes:
         type: string
       payment_method:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod'
+        $ref: '#/definitions/domain.PaymentMethod'
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateAppointmentInput:
+  domain.CreateAppointmentInput:
     properties:
       barber_id:
         type: string
@@ -195,7 +216,7 @@ definitions:
       unit_id:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateTenantInput:
+  domain.CreateTenantInput:
     properties:
       admin_email:
         type: string
@@ -215,7 +236,7 @@ definitions:
       trade_name:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.ImpersonateResponse:
+  domain.ImpersonateResponse:
     properties:
       expires_in:
         description: 'Ex: 1800 for 30min'
@@ -229,8 +250,10 @@ definitions:
       token:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization:
+  domain.Organization:
     properties:
+      active_users_count:
+        type: integer
       created_at:
         type: string
       document:
@@ -239,20 +262,26 @@ definitions:
         type: string
       is_active:
         type: boolean
+      last_activity_at:
+        type: string
       monthly_fee_in_cents:
         type: integer
       name:
         type: string
+      past_due_since:
+        type: string
       plan:
         type: string
       subscription_status:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus'
+        $ref: '#/definitions/domain.SubscriptionStatus'
       trade_name:
         type: string
+      units_count:
+        type: integer
       updated_at:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs:
+  domain.OwnerExecutiveKPIs:
     properties:
       average_ticket_in_cents:
         type: integer
@@ -267,11 +296,11 @@ definitions:
       total_commissions_in_cents:
         type: integer
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedBillings:
+  domain.PaginatedBillings:
     properties:
       items:
         items:
-          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing'
+          $ref: '#/definitions/domain.Billing'
         type: array
       page:
         type: integer
@@ -280,11 +309,11 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedOrganizations:
+  domain.PaginatedOrganizations:
     properties:
       items:
         items:
-          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization'
+          $ref: '#/definitions/domain.Organization'
         type: array
       page:
         type: integer
@@ -293,7 +322,7 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentMethod:
+  domain.PaymentMethod:
     enum:
     - CREDIT_CARD
     - DEBIT_CARD
@@ -318,7 +347,7 @@ definitions:
     - PaymentMethodCash
     - PaymentMethodOther
     - PaymentMethodCard
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.PaymentStatus:
+  domain.PaymentStatus:
     enum:
     - PENDING
     - PAID
@@ -326,7 +355,21 @@ definitions:
     x-enum-varnames:
     - PaymentStatusPending
     - PaymentStatusPaid
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.Role:
+  domain.ResetPasswordResponse:
+    properties:
+      temporary_password:
+        type: string
+      user_email:
+        type: string
+      user_id:
+        type: string
+    type: object
+  domain.ResetTenantPasswordInput:
+    properties:
+      new_password:
+        type: string
+    type: object
+  domain.Role:
     enum:
     - SUPER_ADMIN
     - ORG_OWNER
@@ -340,7 +383,7 @@ definitions:
     - RoleUnitManager
     - RoleReceptionist
     - RoleBarber
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.SaaSMetrics:
+  domain.SaaSMetrics:
     properties:
       active_tenants:
         type: integer
@@ -355,10 +398,10 @@ definitions:
       total_units_across_tenants:
         type: integer
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.Service:
+  domain.Service:
     properties:
       category:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceCategory'
+        $ref: '#/definitions/domain.ServiceCategory'
       created_at:
         type: string
       description:
@@ -379,7 +422,7 @@ definitions:
       updated_at:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceCategory:
+  domain.ServiceCategory:
     enum:
     - CABELO
     - BARBA
@@ -401,7 +444,7 @@ definitions:
     - ServiceCategoryQuimicas
     - ServiceCategoryVisagismo
     - ServiceCategoryEsteticaFacial
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceMixAnalytics:
+  domain.ServiceMixAnalytics:
     properties:
       category:
         type: string
@@ -414,7 +457,7 @@ definitions:
       service_name:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.SubscriptionStatus:
+  domain.SubscriptionStatus:
     enum:
     - ACTIVE
     - PAST_DUE
@@ -426,7 +469,20 @@ definitions:
     - SubscriptionStatusPastDue
     - SubscriptionStatusTrial
     - SubscriptionStatusCancelled
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison:
+  domain.TenantOverview:
+    properties:
+      appointments_last_30_days:
+        type: integer
+      days_overdue:
+        type: integer
+      gmv_last_30_days_in_cents:
+        type: integer
+      organization:
+        $ref: '#/definitions/domain.Organization'
+      total_barbers_count:
+        type: integer
+    type: object
+  domain.UnitRevenueComparison:
     properties:
       revenue_in_cents:
         type: integer
@@ -435,7 +491,14 @@ definitions:
       unit_name:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_domain.User:
+  domain.UpdateTenantPlanInput:
+    properties:
+      monthly_fee_in_cents:
+        type: integer
+      plan:
+        type: string
+    type: object
+  domain.User:
     properties:
       created_at:
         type: string
@@ -451,32 +514,49 @@ definitions:
         description: NULL for SUPER_ADMIN
         type: string
       role:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Role'
+        $ref: '#/definitions/domain.Role'
       unit_id:
         description: NULL for SUPER_ADMIN & ORG_OWNER
         type: string
       updated_at:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse:
+  handler.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handler.HealthResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.ToggleStatusRequest:
+    properties:
+      is_active:
+        type: boolean
+    type: object
+  service.CatalogResponse:
     properties:
       barbers:
         items:
-          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Barber'
+          $ref: '#/definitions/domain.Barber'
         type: array
       services:
         items:
-          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Service'
+          $ref: '#/definitions/domain.Service'
         type: array
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_service.LoginInput:
+  service.LoginInput:
     properties:
       email:
         type: string
       password:
         type: string
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_service.LoginOutput:
+  service.LoginOutput:
     properties:
       expires_in:
         description: in seconds
@@ -487,9 +567,9 @@ definitions:
         description: always Bearer
         type: string
       user:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.UserResponse'
+        $ref: '#/definitions/service.UserResponse'
     type: object
-  github_com_matheuseufrasio2_ponto_certo_internal_service.UserResponse:
+  service.UserResponse:
     properties:
       email:
         type: string
@@ -500,26 +580,9 @@ definitions:
       organization_id:
         type: string
       role:
-        $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Role'
+        $ref: '#/definitions/domain.Role'
       unit_id:
         type: string
-    type: object
-  internal_handler.ErrorResponse:
-    properties:
-      error:
-        type: string
-    type: object
-  internal_handler.HealthResponse:
-    properties:
-      message:
-        type: string
-      status:
-        type: string
-    type: object
-  internal_handler.ToggleStatusRequest:
-    properties:
-      is_active:
-        type: boolean
     type: object
 info:
   contact:
@@ -552,19 +615,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.SaaSMetrics'
+            $ref: '#/definitions/domain.SaaSMetrics'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get SaaS platform KPIs
@@ -572,17 +635,27 @@ paths:
       - admin
   /admin/tenants:
     get:
-      description: Returns paginated organizations matching search term
+      description: Returns paginated organizations matching search term, status, and
+        plan filters
       parameters:
       - description: Search by name, trade name or document
         in: query
         name: search
         type: string
+      - description: Filter by subscription status (ACTIVE, PAST_DUE, TRIAL, CANCELLED)
+          or BLOCKED
+        in: query
+        name: status
+        type: string
+      - description: Filter by plan (BASIC, PRO, ENTERPRISE)
+        in: query
+        name: plan
+        type: string
       - description: Page number (default 1)
         in: query
         name: page
         type: integer
-      - description: Items per page (default 15)
+      - description: Items per page (default 10)
         in: query
         name: per_page
         type: integer
@@ -592,19 +665,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedOrganizations'
+            $ref: '#/definitions/domain.PaginatedOrganizations'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List and search organizations
@@ -620,33 +693,174 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateTenantInput'
+          $ref: '#/definitions/domain.CreateTenantInput'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Organization'
+            $ref: '#/definitions/domain.Organization'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Onboard a new barbershop franchise tenant
+      tags:
+      - admin
+  /admin/tenants/{id}/overview:
+    get:
+      description: Returns 30-day GMV, 30-day appointment volume, total barbers, and
+        overdue status
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.TenantOverview'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get aggregated engagement and financial metrics for a tenant
+      tags:
+      - admin
+  /admin/tenants/{id}/plan:
+    patch:
+      consumes:
+      - application/json
+      description: Updates organization plan tier (BASIC, PRO, ENTERPRISE) and monthly
+        fee
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Plan update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateTenantPlanInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Organization'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upgrade or downgrade a tenant's subscription plan and fee
+      tags:
+      - admin
+  /admin/tenants/{id}/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Sets a specified password or generates a temporary credential for
+        tenant owner
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Optional custom password payload
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/domain.ResetTenantPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.ResetPasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Administratively reset franchise owner's password
       tags:
       - admin
   /admin/tenants/{id}/toggle-status:
@@ -665,7 +879,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler.ToggleStatusRequest'
+          $ref: '#/definitions/handler.ToggleStatusRequest'
       produces:
       - application/json
       responses:
@@ -677,26 +891,66 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Activate or suspend an organization
+      tags:
+      - admin
+  /admin/tenants/{id}/units:
+    get:
+      description: Returns branches/units belonging to an organization for Super Admin
+        inspection
+      parameters:
+      - description: Organization UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.BarbershopUnit'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all physical branches/units in a tenant organization
       tags:
       - admin
   /admin/tenants/{id}/users:
@@ -715,24 +969,24 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.User'
+              $ref: '#/definitions/domain.User'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all users in a tenant organization
@@ -753,23 +1007,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ImpersonateResponse'
+            $ref: '#/definitions/domain.ImpersonateResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Impersonate a user for diagnostic support
@@ -787,30 +1041,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.LoginInput'
+          $ref: '#/definitions/service.LoginInput'
       produces:
       - application/json
       responses:
         "200":
           description: Token de acesso e dados do usuário
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.LoginOutput'
+            $ref: '#/definitions/service.LoginOutput'
         "400":
           description: Requisição malformada ou inválida
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Credenciais incorretas
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Usuário desativado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       summary: Realizar autenticação
       tags:
       - Auth
@@ -836,23 +1090,23 @@ paths:
         "400":
           description: ID inválido ou transição de status não permitida
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Não autenticado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Atendimento não pertence a este barbeiro
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Agendamento não encontrado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Concluir atendimento na cadeira
@@ -874,20 +1128,20 @@ paths:
           description: Fila de agendamentos do profissional
           schema:
             items:
-              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails'
+              $ref: '#/definitions/domain.AppointmentDetails'
             type: array
         "401":
           description: Não autenticado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Perfil de barbeiro não encontrado para o usuário
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Listar fila diária do barbeiro
@@ -903,11 +1157,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler.HealthResponse'
+            $ref: '#/definitions/handler.HealthResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       summary: Health check endpoint
       tags:
       - health
@@ -940,19 +1194,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.PaginatedBillings'
+            $ref: '#/definitions/domain.PaginatedBillings'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List consolidated billings
@@ -976,15 +1230,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Export consolidated billings as CSV
@@ -1013,19 +1267,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.OwnerExecutiveKPIs'
+            $ref: '#/definitions/domain.OwnerExecutiveKPIs'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get executive network KPIs
@@ -1050,20 +1304,20 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.UnitRevenueComparison'
+              $ref: '#/definitions/domain.UnitRevenueComparison'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get revenue comparison across all units
@@ -1092,20 +1346,20 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.ServiceMixAnalytics'
+              $ref: '#/definitions/domain.ServiceMixAnalytics'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get service mix analytics
@@ -1131,20 +1385,20 @@ paths:
           description: Lista de agendamentos detalhados
           schema:
             items:
-              $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.AppointmentDetails'
+              $ref: '#/definitions/domain.AppointmentDetails'
             type: array
         "401":
           description: Não autenticado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Acesso não permitido a esta unidade
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Listar agendamentos da recepção
@@ -1161,34 +1415,34 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CreateAppointmentInput'
+          $ref: '#/definitions/domain.CreateAppointmentInput'
       produces:
       - application/json
       responses:
         "201":
           description: Agendamento criado com sucesso
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Appointment'
+            $ref: '#/definitions/domain.Appointment'
         "400":
           description: Dados inválidos ou corpo malformado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Não autenticado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Acesso não permitido
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "409":
           description: Barbeiro já possui agendamento neste horário
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Criar novo agendamento ou encaixe
@@ -1206,34 +1460,34 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.CheckoutInput'
+          $ref: '#/definitions/domain.CheckoutInput'
       produces:
       - application/json
       responses:
         "200":
           description: Faturamento registrado com sucesso
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_domain.Billing'
+            $ref: '#/definitions/domain.Billing'
         "400":
           description: Método de pagamento inválido ou corpo malformado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "401":
           description: Não autenticado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Agendamento não encontrado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "409":
           description: Agendamento já foi liquidado anteriormente
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Realizar checkout de agendamento
@@ -1255,23 +1509,23 @@ paths:
         "200":
           description: Catálogo com lista de barbeiros e serviços
           schema:
-            $ref: '#/definitions/github_com_matheuseufrasio2_ponto_certo_internal_service.CatalogResponse'
+            $ref: '#/definitions/service.CatalogResponse'
         "401":
           description: Não autenticado
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "403":
           description: Acesso não permitido à unidade informada
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "404":
           description: Unidade não encontrada
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/internal_handler.ErrorResponse'
+            $ref: '#/definitions/handler.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Obter catálogo da unidade

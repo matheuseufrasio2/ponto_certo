@@ -45,8 +45,8 @@ func (s *TenantAdminService) GetSaaSMetrics(ctx context.Context, claims *UserCla
 	return s.repo.GetSaaSPlatformKPIs(ctx)
 }
 
-// ListTenants returns paginated organizations matching search term.
-func (s *TenantAdminService) ListTenants(ctx context.Context, claims *UserClaims, search string, page, perPage int) (*domain.PaginatedOrganizations, error) {
+// ListTenants returns paginated organizations matching search, status, and plan filters.
+func (s *TenantAdminService) ListTenants(ctx context.Context, claims *UserClaims, search, status, plan string, page, perPage int) (*domain.PaginatedOrganizations, error) {
 	if err := requireSuperAdmin(claims); err != nil {
 		return nil, err
 	}
@@ -55,11 +55,11 @@ func (s *TenantAdminService) ListTenants(ctx context.Context, claims *UserClaims
 		page = 1
 	}
 	if perPage < 1 || perPage > 100 {
-		perPage = 15
+		perPage = 10
 	}
 
 	offset := (page - 1) * perPage
-	items, total, err := s.repo.ListTenants(ctx, search, perPage, offset)
+	items, total, err := s.repo.ListTenants(ctx, search, status, plan, perPage, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +110,87 @@ func (s *TenantAdminService) GetTenantUsers(ctx context.Context, claims *UserCla
 		return nil, err
 	}
 	return s.repo.GetTenantUsers(ctx, tenantID)
+}
+
+// GetTenantUnits returns physical units/branches belonging to a tenant organization.
+func (s *TenantAdminService) GetTenantUnits(ctx context.Context, claims *UserClaims, tenantID string) ([]domain.BarbershopUnit, error) {
+	if err := requireSuperAdmin(claims); err != nil {
+		return nil, err
+	}
+	if tenantID == "" {
+		return nil, errors.New("tenant id is required")
+	}
+	return s.repo.GetTenantUnits(ctx, tenantID)
+}
+
+// GetTenantOverview aggregates tenant engagement, 30-day GMV, appointments, and days overdue.
+func (s *TenantAdminService) GetTenantOverview(ctx context.Context, claims *UserClaims, tenantID string) (*domain.TenantOverview, error) {
+	if err := requireSuperAdmin(claims); err != nil {
+		return nil, err
+	}
+	if tenantID == "" {
+		return nil, errors.New("tenant id is required")
+	}
+	return s.repo.GetTenantOverview(ctx, tenantID)
+}
+
+// UpdateTenantPlan modifies an organization's subscription tier and monthly billing rate.
+func (s *TenantAdminService) UpdateTenantPlan(ctx context.Context, claims *UserClaims, tenantID string, input domain.UpdateTenantPlanInput) (*domain.Organization, error) {
+	if err := requireSuperAdmin(claims); err != nil {
+		return nil, err
+	}
+	if tenantID == "" {
+		return nil, errors.New("tenant id is required")
+	}
+	if err := input.Validate(); err != nil {
+		return nil, err
+	}
+	return s.repo.UpdateTenantPlan(ctx, tenantID, input.Plan, input.MonthlyFeeInCents)
+}
+
+// ResetTenantPassword assists franchise owners who lost system access by setting a new or temporary password.
+func (s *TenantAdminService) ResetTenantPassword(ctx context.Context, claims *UserClaims, tenantID string, input domain.ResetTenantPasswordInput) (*domain.ResetPasswordResponse, error) {
+	if err := requireSuperAdmin(claims); err != nil {
+		return nil, err
+	}
+	if tenantID == "" {
+		return nil, errors.New("tenant id is required")
+	}
+
+	owner, err := s.repo.GetPrimaryOwnerByTenantID(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	passwordToSet := input.NewPassword
+	if passwordToSet == "" {
+		passwordToSet = fmt.Sprintf("Ponto@%d", time.Now().UnixNano()%1000000)
+	}
+	if len(passwordToSet) < 6 {
+		return nil, errors.New("password must be at least 6 characters long")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(passwordToSet), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("hash password: %w", err)
+	}
+
+	if err := s.repo.UpdateUserPassword(ctx, owner.ID, string(hash)); err != nil {
+		return nil, err
+	}
+
+	slog.Warn("superadmin reset tenant owner password",
+		"admin_id", claims.UserID,
+		"tenant_id", tenantID,
+		"owner_id", owner.ID,
+		"owner_email", owner.Email,
+	)
+
+	return &domain.ResetPasswordResponse{
+		UserID:            owner.ID,
+		UserEmail:         owner.Email,
+		TemporaryPassword: passwordToSet,
+	}, nil
 }
 
 // ImpersonateUser generates a temporary JWT token allowing a Super Admin to access the system as a specific user.

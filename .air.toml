@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/main"
+  entrypoint = "./tmp/main"
   cmd = "go build -o ./tmp/main ./cmd/api"
   delay = 500
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "docs"]
@@ -21,7 +21,7 @@ tmp_dir = "tmp"
   poll = false
   poll_interval = 0
   post_cmd = []
-  pre_cmd = ["swag init -g cmd/api/main.go --parseDependency --parseInternal"]
+  pre_cmd = ["swag init -g main.go -d cmd/api,internal/handler,internal/domain,internal/service --packagePrefix github.com/matheuseufrasio2/ponto_certo --parseInternal"]
   rerun = false
   rerun_delay = 500
   send_interrupt = false

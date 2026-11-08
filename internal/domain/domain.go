@@ -100,6 +100,10 @@ type Organization struct {
 	MonthlyFeeInCents  int64              `json:"monthly_fee_in_cents"`
 	SubscriptionStatus SubscriptionStatus `json:"subscription_status"`
 	IsActive           bool               `json:"is_active"`
+	UnitsCount         int                `json:"units_count"`
+	ActiveUsersCount   int                `json:"active_users_count"`
+	LastActivityAt     *time.Time         `json:"last_activity_at,omitempty"`
+	PastDueSince       *time.Time         `json:"past_due_since,omitempty"`
 	CreatedAt          time.Time          `json:"created_at"`
 	UpdatedAt          time.Time          `json:"updated_at"`
 }
@@ -572,6 +576,44 @@ type PaginatedOrganizations struct {
 	Total   int            `json:"total"`
 	Page    int            `json:"page"`
 	PerPage int            `json:"per_page"`
+}
+
+// TenantOverview aggregates detailed engagement, financial health, and operational capacity for a tenant.
+type TenantOverview struct {
+	Organization           Organization `json:"organization"`
+	GMVLast30DaysInCents   int64        `json:"gmv_last_30_days_in_cents"`
+	AppointmentsLast30Days int          `json:"appointments_last_30_days"`
+	TotalBarbersCount      int          `json:"total_barbers_count"`
+	DaysOverdue            int          `json:"days_overdue"`
+}
+
+// UpdateTenantPlanInput defines parameters for upgrading/downgrading a tenant's subscription.
+type UpdateTenantPlanInput struct {
+	Plan              string `json:"plan"`
+	MonthlyFeeInCents int64  `json:"monthly_fee_in_cents"`
+}
+
+// Validate verifies plan and fee constraints.
+func (i UpdateTenantPlanInput) Validate() error {
+	if i.Plan != "BASIC" && i.Plan != "PRO" && i.Plan != "ENTERPRISE" {
+		return errors.New("plan must be BASIC, PRO, or ENTERPRISE")
+	}
+	if i.MonthlyFeeInCents < 0 {
+		return errors.New("monthly fee must be greater than or equal to zero")
+	}
+	return nil
+}
+
+// ResetTenantPasswordInput defines optional payload for administrative password resets.
+type ResetTenantPasswordInput struct {
+	NewPassword string `json:"new_password,omitempty"`
+}
+
+// ResetPasswordResponse carries the result of an administrative password reset.
+type ResetPasswordResponse struct {
+	UserID            string `json:"user_id"`
+	UserEmail         string `json:"user_email"`
+	TemporaryPassword string `json:"temporary_password"`
 }
 
 

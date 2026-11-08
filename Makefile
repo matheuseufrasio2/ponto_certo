@@ -1,4 +1,4 @@
-.PHONY: all docs dev build test clean air-install hooks-install db-up db-down db-logs db-shell db-reset db-seed migrate-up migrate-down migrate-status
+.PHONY: all docs dev build test clean air-install hooks-install db-up db-down db-logs db-shell db-reset seed db-seed migrate migrate-up migrate-down migrate-status
 
 # Install native Git hooks for Conventional Commits and Atomic Commits validation
 hooks-install:
@@ -10,16 +10,18 @@ hooks-install:
 # Generate Swagger documentation
 docs:
 	@echo "📚 Generating Swagger documentation..."
-	@swag init -g cmd/api/main.go --parseDependency --parseInternal
+	@swag init -g main.go -d cmd/api,internal/handler,internal/domain,internal/service --packagePrefix github.com/matheuseufrasio2/ponto_certo --parseInternal
 
 # Development mode with hot-reload (Air) or fallback to go run
-dev:
+dev: migrate
+	@if ! command -v air > /dev/null 2>&1 && [ ! -f "$$(go env GOPATH)/bin/air" ]; then \
+		echo "⬇️  Air not found. Installing Air..."; \
+		go install github.com/air-verse/air@latest; \
+	fi
 	@if command -v air > /dev/null 2>&1; then \
 		air; \
 	else \
-		echo "💡 Tip: 'air' binary not found. Run 'make air-install' to enable hot-reload."; \
-		$(MAKE) docs; \
-		go run cmd/api/main.go; \
+		$$(go env GOPATH)/bin/air; \
 	fi
 
 # Install Air for hot-reload
@@ -63,24 +65,25 @@ db-reset:
 	@docker compose down -v
 	@$(MAKE) db-up
 
-# Seed database with realistic development and testing data
-db-seed:
-	@echo "🌱 Seeding database with realistic barbershop data..."
-	@docker compose exec -T postgres psql -U postgres -d ponto_certo < scripts/seed.sql
-	@echo "✅ Database seeded successfully"
+# Seed database with 20 realistic tenants & employees (Native Go CLI, agnostic for Neon Cloud & Docker)
+seed:
+	@go run cmd/seed/main.go
 
-# Database migrations using official golang-migrate container
-migrate-up:
-	@echo "🚀 Applying database migrations..."
-	@docker compose --profile tools run --rm migrate up
+# Legacy alias
+db-seed: seed
 
-migrate-down:
-	@echo "⏪ Reverting last database migration..."
-	@docker compose --profile tools run --rm migrate down 1
+# Database migrations (Native Go CLI, agnostic for Neon Cloud and local Docker)
+migrate:
+	@go run cmd/migrate/main.go up
 
 migrate-status:
-	@echo "📊 Checking migration version..."
-	@docker compose --profile tools run --rm migrate version
+	@go run cmd/migrate/main.go status
+
+migrate-down:
+	@go run cmd/migrate/main.go down
+
+# Backwards compatibility aliases
+migrate-up: migrate
 
 # Clean up build artifacts and temporary files
 clean:
