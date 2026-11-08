@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.11.0...ponto_certo-v0.12.0) (2026-11-08)
+
+
+### Features
+
+* **domain:** define governance audit logs with employee leave entities ([f714fdc](https://github.com/matheuseufrasio2/ponto_certo/commit/f714fdcb25aa4f581fcf6e5bf53d456b9001c639))
+* **governance:** implement system audit logs with team leave governance ([5b1e1b3](https://github.com/matheuseufrasio2/ponto_certo/commit/5b1e1b38911ef16ca531fdb306265c7cfcfb594a))
+* **handler:** add endpoints for user governance with audit logs ([febca0e](https://github.com/matheuseufrasio2/ponto_certo/commit/febca0e69cdba2389c9ee007aec9ca8dec818bb0))
+* **migrations:** add audit logs with employee leaves schema ([b973574](https://github.com/matheuseufrasio2/ponto_certo/commit/b97357472b8febf4b2dc03f99ee36bc19ac80bb4))
+* **repo:** implement audit logs persistence with multi-tenant filtering ([c1686ac](https://github.com/matheuseufrasio2/ponto_certo/commit/c1686aca834565583813d9b779086a9f33881168))
+* **service:** implement governance services with audit trail recording ([89a73e7](https://github.com/matheuseufrasio2/ponto_certo/commit/89a73e7db120ceda89297dd1f922fb114dde8cea))
+
 ## [0.11.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.10.0...ponto_certo-v0.11.0) (2026-11-08)
 
 
