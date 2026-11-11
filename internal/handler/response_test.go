@@ -116,6 +116,13 @@ func TestHandleError(t *testing.T) {
 			expectedCode:   domain.ErrCodeInvalidRole,
 		},
 		{
+			name:           "invalid uuid error",
+			err:            domain.ErrInvalidUUID,
+			expectedStatus: http.StatusBadRequest,
+			expectedMsg:    domain.ErrInvalidUUID.Error(),
+			expectedCode:   domain.ErrCodeInvalidUUID,
+		},
+		{
 			name:           "unit name required error",
 			err:            domain.ErrUnitNameRequired,
 			expectedStatus: http.StatusBadRequest,

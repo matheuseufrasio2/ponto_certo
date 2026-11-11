@@ -152,6 +152,7 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrInvalidRole),
 		errors.Is(err, domain.ErrInvalidDocument),
 		errors.Is(err, domain.ErrInvalidLogoURL),
+		errors.Is(err, domain.ErrInvalidUUID),
 		errors.Is(err, domain.ErrUnitNameRequired),
 		errors.Is(err, domain.ErrInvalidChairCount),
 		errors.Is(err, domain.ErrValidationFailed):
