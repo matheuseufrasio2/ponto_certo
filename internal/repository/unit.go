@@ -172,6 +172,9 @@ func (r *PostgresUnitRepository) ToggleStatus(ctx context.Context, unitID string
 
 // IsUnitActive returns whether the specified unit exists and is currently active.
 func (r *PostgresUnitRepository) IsUnitActive(ctx context.Context, unitID string) (bool, error) {
+	if !domain.IsValidUUID(unitID) {
+		return false, domain.ErrUnitNotFound
+	}
 	query := `SELECT is_active FROM barbershop_units WHERE id = $1 LIMIT 1;`
 	var isActive bool
 	err := r.db.QueryRow(ctx, query, unitID).Scan(&isActive)
