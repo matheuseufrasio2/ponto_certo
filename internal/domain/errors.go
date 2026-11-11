@@ -10,17 +10,17 @@ type ErrorCode string
 
 const (
 	// 404 - Resource Not Found
-	ErrCodeNotFound             ErrorCode = "RESOURCE_NOT_FOUND"
-	ErrCodeBarberNotFound       ErrorCode = "BARBER_NOT_FOUND"
-	ErrCodeCustomerNotFound     ErrorCode = "CUSTOMER_NOT_FOUND"
-	ErrCodeClientNotFound       ErrorCode = "CLIENT_NOT_FOUND"
-	ErrCodeServiceNotFound      ErrorCode = "SERVICE_NOT_FOUND"
-	ErrCodeBillingNotFound      ErrorCode = "BILLING_NOT_FOUND"
-	ErrCodeUserNotFound         ErrorCode = "USER_NOT_FOUND"
-	ErrCodeOrganizationNotFound ErrorCode = "ORGANIZATION_NOT_FOUND"
-	ErrCodeUnitNotFound         ErrorCode = "UNIT_NOT_FOUND"
-	ErrCodeProductNotFound      ErrorCode = "PRODUCT_NOT_FOUND"
-	ErrCodeAppointmentNotFound  ErrorCode = "APPOINTMENT_NOT_FOUND"
+	ErrCodeNotFound              ErrorCode = "RESOURCE_NOT_FOUND"
+	ErrCodeBarberNotFound        ErrorCode = "BARBER_NOT_FOUND"
+	ErrCodeCustomerNotFound      ErrorCode = "CUSTOMER_NOT_FOUND"
+	ErrCodeClientNotFound        ErrorCode = "CLIENT_NOT_FOUND"
+	ErrCodeServiceNotFound       ErrorCode = "SERVICE_NOT_FOUND"
+	ErrCodeBillingNotFound       ErrorCode = "BILLING_NOT_FOUND"
+	ErrCodeUserNotFound          ErrorCode = "USER_NOT_FOUND"
+	ErrCodeOrganizationNotFound  ErrorCode = "ORGANIZATION_NOT_FOUND"
+	ErrCodeUnitNotFound          ErrorCode = "UNIT_NOT_FOUND"
+	ErrCodeProductNotFound       ErrorCode = "PRODUCT_NOT_FOUND"
+	ErrCodeAppointmentNotFound   ErrorCode = "APPOINTMENT_NOT_FOUND"
 	ErrCodeScheduleBlockNotFound ErrorCode = "SCHEDULE_BLOCK_NOT_FOUND"
 	ErrCodeEmployeeLeaveNotFound ErrorCode = "EMPLOYEE_LEAVE_NOT_FOUND"
 
@@ -28,8 +28,9 @@ const (
 	ErrCodeAppointmentConflict         ErrorCode = "APPOINTMENT_CONFLICT"
 	ErrCodeBarberHasFutureAppointments ErrorCode = "BARBER_HAS_FUTURE_APPOINTMENTS"
 	ErrCodeBillingAlreadyProcessed     ErrorCode = "BILLING_ALREADY_PROCESSED"
-	ErrCodeScheduleBlockConflict        ErrorCode = "SCHEDULE_BLOCK_CONFLICT"
-	ErrCodeEmployeeLeaveConflict        ErrorCode = "EMPLOYEE_LEAVE_CONFLICT"
+	ErrCodeScheduleBlockConflict       ErrorCode = "SCHEDULE_BLOCK_CONFLICT"
+	ErrCodeEmployeeLeaveConflict       ErrorCode = "EMPLOYEE_LEAVE_CONFLICT"
+	ErrCodeUnitNameAlreadyExists       ErrorCode = "UNIT_NAME_ALREADY_EXISTS"
 
 	// 401 & 403 - Auth, Tenant & Governance
 	ErrCodeUnauthorized                ErrorCode = "UNAUTHORIZED"
@@ -43,46 +44,49 @@ const (
 	ErrCodeCannotImpersonateSuperAdmin ErrorCode = "CANNOT_IMPERSONATE_SUPER_ADMIN"
 	ErrCodeImpersonationActionBlocked  ErrorCode = "IMPERSONATION_ACTION_BLOCKED"
 	ErrCodeTenantInactive              ErrorCode = "TENANT_INACTIVE"
+	ErrCodeUnitInactive                ErrorCode = "UNIT_INACTIVE"
 	ErrCodeCannotDeactivateSuperAdmin  ErrorCode = "CANNOT_DEACTIVATE_SUPER_ADMIN"
 	ErrCodeCannotDeactivateSelf        ErrorCode = "CANNOT_DEACTIVATE_SELF"
 	ErrCodeInsufficientRoleHierarchy   ErrorCode = "INSUFFICIENT_ROLE_HIERARCHY"
 
 	// 400 - Validation & Input
-	ErrCodeValidationFailed            ErrorCode = "VALIDATION_FAILED"
-	ErrCodeInvalidTimeSlot             ErrorCode = "INVALID_TIME_SLOT"
-	ErrCodeInvalidPaymentMethod        ErrorCode = "INVALID_PAYMENT_METHOD"
-	ErrCodeInvalidBillingStatus        ErrorCode = "INVALID_BILLING_STATUS"
-	ErrCodeInvalidRole                 ErrorCode = "INVALID_ROLE"
-	ErrCodeInvalidProductPrice         ErrorCode = "INVALID_PRODUCT_PRICE"
-	ErrCodeInvalidProductStock         ErrorCode = "INVALID_PRODUCT_STOCK"
+	ErrCodeValidationFailed             ErrorCode = "VALIDATION_FAILED"
+	ErrCodeInvalidTimeSlot              ErrorCode = "INVALID_TIME_SLOT"
+	ErrCodeInvalidPaymentMethod         ErrorCode = "INVALID_PAYMENT_METHOD"
+	ErrCodeInvalidBillingStatus         ErrorCode = "INVALID_BILLING_STATUS"
+	ErrCodeInvalidRole                  ErrorCode = "INVALID_ROLE"
+	ErrCodeInvalidProductPrice          ErrorCode = "INVALID_PRODUCT_PRICE"
+	ErrCodeInvalidProductStock          ErrorCode = "INVALID_PRODUCT_STOCK"
 	ErrCodeInvalidAppointmentTransition ErrorCode = "INVALID_APPOINTMENT_TRANSITION"
-	ErrCodeInvalidAppointmentTime      ErrorCode = "INVALID_APPOINTMENT_TIME"
-	ErrCodeInvalidBarberStatus         ErrorCode = "INVALID_BARBER_STATUS"
-	ErrCodeInvalidDateRange            ErrorCode = "INVALID_DATE_RANGE"
-	ErrCodeProductNameRequired         ErrorCode = "PRODUCT_NAME_REQUIRED"
-	ErrCodeInvalidProductCategory      ErrorCode = "INVALID_PRODUCT_CATEGORY"
-	ErrCodeProductCostMinValue         ErrorCode = "PRODUCT_COST_MIN_VALUE"
-	ErrCodeUnitIdRequired              ErrorCode = "UNIT_ID_REQUIRED"
-	ErrCodeBarberIdRequired            ErrorCode = "BARBER_ID_REQUIRED"
-	ErrCodeClientIdRequired            ErrorCode = "CLIENT_ID_REQUIRED"
-	ErrCodeServiceIdRequired           ErrorCode = "SERVICE_ID_REQUIRED"
-	ErrCodePriceMinValue               ErrorCode = "PRICE_MIN_VALUE"
-	ErrCodeInvalidPlan                 ErrorCode = "INVALID_PLAN"
-	ErrCodeMonthlyFeeMinValue          ErrorCode = "MONTHLY_FEE_MIN_VALUE"
-	ErrCodeOrganizationNameRequired    ErrorCode = "ORGANIZATION_NAME_REQUIRED"
-	ErrCodeAdminCredentialsRequired    ErrorCode = "ADMIN_CREDENTIALS_REQUIRED"
-	ErrCodeAdminPasswordMinLength      ErrorCode = "ADMIN_PASSWORD_MIN_LENGTH"
-	ErrCodeTenantIdRequired            ErrorCode = "TENANT_ID_REQUIRED"
-	ErrCodeCannotImpersonateInactive   ErrorCode = "CANNOT_IMPERSONATE_INACTIVE_USER"
-	ErrCodeTargetUserIdRequired        ErrorCode = "TARGET_USER_ID_REQUIRED"
-	ErrCodeInvalidUUID                 ErrorCode = "INVALID_UUID_FORMAT"
-	ErrCodeStartTimeAndEndTimeRequired ErrorCode = "START_TIME_AND_END_TIME_REQUIRED"
-	ErrCodeReasonRequired              ErrorCode = "REASON_REQUIRED"
-	ErrCodeUserIdRequired              ErrorCode = "USER_ID_REQUIRED"
-	ErrCodeInvalidLeaveType            ErrorCode = "INVALID_LEAVE_TYPE"
-	ErrCodeInvalidDateFormat           ErrorCode = "INVALID_DATE_FORMAT"
-	ErrCodeInvalidDocument             ErrorCode = "INVALID_DOCUMENT"
-	ErrCodeInvalidLogoURL              ErrorCode = "INVALID_LOGO_URL"
+	ErrCodeInvalidAppointmentTime       ErrorCode = "INVALID_APPOINTMENT_TIME"
+	ErrCodeInvalidBarberStatus          ErrorCode = "INVALID_BARBER_STATUS"
+	ErrCodeInvalidDateRange             ErrorCode = "INVALID_DATE_RANGE"
+	ErrCodeProductNameRequired          ErrorCode = "PRODUCT_NAME_REQUIRED"
+	ErrCodeInvalidProductCategory       ErrorCode = "INVALID_PRODUCT_CATEGORY"
+	ErrCodeProductCostMinValue          ErrorCode = "PRODUCT_COST_MIN_VALUE"
+	ErrCodeUnitIdRequired               ErrorCode = "UNIT_ID_REQUIRED"
+	ErrCodeBarberIdRequired             ErrorCode = "BARBER_ID_REQUIRED"
+	ErrCodeClientIdRequired             ErrorCode = "CLIENT_ID_REQUIRED"
+	ErrCodeServiceIdRequired            ErrorCode = "SERVICE_ID_REQUIRED"
+	ErrCodePriceMinValue                ErrorCode = "PRICE_MIN_VALUE"
+	ErrCodeInvalidPlan                  ErrorCode = "INVALID_PLAN"
+	ErrCodeMonthlyFeeMinValue           ErrorCode = "MONTHLY_FEE_MIN_VALUE"
+	ErrCodeOrganizationNameRequired     ErrorCode = "ORGANIZATION_NAME_REQUIRED"
+	ErrCodeAdminCredentialsRequired     ErrorCode = "ADMIN_CREDENTIALS_REQUIRED"
+	ErrCodeAdminPasswordMinLength       ErrorCode = "ADMIN_PASSWORD_MIN_LENGTH"
+	ErrCodeTenantIdRequired             ErrorCode = "TENANT_ID_REQUIRED"
+	ErrCodeCannotImpersonateInactive    ErrorCode = "CANNOT_IMPERSONATE_INACTIVE_USER"
+	ErrCodeTargetUserIdRequired         ErrorCode = "TARGET_USER_ID_REQUIRED"
+	ErrCodeInvalidUUID                  ErrorCode = "INVALID_UUID_FORMAT"
+	ErrCodeStartTimeAndEndTimeRequired  ErrorCode = "START_TIME_AND_END_TIME_REQUIRED"
+	ErrCodeReasonRequired               ErrorCode = "REASON_REQUIRED"
+	ErrCodeUserIdRequired               ErrorCode = "USER_ID_REQUIRED"
+	ErrCodeInvalidLeaveType             ErrorCode = "INVALID_LEAVE_TYPE"
+	ErrCodeInvalidDateFormat            ErrorCode = "INVALID_DATE_FORMAT"
+	ErrCodeInvalidDocument              ErrorCode = "INVALID_DOCUMENT"
+	ErrCodeInvalidLogoURL               ErrorCode = "INVALID_LOGO_URL"
+	ErrCodeUnitNameRequired             ErrorCode = "UNIT_NAME_REQUIRED"
+	ErrCodeInvalidChairCount            ErrorCode = "INVALID_CHAIR_COUNT"
 
 	// 500 - Server
 	ErrCodeInternalServerError ErrorCode = "INTERNAL_SERVER_ERROR"
@@ -160,6 +164,8 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeScheduleBlockConflict
 	case errors.Is(err, ErrEmployeeLeaveConflict):
 		return ErrCodeEmployeeLeaveConflict
+	case errors.Is(err, ErrUnitNameAlreadyExists):
+		return ErrCodeUnitNameAlreadyExists
 
 	// 401 & 403
 	case errors.Is(err, ErrUnauthorized):
@@ -174,6 +180,8 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeImpersonationActionBlocked
 	case errors.Is(err, ErrTenantInactive):
 		return ErrCodeTenantInactive
+	case errors.Is(err, ErrUnitInactive):
+		return ErrCodeUnitInactive
 	case errors.Is(err, ErrCannotDeactivateSuperAdmin):
 		return ErrCodeCannotDeactivateSuperAdmin
 	case errors.Is(err, ErrCannotDeactivateSelf):
@@ -208,6 +216,10 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeInvalidLogoURL
 	case errors.Is(err, ErrInvalidUUID):
 		return ErrCodeInvalidUUID
+	case errors.Is(err, ErrUnitNameRequired):
+		return ErrCodeUnitNameRequired
+	case errors.Is(err, ErrInvalidChairCount):
+		return ErrCodeInvalidChairCount
 	case errors.Is(err, ErrValidationFailed):
 		return ErrCodeValidationFailed
 
@@ -280,8 +292,15 @@ func CodeForMessage(msg string) ErrorCode {
 		return ErrCodeInvalidDocument
 	case strings.Contains(normalized, "url do logotipo invalida"):
 		return ErrCodeInvalidLogoURL
+	case strings.Contains(normalized, "unit name is required"):
+		return ErrCodeUnitNameRequired
+	case strings.Contains(normalized, "chair count must be greater"):
+		return ErrCodeInvalidChairCount
+	case strings.Contains(normalized, "already exists in the organization"):
+		return ErrCodeUnitNameAlreadyExists
+	case strings.Contains(normalized, "barbershop unit is inactive"):
+		return ErrCodeUnitInactive
 	default:
 		return ""
 	}
 }
-

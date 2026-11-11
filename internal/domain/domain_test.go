@@ -711,3 +711,25 @@ func TestCreateEmployeeLeaveInput_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestUnitDomainErrorCodes(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected domain.ErrorCode
+	}{
+		{name: "unit not found", err: domain.ErrUnitNotFound, expected: domain.ErrCodeUnitNotFound},
+		{name: "unit name required", err: domain.ErrUnitNameRequired, expected: domain.ErrCodeUnitNameRequired},
+		{name: "invalid chair count", err: domain.ErrInvalidChairCount, expected: domain.ErrCodeInvalidChairCount},
+		{name: "unit name already exists", err: domain.ErrUnitNameAlreadyExists, expected: domain.ErrCodeUnitNameAlreadyExists},
+		{name: "unit inactive", err: domain.ErrUnitInactive, expected: domain.ErrCodeUnitInactive},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := domain.CodeForError(tc.err); got != tc.expected {
+				t.Errorf("expected error code %q, got %q", tc.expected, got)
+			}
+		})
+	}
+}
