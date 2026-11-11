@@ -1872,6 +1872,122 @@ const docTemplate = `{
                 }
             }
         },
+        "/owner/organization": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna os dados cadastrais da organização do Dono autenticado (Razão social, Nome fantasia, CNPJ/CPF, Telefone, Logo).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Owner"
+                ],
+                "summary": "Obter perfil da organização do Dono",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.OrganizationProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permite ao Dono atualizar razão social, nome fantasia, documento (CNPJ/CPF), telefone e logotipo da empresa.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Owner"
+                ],
+                "summary": "Atualizar dados cadastrais da organização",
+                "parameters": [
+                    {
+                        "description": "Dados cadastrais da organização",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.UpdateOrganizationInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.OrganizationProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/owner/revenue-by-unit": {
             "get": {
                 "security": [
@@ -3087,6 +3203,8 @@ const docTemplate = `{
                 "USER_ID_REQUIRED",
                 "INVALID_LEAVE_TYPE",
                 "INVALID_DATE_FORMAT",
+                "INVALID_DOCUMENT",
+                "INVALID_LOGO_URL",
                 "INTERNAL_SERVER_ERROR"
             ],
             "x-enum-varnames": [
@@ -3155,6 +3273,8 @@ const docTemplate = `{
                 "ErrCodeUserIdRequired",
                 "ErrCodeInvalidLeaveType",
                 "ErrCodeInvalidDateFormat",
+                "ErrCodeInvalidDocument",
+                "ErrCodeInvalidLogoURL",
                 "ErrCodeInternalServerError"
             ]
         },
@@ -3215,6 +3335,9 @@ const docTemplate = `{
                 "last_activity_at": {
                     "type": "string"
                 },
+                "logo_url": {
+                    "type": "string"
+                },
                 "monthly_fee_in_cents": {
                     "type": "integer"
                 },
@@ -3222,6 +3345,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "past_due_since": {
+                    "type": "string"
+                },
+                "phone": {
                     "type": "string"
                 },
                 "plan": {
@@ -3275,6 +3401,44 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "unit_name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.OrganizationProfileResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "document": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "plan": {
+                    "type": "string"
+                },
+                "subscription_status": {
+                    "$ref": "#/definitions/domain.SubscriptionStatus"
+                },
+                "trade_name": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -3635,6 +3799,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "unit_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.UpdateOrganizationInput": {
+            "type": "object",
+            "properties": {
+                "document": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "trade_name": {
                     "type": "string"
                 }
             }

@@ -46,6 +46,10 @@ var (
 	ErrEmployeeLeaveNotFound        = errors.New("employee leave not found")
 	ErrInvalidDateRange             = errors.New("invalid date range: start date must be before or equal to end date")
 	ErrEmployeeLeaveConflict        = errors.New("employee already has a leave scheduled for this period")
+	ErrInvalidDocument              = errors.New("documento invalido: informe um CPF ou CNPJ valido")
+	ErrInvalidLogoURL               = errors.New("url do logotipo invalida: informe uma URL http ou https")
+	ErrInvalidUUID                  = errors.New("invalid uuid format")
+	ErrValidationFailed             = errors.New("validation failed")
 )
 
 // BarberStatus defines live operational shift state for a barber.
@@ -106,6 +110,8 @@ type Organization struct {
 	Name               string             `json:"name"`
 	TradeName          string             `json:"trade_name,omitempty"`
 	Document           string             `json:"document,omitempty"`
+	Phone              string             `json:"phone,omitempty"`
+	LogoURL            string             `json:"logo_url,omitempty"`
 	Plan               string             `json:"plan"`
 	MonthlyFeeInCents  int64              `json:"monthly_fee_in_cents"`
 	SubscriptionStatus SubscriptionStatus `json:"subscription_status"`
@@ -115,6 +121,30 @@ type Organization struct {
 	TotalUsersCount    int                `json:"total_users_count"`
 	LastActivityAt     *time.Time         `json:"last_activity_at,omitempty"`
 	PastDueSince       *time.Time         `json:"past_due_since,omitempty"`
+	CreatedAt          time.Time          `json:"created_at"`
+	UpdatedAt          time.Time          `json:"updated_at"`
+}
+
+// UpdateOrganizationInput defines payload to update organization corporate profile.
+type UpdateOrganizationInput struct {
+	Name      string  `json:"name"`
+	TradeName *string `json:"trade_name"`
+	Document  *string `json:"document"`
+	Phone     *string `json:"phone"`
+	LogoURL   *string `json:"logo_url"`
+}
+
+// OrganizationProfileResponse represents organization data returned to owner.
+type OrganizationProfileResponse struct {
+	ID                 string             `json:"id"`
+	Name               string             `json:"name"`
+	TradeName          string             `json:"trade_name,omitempty"`
+	Document           string             `json:"document,omitempty"`
+	Phone              string             `json:"phone,omitempty"`
+	LogoURL            string             `json:"logo_url,omitempty"`
+	Plan               string             `json:"plan"`
+	SubscriptionStatus SubscriptionStatus `json:"subscription_status"`
+	IsActive           bool               `json:"is_active"`
 	CreatedAt          time.Time          `json:"created_at"`
 	UpdatedAt          time.Time          `json:"updated_at"`
 }

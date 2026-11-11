@@ -86,6 +86,7 @@ func main() {
 	auditLogRepo := repository.NewPostgresAuditLogRepository(dbPool)
 	scheduleBlockRepo := repository.NewPostgresScheduleBlockRepository(dbPool)
 	employeeLeaveRepo := repository.NewPostgresEmployeeLeaveRepository(dbPool)
+	orgRepo := repository.NewPostgresOrganizationRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
@@ -99,6 +100,7 @@ func main() {
 	auditLogService := service.NewAuditLogService(auditLogRepo)
 	scheduleBlockService := service.NewScheduleBlockService(scheduleBlockRepo)
 	employeeLeaveService := service.NewEmployeeLeaveService(employeeLeaveRepo)
+	orgService := service.NewOrganizationService(orgRepo)
 
 	// Wire audit recorders for critical and sensitive actions
 	tenantAdminService.SetAuditRecorder(auditLogRepo)
@@ -117,6 +119,7 @@ func main() {
 	auditLogHandler := handler.NewAuditLogHandler(auditLogService)
 	scheduleBlockHandler := handler.NewScheduleBlockHandler(scheduleBlockService)
 	employeeLeaveHandler := handler.NewEmployeeLeaveHandler(employeeLeaveService)
+	ownerMgmtHandler := handler.NewOwnerManagementHandler(orgService)
 
 	var devHandler *handler.DevHandler
 	if cfg.Env != "production" {
@@ -202,6 +205,8 @@ func main() {
 				// Subscription status is accessible even if tenant is inactive/suspended
 				r.Get("/subscription", ownerAnalyticsHandler.GetSubscription)
 				r.Get("/audit-logs", auditLogHandler.ListOrgAuditLogs)
+				r.Get("/organization", ownerMgmtHandler.GetOrganization)
+				r.Put("/organization", ownerMgmtHandler.UpdateOrganization)
 
 				// Analytical and export routes require active tenant
 				r.Group(func(r chi.Router) {

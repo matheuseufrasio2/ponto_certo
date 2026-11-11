@@ -147,7 +147,10 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrInvalidAppointmentTransition),
 		errors.Is(err, domain.ErrInvalidAppointmentTime),
 		errors.Is(err, domain.ErrInvalidDateRange),
-		errors.Is(err, domain.ErrInvalidRole):
+		errors.Is(err, domain.ErrInvalidRole),
+		errors.Is(err, domain.ErrInvalidDocument),
+		errors.Is(err, domain.ErrInvalidLogoURL),
+		errors.Is(err, domain.ErrValidationFailed):
 		slog.Warn("bad request validation failed (400)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusBadRequest, err.Error(), loc, code)
 
