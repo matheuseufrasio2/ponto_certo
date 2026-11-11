@@ -308,6 +308,17 @@ definitions:
       trade_name:
         type: string
     type: object
+  domain.CreateUnitInput:
+    properties:
+      address:
+        type: string
+      chair_count:
+        type: integer
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
   domain.DevSuperAdmin:
     properties:
       email:
@@ -448,6 +459,7 @@ definitions:
     - BILLING_ALREADY_PROCESSED
     - SCHEDULE_BLOCK_CONFLICT
     - EMPLOYEE_LEAVE_CONFLICT
+    - UNIT_NAME_ALREADY_EXISTS
     - UNAUTHORIZED
     - INVALID_CREDENTIALS
     - INVALID_TOKEN
@@ -459,6 +471,7 @@ definitions:
     - CANNOT_IMPERSONATE_SUPER_ADMIN
     - IMPERSONATION_ACTION_BLOCKED
     - TENANT_INACTIVE
+    - UNIT_INACTIVE
     - CANNOT_DEACTIVATE_SUPER_ADMIN
     - CANNOT_DEACTIVATE_SELF
     - INSUFFICIENT_ROLE_HIERARCHY
@@ -497,6 +510,8 @@ definitions:
     - INVALID_DATE_FORMAT
     - INVALID_DOCUMENT
     - INVALID_LOGO_URL
+    - UNIT_NAME_REQUIRED
+    - INVALID_CHAIR_COUNT
     - INTERNAL_SERVER_ERROR
     type: string
     x-enum-varnames:
@@ -518,6 +533,7 @@ definitions:
     - ErrCodeBillingAlreadyProcessed
     - ErrCodeScheduleBlockConflict
     - ErrCodeEmployeeLeaveConflict
+    - ErrCodeUnitNameAlreadyExists
     - ErrCodeUnauthorized
     - ErrCodeInvalidCredentials
     - ErrCodeInvalidToken
@@ -529,6 +545,7 @@ definitions:
     - ErrCodeCannotImpersonateSuperAdmin
     - ErrCodeImpersonationActionBlocked
     - ErrCodeTenantInactive
+    - ErrCodeUnitInactive
     - ErrCodeCannotDeactivateSuperAdmin
     - ErrCodeCannotDeactivateSelf
     - ErrCodeInsufficientRoleHierarchy
@@ -567,6 +584,8 @@ definitions:
     - ErrCodeInvalidDateFormat
     - ErrCodeInvalidDocument
     - ErrCodeInvalidLogoURL
+    - ErrCodeUnitNameRequired
+    - ErrCodeInvalidChairCount
     - ErrCodeInternalServerError
   domain.ImpersonateResponse:
     properties:
@@ -904,6 +923,11 @@ definitions:
       total_barbers_count:
         type: integer
     type: object
+  domain.ToggleUnitStatusInput:
+    properties:
+      is_active:
+        type: boolean
+    type: object
   domain.ToggleUserStatusInput:
     properties:
       is_active:
@@ -951,6 +975,17 @@ definitions:
       plan:
         type: string
     type: object
+  domain.UpdateUnitInput:
+    properties:
+      address:
+        type: string
+      chair_count:
+        type: integer
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
   domain.User:
     properties:
       created_at:
@@ -975,6 +1010,8 @@ definitions:
       unit_id:
         description: NULL for SUPER_ADMIN & ORG_OWNER
         type: string
+      unit_is_active:
+        type: boolean
       updated_at:
         type: string
     type: object
@@ -1571,7 +1608,7 @@ paths:
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
         "403":
-          description: Usuário desativado
+          description: Usuário, organização ou filial desativada
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
         "500":
@@ -2478,6 +2515,193 @@ paths:
       summary: Get organization subscription status
       tags:
       - owner
+  /owner/units:
+    get:
+      description: Retorna as filiais da organização do Dono autenticado ordenadas
+        por nome, com filtro opcional de status (active, inactive, all).
+      parameters:
+      - description: 'Filtrar por status: active, inactive, all'
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.BarbershopUnit'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Listar filiais/unidades da organização
+      tags:
+      - Owner
+    post:
+      consumes:
+      - application/json
+      description: Cria uma nova filial para a organização do Dono autenticado (chair_count
+        padrão é 4 se omitido).
+      parameters:
+      - description: Dados da nova filial
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateUnitInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.BarbershopUnit'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cadastrar nova filial/unidade
+      tags:
+      - Owner
+  /owner/units/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Atualiza nome, telefone, endereço e quantidade de cadeiras de uma
+        filial pertencente à organização do Dono.
+      parameters:
+      - description: UUID da filial
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados atualizados da filial
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateUnitInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.BarbershopUnit'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Atualizar dados de uma filial/unidade
+      tags:
+      - Owner
+  /owner/units/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Alterna o status ativo (is_active) de uma filial. Unidades pausadas
+        bloqueiam novos agendamentos e o login da equipe local.
+      parameters:
+      - description: UUID da filial
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Novo status de ativação
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ToggleUnitStatusInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.BarbershopUnit'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Ativar ou pausar uma filial/unidade
+      tags:
+      - Owner
   /reception/appointments:
     get:
       description: 'Retorna a lista de agendamentos de uma unidade para a data informada
@@ -2545,7 +2769,11 @@ paths:
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
         "403":
-          description: Acesso não permitido
+          description: Acesso não permitido ou filial pausada
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Unidade, barbeiro ou serviço não encontrado
           schema:
             $ref: '#/definitions/handler.ErrorResponse'
         "409":

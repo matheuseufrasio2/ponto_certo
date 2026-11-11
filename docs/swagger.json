@@ -772,7 +772,7 @@
                         }
                     },
                     "403": {
-                        "description": "Usuário desativado",
+                        "description": "Usuário, organização ou filial desativada",
                         "schema": {
                             "$ref": "#/definitions/handler.ErrorResponse"
                         }
@@ -2156,6 +2156,291 @@
                 }
             }
         },
+        "/owner/units": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna as filiais da organização do Dono autenticado ordenadas por nome, com filtro opcional de status (active, inactive, all).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Owner"
+                ],
+                "summary": "Listar filiais/unidades da organização",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filtrar por status: active, inactive, all",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.BarbershopUnit"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cria uma nova filial para a organização do Dono autenticado (chair_count padrão é 4 se omitido).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Owner"
+                ],
+                "summary": "Cadastrar nova filial/unidade",
+                "parameters": [
+                    {
+                        "description": "Dados da nova filial",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.CreateUnitInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.BarbershopUnit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/owner/units/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Atualiza nome, telefone, endereço e quantidade de cadeiras de uma filial pertencente à organização do Dono.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Owner"
+                ],
+                "summary": "Atualizar dados de uma filial/unidade",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID da filial",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados atualizados da filial",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.UpdateUnitInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.BarbershopUnit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/owner/units/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Alterna o status ativo (is_active) de uma filial. Unidades pausadas bloqueiam novos agendamentos e o login da equipe local.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Owner"
+                ],
+                "summary": "Ativar ou pausar uma filial/unidade",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID da filial",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Novo status de ativação",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.ToggleUnitStatusInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.BarbershopUnit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/reception/appointments": {
             "get": {
                 "security": [
@@ -2263,7 +2548,13 @@
                         }
                     },
                     "403": {
-                        "description": "Acesso não permitido",
+                        "description": "Acesso não permitido ou filial pausada",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Unidade, barbeiro ou serviço não encontrado",
                         "schema": {
                             "$ref": "#/definitions/handler.ErrorResponse"
                         }
@@ -2945,6 +3236,23 @@
                 }
             }
         },
+        "domain.CreateUnitInput": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "chair_count": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.DevSuperAdmin": {
             "type": "object",
             "properties": {
@@ -3149,6 +3457,7 @@
                 "BILLING_ALREADY_PROCESSED",
                 "SCHEDULE_BLOCK_CONFLICT",
                 "EMPLOYEE_LEAVE_CONFLICT",
+                "UNIT_NAME_ALREADY_EXISTS",
                 "UNAUTHORIZED",
                 "INVALID_CREDENTIALS",
                 "INVALID_TOKEN",
@@ -3160,6 +3469,7 @@
                 "CANNOT_IMPERSONATE_SUPER_ADMIN",
                 "IMPERSONATION_ACTION_BLOCKED",
                 "TENANT_INACTIVE",
+                "UNIT_INACTIVE",
                 "CANNOT_DEACTIVATE_SUPER_ADMIN",
                 "CANNOT_DEACTIVATE_SELF",
                 "INSUFFICIENT_ROLE_HIERARCHY",
@@ -3198,6 +3508,8 @@
                 "INVALID_DATE_FORMAT",
                 "INVALID_DOCUMENT",
                 "INVALID_LOGO_URL",
+                "UNIT_NAME_REQUIRED",
+                "INVALID_CHAIR_COUNT",
                 "INTERNAL_SERVER_ERROR"
             ],
             "x-enum-varnames": [
@@ -3219,6 +3531,7 @@
                 "ErrCodeBillingAlreadyProcessed",
                 "ErrCodeScheduleBlockConflict",
                 "ErrCodeEmployeeLeaveConflict",
+                "ErrCodeUnitNameAlreadyExists",
                 "ErrCodeUnauthorized",
                 "ErrCodeInvalidCredentials",
                 "ErrCodeInvalidToken",
@@ -3230,6 +3543,7 @@
                 "ErrCodeCannotImpersonateSuperAdmin",
                 "ErrCodeImpersonationActionBlocked",
                 "ErrCodeTenantInactive",
+                "ErrCodeUnitInactive",
                 "ErrCodeCannotDeactivateSuperAdmin",
                 "ErrCodeCannotDeactivateSelf",
                 "ErrCodeInsufficientRoleHierarchy",
@@ -3268,6 +3582,8 @@
                 "ErrCodeInvalidDateFormat",
                 "ErrCodeInvalidDocument",
                 "ErrCodeInvalidLogoURL",
+                "ErrCodeUnitNameRequired",
+                "ErrCodeInvalidChairCount",
                 "ErrCodeInternalServerError"
             ]
         },
@@ -3754,6 +4070,14 @@
                 }
             }
         },
+        "domain.ToggleUnitStatusInput": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                }
+            }
+        },
         "domain.ToggleUserStatusInput": {
             "type": "object",
             "properties": {
@@ -3827,6 +4151,23 @@
                 }
             }
         },
+        "domain.UpdateUnitInput": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "chair_count": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.User": {
             "type": "object",
             "properties": {
@@ -3861,6 +4202,9 @@
                 "unit_id": {
                     "description": "NULL for SUPER_ADMIN \u0026 ORG_OWNER",
                     "type": "string"
+                },
+                "unit_is_active": {
+                    "type": "boolean"
                 },
                 "updated_at": {
                     "type": "string"
