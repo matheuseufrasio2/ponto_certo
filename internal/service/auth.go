@@ -94,6 +94,12 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*LoginOutput
 		}
 	}
 
+	if user.Role != domain.RoleOrgOwner && user.Role != domain.RoleSuperAdmin {
+		if user.UnitID != nil && *user.UnitID != "" && user.UnitIsActive != nil && !*user.UnitIsActive {
+			return nil, domain.ErrUnitInactive
+		}
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password))
 	if err != nil {
 		return nil, domain.ErrUnauthorized
