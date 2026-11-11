@@ -126,6 +126,7 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrCannotImpersonateSuperAdmin),
 		errors.Is(err, domain.ErrImpersonationActionBlocked),
 		errors.Is(err, domain.ErrTenantInactive),
+		errors.Is(err, domain.ErrUnitInactive),
 		errors.Is(err, domain.ErrCannotDeactivateSuperAdmin),
 		errors.Is(err, domain.ErrCannotDeactivateSelf),
 		errors.Is(err, domain.ErrInsufficientRoleHierarchy):
@@ -136,6 +137,7 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrBarberHasFutureAppointments),
 		errors.Is(err, domain.ErrScheduleBlockConflict),
 		errors.Is(err, domain.ErrEmployeeLeaveConflict),
+		errors.Is(err, domain.ErrUnitNameAlreadyExists),
 		errors.Is(err, domain.ErrBillingAlreadyProcessed):
 		slog.Warn("conflict detected (409)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusConflict, err.Error(), loc, code)
@@ -150,6 +152,8 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrInvalidRole),
 		errors.Is(err, domain.ErrInvalidDocument),
 		errors.Is(err, domain.ErrInvalidLogoURL),
+		errors.Is(err, domain.ErrUnitNameRequired),
+		errors.Is(err, domain.ErrInvalidChairCount),
 		errors.Is(err, domain.ErrValidationFailed):
 		slog.Warn("bad request validation failed (400)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusBadRequest, err.Error(), loc, code)
