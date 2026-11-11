@@ -81,6 +81,8 @@ const (
 	ErrCodeUserIdRequired              ErrorCode = "USER_ID_REQUIRED"
 	ErrCodeInvalidLeaveType            ErrorCode = "INVALID_LEAVE_TYPE"
 	ErrCodeInvalidDateFormat           ErrorCode = "INVALID_DATE_FORMAT"
+	ErrCodeInvalidDocument             ErrorCode = "INVALID_DOCUMENT"
+	ErrCodeInvalidLogoURL              ErrorCode = "INVALID_LOGO_URL"
 
 	// 500 - Server
 	ErrCodeInternalServerError ErrorCode = "INTERNAL_SERVER_ERROR"
@@ -200,6 +202,14 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeInvalidBarberStatus
 	case errors.Is(err, ErrInvalidDateRange):
 		return ErrCodeInvalidDateRange
+	case errors.Is(err, ErrInvalidDocument):
+		return ErrCodeInvalidDocument
+	case errors.Is(err, ErrInvalidLogoURL):
+		return ErrCodeInvalidLogoURL
+	case errors.Is(err, ErrInvalidUUID):
+		return ErrCodeInvalidUUID
+	case errors.Is(err, ErrValidationFailed):
+		return ErrCodeValidationFailed
 
 	default:
 		// Fallback por string matching
@@ -266,6 +276,10 @@ func CodeForMessage(msg string) ErrorCode {
 		return ErrCodeInvalidLeaveType
 	case strings.Contains(normalized, "invalid start_date format") || strings.Contains(normalized, "invalid end_date format"):
 		return ErrCodeInvalidDateFormat
+	case strings.Contains(normalized, "documento invalido") || strings.Contains(normalized, "cpf ou cnpj"):
+		return ErrCodeInvalidDocument
+	case strings.Contains(normalized, "url do logotipo invalida"):
+		return ErrCodeInvalidLogoURL
 	default:
 		return ""
 	}
