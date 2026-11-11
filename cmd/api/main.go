@@ -87,11 +87,12 @@ func main() {
 	scheduleBlockRepo := repository.NewPostgresScheduleBlockRepository(dbPool)
 	employeeLeaveRepo := repository.NewPostgresEmployeeLeaveRepository(dbPool)
 	orgRepo := repository.NewPostgresOrganizationRepository(dbPool)
+	unitRepo := repository.NewPostgresUnitRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
 	catalogService := service.NewCatalogService(catalogRepo)
-	appointmentService := service.NewAppointmentService(appointmentRepo, catalogRepo)
+	appointmentService := service.NewAppointmentService(appointmentRepo, catalogRepo, unitRepo)
 	billingService := service.NewBillingService(billingRepo)
 	unitOpsService := service.NewUnitOperationsService(unitOpsRepo)
 	ownerAnalyticsService := service.NewOwnerAnalyticsService(ownerAnalyticsRepo)

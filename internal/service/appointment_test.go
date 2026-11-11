@@ -109,6 +109,17 @@ func (m *mockCatalogRepo) GetOrCreateClient(ctx context.Context, unitID, name, p
 	}, nil
 }
 
+type mockUnitAvailabilityChecker struct {
+	isUnitActiveFn func(ctx context.Context, unitID string) (bool, error)
+}
+
+func (m *mockUnitAvailabilityChecker) IsUnitActive(ctx context.Context, unitID string) (bool, error) {
+	if m.isUnitActiveFn != nil {
+		return m.isUnitActiveFn(ctx, unitID)
+	}
+	return true, nil
+}
+
 func TestAppointmentService_CreateAppointment(t *testing.T) {
 	aptRepo := &mockAppointmentRepo{}
 	catalogRepo := &mockCatalogRepo{
@@ -121,7 +132,8 @@ func TestAppointmentService_CreateAppointment(t *testing.T) {
 			},
 		},
 	}
-	svc := NewAppointmentService(aptRepo, catalogRepo)
+	unitChecker := &mockUnitAvailabilityChecker{}
+	svc := NewAppointmentService(aptRepo, catalogRepo, unitChecker)
 
 	ctx := context.Background()
 	now := time.Now().Add(time.Hour)
@@ -163,6 +175,44 @@ func TestAppointmentService_CreateAppointment(t *testing.T) {
 			t.Fatalf("expected ErrAppointmentConflict, got %v", err)
 		}
 	})
+
+	t.Run("fails when unit is inactive", func(t *testing.T) {
+		aptRepo.conflictResult = false
+		unitChecker.isUnitActiveFn = func(ctx context.Context, unitID string) (bool, error) {
+			return false, nil
+		}
+		defer func() { unitChecker.isUnitActiveFn = nil }()
+
+		_, err := svc.CreateAppointment(ctx, domain.CreateAppointmentInput{
+			UnitID:    "unit-paused",
+			BarberID:  "barber-1",
+			ClientID:  "client-1",
+			ServiceID: "svc-1",
+			StartTime: now,
+		})
+		if err != domain.ErrUnitInactive {
+			t.Fatalf("expected ErrUnitInactive, got %v", err)
+		}
+	})
+
+	t.Run("fails when unit does not exist", func(t *testing.T) {
+		aptRepo.conflictResult = false
+		unitChecker.isUnitActiveFn = func(ctx context.Context, unitID string) (bool, error) {
+			return false, domain.ErrUnitNotFound
+		}
+		defer func() { unitChecker.isUnitActiveFn = nil }()
+
+		_, err := svc.CreateAppointment(ctx, domain.CreateAppointmentInput{
+			UnitID:    "unit-missing",
+			BarberID:  "barber-1",
+			ClientID:  "client-1",
+			ServiceID: "svc-1",
+			StartTime: now,
+		})
+		if err != domain.ErrUnitNotFound {
+			t.Fatalf("expected ErrUnitNotFound, got %v", err)
+		}
+	})
 }
 
 func TestAppointmentService_CompleteCut(t *testing.T) {
@@ -185,7 +235,7 @@ func TestAppointmentService_CompleteCut(t *testing.T) {
 			},
 		},
 	}
-	svc := NewAppointmentService(aptRepo, catalogRepo)
+	svc := NewAppointmentService(aptRepo, catalogRepo, &mockUnitAvailabilityChecker{})
 	ctx := context.Background()
 
 	t.Run("successfully completes scheduled cut", func(t *testing.T) {
