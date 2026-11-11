@@ -102,11 +102,13 @@ func main() {
 	scheduleBlockService := service.NewScheduleBlockService(scheduleBlockRepo)
 	employeeLeaveService := service.NewEmployeeLeaveService(employeeLeaveRepo)
 	orgService := service.NewOrganizationService(orgRepo)
+	unitService := service.NewUnitService(unitRepo)
 
 	// Wire audit recorders for critical and sensitive actions
 	tenantAdminService.SetAuditRecorder(auditLogRepo)
 	unitOpsService.SetAuditRecorder(auditLogRepo)
 	billingService.SetAuditRecorder(auditLogRepo)
+	unitService.SetAuditRecorder(auditLogRepo)
 
 	// 6. Instantiate handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -121,6 +123,7 @@ func main() {
 	scheduleBlockHandler := handler.NewScheduleBlockHandler(scheduleBlockService)
 	employeeLeaveHandler := handler.NewEmployeeLeaveHandler(employeeLeaveService)
 	ownerMgmtHandler := handler.NewOwnerManagementHandler(orgService)
+	ownerUnitsHandler := handler.NewOwnerUnitsHandler(unitService)
 
 	var devHandler *handler.DevHandler
 	if cfg.Env != "production" {
@@ -208,10 +211,14 @@ func main() {
 				r.Get("/audit-logs", auditLogHandler.ListOrgAuditLogs)
 				r.Get("/organization", ownerMgmtHandler.GetOrganization)
 				r.Put("/organization", ownerMgmtHandler.UpdateOrganization)
+				r.Get("/units", ownerUnitsHandler.ListUnits)
 
 				// Analytical and export routes require active tenant
 				r.Group(func(r chi.Router) {
 					r.Use(internalMiddleware.RequireActiveTenant(tenantAdminRepo))
+					r.Post("/units", ownerUnitsHandler.CreateUnit)
+					r.Put("/units/{id}", ownerUnitsHandler.UpdateUnit)
+					r.Patch("/units/{id}/status", ownerUnitsHandler.ToggleUnitStatus)
 					r.Get("/metrics", ownerAnalyticsHandler.GetMetrics)
 					r.Get("/revenue-by-unit", ownerAnalyticsHandler.GetRevenueByUnit)
 					r.Get("/services-mix", ownerAnalyticsHandler.GetServicesMix)
@@ -229,11 +236,14 @@ func main() {
 				r.Use(internalMiddleware.RequireActiveTenant(tenantAdminRepo))
 
 				// Owner and Manager routes
-				r.With(internalMiddleware.RequireRoles(
-					domain.RoleSuperAdmin,
-					domain.RoleOrgOwner,
-					domain.RoleUnitManager,
-				)).Route("/manager", func(r chi.Router) {
+				r.With(
+					internalMiddleware.RequireRoles(
+						domain.RoleSuperAdmin,
+						domain.RoleOrgOwner,
+						domain.RoleUnitManager,
+					),
+					internalMiddleware.RequireActiveUnit(unitRepo),
+				).Route("/manager", func(r chi.Router) {
 					r.Get("/overview", func(w http.ResponseWriter, r *http.Request) {
 						_ = handler.WriteJSON(w, http.StatusOK, map[string]string{"message": "Acesso concedido à gestão!"})
 					})
@@ -257,22 +267,28 @@ func main() {
 				)).Get("/units/{unit_id}/catalog", catalogHandler.GetUnitCatalog)
 
 				// Reception & Unit Operations routes
-				r.With(internalMiddleware.RequireRoles(
-					domain.RoleSuperAdmin,
-					domain.RoleOrgOwner,
-					domain.RoleUnitManager,
-					domain.RoleReceptionist,
-				)).Route("/reception", func(r chi.Router) {
+				r.With(
+					internalMiddleware.RequireRoles(
+						domain.RoleSuperAdmin,
+						domain.RoleOrgOwner,
+						domain.RoleUnitManager,
+						domain.RoleReceptionist,
+					),
+					internalMiddleware.RequireActiveUnit(unitRepo),
+				).Route("/reception", func(r chi.Router) {
 					r.Get("/appointments", appointmentHandler.ListByUnit)
 					r.Post("/appointments", appointmentHandler.Create)
 					r.Post("/checkout", billingHandler.Checkout)
 				})
 
 				// Barber operational routes
-				r.With(internalMiddleware.RequireRoles(
-					domain.RoleSuperAdmin,
-					domain.RoleBarber,
-				)).Route("/barber", func(r chi.Router) {
+				r.With(
+					internalMiddleware.RequireRoles(
+						domain.RoleSuperAdmin,
+						domain.RoleBarber,
+					),
+					internalMiddleware.RequireActiveUnit(unitRepo),
+				).Route("/barber", func(r chi.Router) {
 					r.Get("/my-queue", appointmentHandler.ListMyQueue)
 					r.Post("/appointments/{id}/complete", appointmentHandler.CompleteCut)
 				})
