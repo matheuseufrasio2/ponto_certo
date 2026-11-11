@@ -143,4 +143,3 @@ func TestResolveLocale(t *testing.T) {
 		}
 	})
 }
-
