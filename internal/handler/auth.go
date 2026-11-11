@@ -24,7 +24,7 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 // @Success 200 {object} service.LoginOutput "Token de acesso e dados do usuário"
 // @Failure 400 {object} ErrorResponse "Requisição malformada ou inválida"
 // @Failure 401 {object} ErrorResponse "Credenciais incorretas"
-// @Failure 403 {object} ErrorResponse "Usuário desativado"
+// @Failure 403 {object} ErrorResponse "Usuário, organização ou filial desativada"
 // @Failure 500 {object} ErrorResponse "Erro interno do servidor"
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {

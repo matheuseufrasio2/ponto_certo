@@ -83,7 +83,8 @@ func (h *AppointmentHandler) ListByUnit(w http.ResponseWriter, r *http.Request) 
 // @Success 201 {object} domain.Appointment "Agendamento criado com sucesso"
 // @Failure 400 {object} ErrorResponse "Dados inválidos ou corpo malformado"
 // @Failure 401 {object} ErrorResponse "Não autenticado"
-// @Failure 403 {object} ErrorResponse "Acesso não permitido"
+// @Failure 403 {object} ErrorResponse "Acesso não permitido ou filial pausada"
+// @Failure 404 {object} ErrorResponse "Unidade, barbeiro ou serviço não encontrado"
 // @Failure 409 {object} ErrorResponse "Barbeiro já possui agendamento neste horário"
 // @Failure 500 {object} ErrorResponse "Erro interno do servidor"
 // @Router /reception/appointments [post]
