@@ -32,9 +32,11 @@ func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (
 			u.created_at, 
 			u.updated_at,
 			o.is_active AS org_is_active,
-			o.subscription_status AS org_subscription_status
+			o.subscription_status AS org_subscription_status,
+			bu.is_active AS unit_is_active
 		FROM users u
 		LEFT JOIN organizations o ON o.id = u.organization_id
+		LEFT JOIN barbershop_units bu ON bu.id = u.unit_id
 		WHERE u.email = $1
 		LIMIT 1;
 	`
@@ -43,6 +45,7 @@ func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (
 	var roleStr string
 	var orgIsActive *bool
 	var orgSubStatus *string
+	var unitIsActive *bool
 
 	err := r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID,
@@ -57,6 +60,7 @@ func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (
 		&user.UpdatedAt,
 		&orgIsActive,
 		&orgSubStatus,
+		&unitIsActive,
 	)
 
 	if err != nil {
@@ -68,6 +72,7 @@ func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (
 
 	user.Role = domain.Role(roleStr)
 	user.OrganizationIsActive = orgIsActive
+	user.UnitIsActive = unitIsActive
 	if orgSubStatus != nil {
 		subStatus := domain.SubscriptionStatus(*orgSubStatus)
 		user.SubscriptionStatus = &subStatus
@@ -89,9 +94,11 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domai
 			u.created_at, 
 			u.updated_at,
 			o.is_active AS org_is_active,
-			o.subscription_status AS org_subscription_status
+			o.subscription_status AS org_subscription_status,
+			bu.is_active AS unit_is_active
 		FROM users u
 		LEFT JOIN organizations o ON o.id = u.organization_id
+		LEFT JOIN barbershop_units bu ON bu.id = u.unit_id
 		WHERE u.id = $1
 		LIMIT 1;
 	`
@@ -100,6 +107,7 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domai
 	var roleStr string
 	var orgIsActive *bool
 	var orgSubStatus *string
+	var unitIsActive *bool
 
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&user.ID,
@@ -114,6 +122,7 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domai
 		&user.UpdatedAt,
 		&orgIsActive,
 		&orgSubStatus,
+		&unitIsActive,
 	)
 
 	if err != nil {
@@ -125,6 +134,7 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domai
 
 	user.Role = domain.Role(roleStr)
 	user.OrganizationIsActive = orgIsActive
+	user.UnitIsActive = unitIsActive
 	if orgSubStatus != nil {
 		subStatus := domain.SubscriptionStatus(*orgSubStatus)
 		user.SubscriptionStatus = &subStatus
