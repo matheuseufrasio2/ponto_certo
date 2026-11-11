@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.13.0...ponto_certo-v0.14.0) (2026-11-11)
+
+
+### Features
+
+* **owner:** implement organization profile endpoints ([f349b25](https://github.com/matheuseufrasio2/ponto_certo/commit/f349b25295b9e21129c923bf382e26158ae4cf78))
+* **owner:** implement organization profile endpoints ([6f35c6e](https://github.com/matheuseufrasio2/ponto_certo/commit/6f35c6ec7a2ce8a3ab801cc04cdcea7ca2b95833))
+
 ## [0.13.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.12.0...ponto_certo-v0.13.0) (2026-11-08)
 
 
