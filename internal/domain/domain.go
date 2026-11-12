@@ -50,6 +50,10 @@ var (
 	ErrInvalidLogoURL               = errors.New("url do logotipo invalida: informe uma URL http ou https")
 	ErrInvalidUUID                  = errors.New("invalid uuid format")
 	ErrValidationFailed             = errors.New("validation failed")
+	ErrUnitNameRequired             = errors.New("unit name is required")
+	ErrInvalidChairCount            = errors.New("chair count must be greater than zero")
+	ErrUnitNameAlreadyExists        = errors.New("a branch with this name already exists in the organization")
+	ErrUnitInactive                 = errors.New("barbershop unit is inactive")
 )
 
 // BarberStatus defines live operational shift state for a barber.
@@ -162,6 +166,27 @@ type BarbershopUnit struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+// CreateUnitInput defines payload for creating a new barbershop branch.
+type CreateUnitInput struct {
+	Name       string  `json:"name"`
+	Address    *string `json:"address,omitempty"`
+	Phone      *string `json:"phone,omitempty"`
+	ChairCount *int    `json:"chair_count,omitempty"`
+}
+
+// UpdateUnitInput defines payload for updating an existing barbershop branch.
+type UpdateUnitInput struct {
+	Name       string  `json:"name"`
+	Address    *string `json:"address,omitempty"`
+	Phone      *string `json:"phone,omitempty"`
+	ChairCount int     `json:"chair_count"`
+}
+
+// ToggleUnitStatusInput defines payload for activating or pausing a barbershop branch.
+type ToggleUnitStatusInput struct {
+	IsActive bool `json:"is_active"`
+}
+
 // User represents an authenticated system actor with specific RBAC role.
 type User struct {
 	ID                   string              `json:"id"`
@@ -173,6 +198,7 @@ type User struct {
 	Role                 Role                `json:"role"`
 	IsActive             bool                `json:"is_active"`
 	OrganizationIsActive *bool               `json:"organization_is_active,omitempty"`
+	UnitIsActive         *bool               `json:"unit_is_active,omitempty"`
 	SubscriptionStatus   *SubscriptionStatus `json:"subscription_status,omitempty"`
 	CreatedAt            time.Time           `json:"created_at"`
 	UpdatedAt            time.Time           `json:"updated_at"`

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,20 +10,28 @@ import (
 	"github.com/matheuseufrasio2/ponto_certo/internal/repository"
 )
 
+// UnitAvailabilityChecker verifies whether a branch exists and is active for booking.
+type UnitAvailabilityChecker interface {
+	IsUnitActive(ctx context.Context, unitID string) (bool, error)
+}
+
 // AppointmentService coordinates appointment scheduling and lifecycle operations.
 type AppointmentService struct {
 	appointmentRepo repository.AppointmentRepository
 	catalogRepo     repository.CatalogRepository
+	unitChecker     UnitAvailabilityChecker
 }
 
 // NewAppointmentService instantiates AppointmentService.
 func NewAppointmentService(
 	appointmentRepo repository.AppointmentRepository,
 	catalogRepo repository.CatalogRepository,
+	unitChecker UnitAvailabilityChecker,
 ) *AppointmentService {
 	return &AppointmentService{
 		appointmentRepo: appointmentRepo,
 		catalogRepo:     catalogRepo,
+		unitChecker:     unitChecker,
 	}
 }
 
@@ -36,6 +45,19 @@ func (s *AppointmentService) CreateAppointment(ctx context.Context, input domain
 	}
 	if input.ServiceID == "" {
 		return nil, domain.ErrServiceNotFound
+	}
+
+	if s.unitChecker != nil {
+		isActive, err := s.unitChecker.IsUnitActive(ctx, input.UnitID)
+		if err != nil {
+			if errors.Is(err, domain.ErrUnitNotFound) {
+				return nil, domain.ErrUnitNotFound
+			}
+			return nil, fmt.Errorf("verify unit availability: %w", err)
+		}
+		if !isActive {
+			return nil, domain.ErrUnitInactive
+		}
 	}
 
 	// 1. Resolve client

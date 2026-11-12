@@ -184,4 +184,51 @@ func TestAuthService_Login(t *testing.T) {
 			t.Errorf("expected organization_is_active to be true")
 		}
 	})
+
+	t.Run("login rejects unit staff when assigned unit is inactive", func(t *testing.T) {
+		falseVal := false
+		unitID := "unit-uuid-1"
+		roles := []domain.Role{domain.RoleUnitManager, domain.RoleReceptionist, domain.RoleBarber}
+
+		for _, role := range roles {
+			staff := *testUser
+			staff.Role = role
+			staff.UnitID = &unitID
+			staff.UnitIsActive = &falseVal
+
+			repo := &mockUserRepo{user: &staff}
+			authSvc := service.NewAuthService(repo, "test-secret-key-12345", 1*time.Hour)
+
+			_, err := authSvc.Login(context.Background(), service.LoginInput{
+				Email:    staff.Email,
+				Password: rawPassword,
+			})
+			if err != domain.ErrUnitInactive {
+				t.Errorf("role %s: expected ErrUnitInactive, got %v", role, err)
+			}
+		}
+	})
+
+	t.Run("login allows unit staff when assigned unit is active", func(t *testing.T) {
+		trueVal := true
+		unitID := "unit-uuid-1"
+		staff := *testUser
+		staff.Role = domain.RoleBarber
+		staff.UnitID = &unitID
+		staff.UnitIsActive = &trueVal
+
+		repo := &mockUserRepo{user: &staff}
+		authSvc := service.NewAuthService(repo, "test-secret-key-12345", 1*time.Hour)
+
+		out, err := authSvc.Login(context.Background(), service.LoginInput{
+			Email:    staff.Email,
+			Password: rawPassword,
+		})
+		if err != nil {
+			t.Fatalf("expected successful login, got: %v", err)
+		}
+		if out.User.UnitID == nil || *out.User.UnitID != unitID {
+			t.Errorf("expected unit_id %s, got %v", unitID, out.User.UnitID)
+		}
+	})
 }

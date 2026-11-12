@@ -63,6 +63,10 @@
   "MONTHLY_FEE_MIN_VALUE": "Monthly fee must be greater than or equal to zero.",
   "START_TIME_AND_END_TIME_REQUIRED": "Start time and end time are required.",
   "REASON_REQUIRED": "Reason is required.",
+  "UNIT_NAME_REQUIRED": "Barbershop unit name is required.",
+  "INVALID_CHAIR_COUNT": "Chair count must be greater than zero.",
+  "UNIT_NAME_ALREADY_EXISTS": "A branch with this name already exists in your organization.",
+  "UNIT_INACTIVE": "Access or operation blocked: this branch is currently paused.",
   "INTERNAL_SERVER_ERROR": "An internal server error occurred. Our technical team has been notified."
 }
 

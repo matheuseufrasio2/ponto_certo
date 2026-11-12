@@ -45,6 +45,54 @@ func TestTranslate(t *testing.T) {
 			code:     domain.ErrCodeBarberNotFound,
 			expected: "Profissional barbeiro não encontrado.",
 		},
+		{
+			name:     "pt-BR Unit Name Required",
+			locale:   i18n.LocalePTBR,
+			code:     domain.ErrCodeUnitNameRequired,
+			expected: "O nome da unidade é obrigatório.",
+		},
+		{
+			name:     "en-US Unit Name Required",
+			locale:   i18n.LocaleENUS,
+			code:     domain.ErrCodeUnitNameRequired,
+			expected: "Barbershop unit name is required.",
+		},
+		{
+			name:     "pt-BR Invalid Chair Count",
+			locale:   i18n.LocalePTBR,
+			code:     domain.ErrCodeInvalidChairCount,
+			expected: "A quantidade de cadeiras deve ser maior que zero.",
+		},
+		{
+			name:     "en-US Invalid Chair Count",
+			locale:   i18n.LocaleENUS,
+			code:     domain.ErrCodeInvalidChairCount,
+			expected: "Chair count must be greater than zero.",
+		},
+		{
+			name:     "pt-BR Unit Name Already Exists",
+			locale:   i18n.LocalePTBR,
+			code:     domain.ErrCodeUnitNameAlreadyExists,
+			expected: "Já existe uma filial cadastrada com este nome na organização.",
+		},
+		{
+			name:     "en-US Unit Name Already Exists",
+			locale:   i18n.LocaleENUS,
+			code:     domain.ErrCodeUnitNameAlreadyExists,
+			expected: "A branch with this name already exists in your organization.",
+		},
+		{
+			name:     "pt-BR Unit Inactive",
+			locale:   i18n.LocalePTBR,
+			code:     domain.ErrCodeUnitInactive,
+			expected: "Acesso ou operação bloqueada: esta filial está pausada no momento.",
+		},
+		{
+			name:     "en-US Unit Inactive",
+			locale:   i18n.LocaleENUS,
+			code:     domain.ErrCodeUnitInactive,
+			expected: "Access or operation blocked: this branch is currently paused.",
+		},
 	}
 
 	for _, tc := range tests {
@@ -95,4 +143,3 @@ func TestResolveLocale(t *testing.T) {
 		}
 	})
 }
-
