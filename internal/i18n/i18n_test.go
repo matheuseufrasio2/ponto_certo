@@ -93,6 +93,30 @@ func TestTranslate(t *testing.T) {
 			code:     domain.ErrCodeUnitInactive,
 			expected: "Access or operation blocked: this branch is currently paused.",
 		},
+		{
+			name:     "pt-BR Manager Email Taken",
+			locale:   i18n.LocalePTBR,
+			code:     domain.ErrCodeManagerEmailTaken,
+			expected: "Este e-mail já está cadastrado para outro usuário na plataforma.",
+		},
+		{
+			name:     "en-US Manager Email Taken",
+			locale:   i18n.LocaleENUS,
+			code:     domain.ErrCodeManagerEmailTaken,
+			expected: "This email is already in use by another platform user.",
+		},
+		{
+			name:     "pt-BR Unit Not In Org",
+			locale:   i18n.LocalePTBR,
+			code:     domain.ErrCodeUnitNotInOrg,
+			expected: "A unidade selecionada não pertence à sua organização.",
+		},
+		{
+			name:     "en-US Unit Not In Org",
+			locale:   i18n.LocaleENUS,
+			code:     domain.ErrCodeUnitNotInOrg,
+			expected: "The selected branch does not belong to your organization.",
+		},
 	}
 
 	for _, tc := range tests {

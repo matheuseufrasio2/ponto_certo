@@ -151,6 +151,20 @@ func TestHandleError(t *testing.T) {
 			expectedCode:   domain.ErrCodeUnitNameAlreadyExists,
 		},
 		{
+			name:           "manager email taken error",
+			err:            domain.ErrManagerEmailTaken,
+			expectedStatus: http.StatusConflict,
+			expectedMsg:    domain.ErrManagerEmailTaken.Error(),
+			expectedCode:   domain.ErrCodeManagerEmailTaken,
+		},
+		{
+			name:           "unit not in org error",
+			err:            domain.ErrUnitNotInOrg,
+			expectedStatus: http.StatusForbidden,
+			expectedMsg:    domain.ErrUnitNotInOrg.Error(),
+			expectedCode:   domain.ErrCodeUnitNotInOrg,
+		},
+		{
 			name:           "unexpected server error (sanitized to 500)",
 			err:            errors.New("raw postgres connection pool exhausted"),
 			expectedStatus: http.StatusInternalServerError,

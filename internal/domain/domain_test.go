@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -723,6 +724,8 @@ func TestUnitDomainErrorCodes(t *testing.T) {
 		{name: "invalid chair count", err: domain.ErrInvalidChairCount, expected: domain.ErrCodeInvalidChairCount},
 		{name: "unit name already exists", err: domain.ErrUnitNameAlreadyExists, expected: domain.ErrCodeUnitNameAlreadyExists},
 		{name: "unit inactive", err: domain.ErrUnitInactive, expected: domain.ErrCodeUnitInactive},
+		{name: "manager email taken", err: domain.ErrManagerEmailTaken, expected: domain.ErrCodeManagerEmailTaken},
+		{name: "unit not in org", err: domain.ErrUnitNotInOrg, expected: domain.ErrCodeUnitNotInOrg},
 	}
 
 	for _, tc := range tests {
@@ -732,4 +735,44 @@ func TestUnitDomainErrorCodes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCreateManagerInput_Validate(t *testing.T) {
+	validUnitID := "11111111-1111-1111-1111-111111111111"
+
+	t.Run("valid input passes", func(t *testing.T) {
+		in := domain.CreateManagerInput{
+			Name:     "João Silva",
+			Email:    "joao.silva@barbearia.com.br",
+			Phone:    "(11) 98765-4321",
+			Password: "Password123",
+			UnitID:   validUnitID,
+		}
+		if err := in.Validate(); err != nil {
+			t.Fatalf("expected valid input to pass, got %v", err)
+		}
+	})
+
+	t.Run("collects validation errors on invalid fields", func(t *testing.T) {
+		in := domain.CreateManagerInput{
+			Name:     "A",
+			Email:    "invalid-email",
+			Phone:    "123",
+			Password: "short",
+			UnitID:   "not-a-uuid",
+		}
+		err := in.Validate()
+		if err == nil {
+			t.Fatal("expected validation error, got nil")
+		}
+		var valErr *domain.ValidationError
+		if !errors.As(err, &valErr) {
+			t.Fatalf("expected *domain.ValidationError, got %T", err)
+		}
+		for _, field := range []string{"name", "email", "phone", "password", "unit_id"} {
+			if _, ok := valErr.Fields[field]; !ok {
+				t.Errorf("expected field error for %q, got fields=%v", field, valErr.Fields)
+			}
+		}
+	})
 }

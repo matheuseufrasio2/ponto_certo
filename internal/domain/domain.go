@@ -3,8 +3,10 @@ package domain
 import (
 	"encoding/json"
 	"errors"
+	"net/mail"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Common domain errors for the barbershop system
@@ -54,6 +56,8 @@ var (
 	ErrInvalidChairCount            = errors.New("chair count must be greater than zero")
 	ErrUnitNameAlreadyExists        = errors.New("a branch with this name already exists in the organization")
 	ErrUnitInactive                 = errors.New("barbershop unit is inactive")
+	ErrManagerEmailTaken            = errors.New("email already in use by another user")
+	ErrUnitNotInOrg                 = errors.New("unit does not belong to your organization")
 )
 
 // BarberStatus defines live operational shift state for a barber.
@@ -924,4 +928,82 @@ func (i CreateEmployeeLeaveInput) Validate() error {
 		return errors.New("reason is required")
 	}
 	return nil
+}
+
+
+// ManagerListItem represents a unit manager listed under an owner's organization.
+type ManagerListItem struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone"`
+	UnitID    string    `json:"unit_id"`
+	UnitName  string    `json:"unit_name"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// CreateManagerInput validates the payload for creating a unit manager linked to a branch.
+type CreateManagerInput struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+	Password string `json:"password"`
+	UnitID   string `json:"unit_id"`
+}
+
+// Validate returns a *ValidationError if the CreateManagerInput contains invalid fields.
+func (i CreateManagerInput) Validate() error {
+	valErr := NewValidationError()
+
+	trimmedName := strings.TrimSpace(i.Name)
+	nameLen := utf8.RuneCountInString(trimmedName)
+	if nameLen < 2 || nameLen > 120 {
+		valErr.Add("name", "must be between 2 and 120 characters")
+	}
+
+	trimmedEmail := strings.TrimSpace(i.Email)
+	if !isValidEmailAddress(trimmedEmail) {
+		valErr.Add("email", "must be a valid email address")
+	}
+
+	trimmedPhone := strings.TrimSpace(i.Phone)
+	digitCount := 0
+	for _, r := range trimmedPhone {
+		if r >= '0' && r <= '9' {
+			digitCount++
+		}
+	}
+	if trimmedPhone == "" || digitCount < 8 || utf8.RuneCountInString(trimmedPhone) > 20 {
+		valErr.Add("phone", "must contain at least 8 digits and at most 20 characters")
+	}
+
+	if len(i.Password) < 8 {
+		valErr.Add("password", "must be at least 8 characters")
+	}
+
+	if !IsValidUUID(strings.TrimSpace(i.UnitID)) {
+		valErr.Add("unit_id", "must be a valid UUID")
+	}
+
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+func isValidEmailAddress(email string) bool {
+	if email == "" || len(email) > 120 || strings.ContainsAny(email, " \t\n\r") {
+		return false
+	}
+	addr, err := mail.ParseAddress(email)
+	if err != nil || addr.Address != email {
+		return false
+	}
+	at := strings.LastIndex(email, "@")
+	if at <= 0 || at >= len(email)-1 {
+		return false
+	}
+	domainPart := email[at+1:]
+	return strings.Contains(domainPart, ".") && !strings.HasPrefix(domainPart, ".") && !strings.HasSuffix(domainPart, ".")
 }

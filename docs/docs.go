@@ -1809,6 +1809,119 @@ const docTemplate = `{
                 }
             }
         },
+        "/owner/managers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all UNIT_MANAGER users under the authenticated owner's organization, ordered by unit then name.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Owner"
+                ],
+                "summary": "List unit managers of the organization",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.ManagerListItem"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new UNIT_MANAGER user and assigns them to the specified barbershop unit within the owner's organization.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Owner"
+                ],
+                "summary": "Create a unit manager and link to a branch",
+                "parameters": [
+                    {
+                        "description": "Manager creation payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.CreateManagerInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ManagerListItem"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/owner/metrics": {
             "get": {
                 "security": [
@@ -3199,6 +3312,26 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.CreateManagerInput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.CreateScheduleBlockInput": {
             "type": "object",
             "properties": {
@@ -3465,6 +3598,7 @@ const docTemplate = `{
                 "SCHEDULE_BLOCK_CONFLICT",
                 "EMPLOYEE_LEAVE_CONFLICT",
                 "UNIT_NAME_ALREADY_EXISTS",
+                "MANAGER_EMAIL_TAKEN",
                 "UNAUTHORIZED",
                 "INVALID_CREDENTIALS",
                 "INVALID_TOKEN",
@@ -3477,6 +3611,7 @@ const docTemplate = `{
                 "IMPERSONATION_ACTION_BLOCKED",
                 "TENANT_INACTIVE",
                 "UNIT_INACTIVE",
+                "UNIT_NOT_IN_ORG",
                 "CANNOT_DEACTIVATE_SUPER_ADMIN",
                 "CANNOT_DEACTIVATE_SELF",
                 "INSUFFICIENT_ROLE_HIERARCHY",
@@ -3539,6 +3674,7 @@ const docTemplate = `{
                 "ErrCodeScheduleBlockConflict",
                 "ErrCodeEmployeeLeaveConflict",
                 "ErrCodeUnitNameAlreadyExists",
+                "ErrCodeManagerEmailTaken",
                 "ErrCodeUnauthorized",
                 "ErrCodeInvalidCredentials",
                 "ErrCodeInvalidToken",
@@ -3551,6 +3687,7 @@ const docTemplate = `{
                 "ErrCodeImpersonationActionBlocked",
                 "ErrCodeTenantInactive",
                 "ErrCodeUnitInactive",
+                "ErrCodeUnitNotInOrg",
                 "ErrCodeCannotDeactivateSuperAdmin",
                 "ErrCodeCannotDeactivateSelf",
                 "ErrCodeInsufficientRoleHierarchy",
@@ -3629,6 +3766,35 @@ const docTemplate = `{
                 "LeaveTypePersonal",
                 "LeaveTypeOther"
             ]
+        },
+        "domain.ManagerListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "unit_id": {
+                    "type": "string"
+                },
+                "unit_name": {
+                    "type": "string"
+                }
+            }
         },
         "domain.Organization": {
             "type": "object",
