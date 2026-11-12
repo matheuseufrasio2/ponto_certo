@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.15.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.14.0...ponto_certo-v0.15.0) (2026-11-12)
+
+
+### Features
+
+* **owner:** implement branch unit management endpoints ([7ff5495](https://github.com/matheuseufrasio2/ponto_certo/commit/7ff5495edb6270cc368c50a5b85306a293f52012))
+
+
+### Bug Fixes
+
+* **repo:** guard invalid uuid in IsUnitActive ([6ce01fd](https://github.com/matheuseufrasio2/ponto_certo/commit/6ce01fdd7c9227a8cf1855f3f3e723925d2642de))
+
 ## [0.14.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.13.0...ponto_certo-v0.14.0) (2026-11-11)
 
 
