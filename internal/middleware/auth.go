@@ -63,6 +63,11 @@ func AuthMiddleware(jwtSecret string) func(next http.Handler) http.Handler {
 	}
 }
 
+// WithUser attaches user claims to context, primarily used in handlers and unit tests.
+func WithUser(ctx context.Context, claims *service.UserClaims) context.Context {
+	return context.WithValue(ctx, userContextKey, claims)
+}
+
 func UserFromContext(ctx context.Context) (*service.UserClaims, bool) {
 	claims, ok := ctx.Value(userContextKey).(*service.UserClaims)
 	return claims, ok

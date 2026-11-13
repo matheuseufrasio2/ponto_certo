@@ -69,6 +69,8 @@
   "UNIT_INACTIVE": "Acesso ou operação bloqueada: esta filial está pausada no momento.",
   "MANAGER_EMAIL_TAKEN": "Este e-mail já está cadastrado para outro usuário na plataforma.",
   "UNIT_NOT_IN_ORG": "A unidade selecionada não pertence à sua organização.",
+  "INVALID_COMMISSION_SCOPE": "Escopo de comissão inválido: use ALL_ORGANIZATION, UNIT ou BARBER.",
+  "BARBER_NOT_IN_ORG": "Este barbeiro não pertence à sua organização.",
   "INTERNAL_SERVER_ERROR": "Ocorreu um erro interno no servidor. Nossa equipe técnica já foi informada. Tente novamente em instantes."
 }
 

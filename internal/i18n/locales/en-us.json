@@ -69,6 +69,8 @@
   "UNIT_INACTIVE": "Access or operation blocked: this branch is currently paused.",
   "MANAGER_EMAIL_TAKEN": "This email is already in use by another platform user.",
   "UNIT_NOT_IN_ORG": "The selected branch does not belong to your organization.",
+  "INVALID_COMMISSION_SCOPE": "Invalid commission scope: must be ALL_ORGANIZATION, UNIT, or BARBER.",
+  "BARBER_NOT_IN_ORG": "Barber does not belong to your organization.",
   "INTERNAL_SERVER_ERROR": "An internal server error occurred. Our technical team has been notified."
 }
 
