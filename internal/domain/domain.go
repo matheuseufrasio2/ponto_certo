@@ -60,6 +60,8 @@ var (
 	ErrUnitNotInOrg                 = errors.New("unit does not belong to your organization")
 	ErrInvalidCommissionScope       = errors.New("invalid commission scope: must be ALL_ORGANIZATION, UNIT, or BARBER")
 	ErrBarberNotInOrg               = errors.New("barber does not belong to the caller's organization")
+	ErrServiceNameAlreadyExists     = errors.New("a service with this name already exists in this unit")
+	ErrProductNameAlreadyExists     = errors.New("a product with this name already exists in this unit")
 )
 
 // BarberStatus defines live operational shift state for a barber.
@@ -1064,4 +1066,201 @@ type UpdateCommissionsResponse struct {
 	Scope           CommissionScope `json:"scope"`
 	Percentage      int             `json:"percentage"`
 	BarbersAffected int             `json:"barbers_affected"`
+}
+
+// InventoryMovementType defines taxonomy for inventory transactions.
+type InventoryMovementType string
+
+const (
+	InventoryMovementEntry      InventoryMovementType = "ENTRY"
+	InventoryMovementExit       InventoryMovementType = "EXIT"
+	InventoryMovementAdjustment InventoryMovementType = "ADJUSTMENT"
+)
+
+// IsValid validates whether the inventory movement type is recognized.
+func (t InventoryMovementType) IsValid() bool {
+	switch t {
+	case InventoryMovementEntry, InventoryMovementExit, InventoryMovementAdjustment:
+		return true
+	default:
+		return false
+	}
+}
+
+// InventoryMovement represents an audit log entry for retail stock changes.
+type InventoryMovement struct {
+	ID            string                `json:"id"`
+	ProductID     string                `json:"product_id"`
+	UnitID        string                `json:"unit_id"`
+	UserID        *string               `json:"user_id,omitempty"`
+	UserName      *string               `json:"user_name,omitempty"`
+	MovementType  InventoryMovementType `json:"movement_type"`
+	Quantity      int                   `json:"quantity"`
+	PreviousStock int                   `json:"previous_stock"`
+	NewStock      int                   `json:"new_stock"`
+	Reason        string                `json:"reason"`
+	CreatedAt     time.Time             `json:"created_at"`
+}
+
+// CreateServiceInput defines input payload for creating a service.
+type CreateServiceInput struct {
+	Name            string          `json:"name"`
+	Category        ServiceCategory `json:"category"`
+	Description     string          `json:"description,omitempty"`
+	DurationMinutes int             `json:"duration_minutes"`
+	PriceInCents    int64           `json:"price_in_cents"`
+}
+
+// Validate validates CreateServiceInput fields.
+func (i CreateServiceInput) Validate() error {
+	valErr := NewValidationError()
+	trimmedName := strings.TrimSpace(i.Name)
+	if trimmedName == "" || utf8.RuneCountInString(trimmedName) > 120 {
+		valErr.Add("name", "must be between 1 and 120 characters")
+	}
+	if !i.Category.IsValid() {
+		valErr.Add("category", "invalid service category")
+	}
+	if i.DurationMinutes <= 0 {
+		valErr.Add("duration_minutes", "must be greater than zero")
+	}
+	if i.PriceInCents < 0 {
+		valErr.Add("price_in_cents", "must be greater than or equal to zero")
+	}
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+// UpdateServiceInput defines input payload for updating a service.
+type UpdateServiceInput struct {
+	Name            string          `json:"name"`
+	Category        ServiceCategory `json:"category"`
+	Description     string          `json:"description,omitempty"`
+	DurationMinutes int             `json:"duration_minutes"`
+	PriceInCents    int64           `json:"price_in_cents"`
+	IsActive        *bool           `json:"is_active,omitempty"`
+}
+
+// Validate validates UpdateServiceInput fields.
+func (i UpdateServiceInput) Validate() error {
+	valErr := NewValidationError()
+	trimmedName := strings.TrimSpace(i.Name)
+	if trimmedName == "" || utf8.RuneCountInString(trimmedName) > 120 {
+		valErr.Add("name", "must be between 1 and 120 characters")
+	}
+	if !i.Category.IsValid() {
+		valErr.Add("category", "invalid service category")
+	}
+	if i.DurationMinutes <= 0 {
+		valErr.Add("duration_minutes", "must be greater than zero")
+	}
+	if i.PriceInCents < 0 {
+		valErr.Add("price_in_cents", "must be greater than or equal to zero")
+	}
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+// CreateProductInput defines input payload for creating a product.
+type CreateProductInput struct {
+	Name          string          `json:"name"`
+	Category      ProductCategory `json:"category"`
+	Description   string          `json:"description,omitempty"`
+	PriceInCents  int64           `json:"price_in_cents"`
+	CostInCents   int64           `json:"cost_in_cents"`
+	StockQuantity int             `json:"stock_quantity"`
+}
+
+// Validate validates CreateProductInput fields.
+func (i CreateProductInput) Validate() error {
+	valErr := NewValidationError()
+	trimmedName := strings.TrimSpace(i.Name)
+	if trimmedName == "" || utf8.RuneCountInString(trimmedName) > 120 {
+		valErr.Add("name", "must be between 1 and 120 characters")
+	}
+	if !i.Category.IsValid() {
+		valErr.Add("category", "invalid product category")
+	}
+	if i.PriceInCents < 0 {
+		valErr.Add("price_in_cents", "must be greater than or equal to zero")
+	}
+	if i.CostInCents < 0 {
+		valErr.Add("cost_in_cents", "must be greater than or equal to zero")
+	}
+	if i.StockQuantity < 0 {
+		valErr.Add("stock_quantity", "must be greater than or equal to zero")
+	}
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+// UpdateProductInput defines input payload for updating a product.
+type UpdateProductInput struct {
+	Name         string          `json:"name"`
+	Category     ProductCategory `json:"category"`
+	Description  string          `json:"description,omitempty"`
+	PriceInCents int64           `json:"price_in_cents"`
+	CostInCents  int64           `json:"cost_in_cents"`
+	IsActive     *bool           `json:"is_active,omitempty"`
+}
+
+// Validate validates UpdateProductInput fields.
+func (i UpdateProductInput) Validate() error {
+	valErr := NewValidationError()
+	trimmedName := strings.TrimSpace(i.Name)
+	if trimmedName == "" || utf8.RuneCountInString(trimmedName) > 120 {
+		valErr.Add("name", "must be between 1 and 120 characters")
+	}
+	if !i.Category.IsValid() {
+		valErr.Add("category", "invalid product category")
+	}
+	if i.PriceInCents < 0 {
+		valErr.Add("price_in_cents", "must be greater than or equal to zero")
+	}
+	if i.CostInCents < 0 {
+		valErr.Add("cost_in_cents", "must be greater than or equal to zero")
+	}
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+// AdjustProductStockInput defines input payload for adjusting product stock.
+type AdjustProductStockInput struct {
+	MovementType InventoryMovementType `json:"movement_type"`
+	Quantity     int                   `json:"quantity"`
+	Reason       string                `json:"reason"`
+}
+
+// Validate validates AdjustProductStockInput fields.
+func (i AdjustProductStockInput) Validate() error {
+	valErr := NewValidationError()
+	if !i.MovementType.IsValid() {
+		valErr.Add("movement_type", "invalid movement type (must be ENTRY, EXIT, or ADJUSTMENT)")
+	}
+	trimmedReason := strings.TrimSpace(i.Reason)
+	if trimmedReason == "" || utf8.RuneCountInString(trimmedReason) > 255 {
+		valErr.Add("reason", "must be between 1 and 255 characters")
+	}
+	switch i.MovementType {
+	case InventoryMovementEntry, InventoryMovementExit:
+		if i.Quantity <= 0 {
+			valErr.Add("quantity", "must be greater than zero for entry or exit")
+		}
+	case InventoryMovementAdjustment:
+		if i.Quantity < 0 {
+			valErr.Add("quantity", "must be greater than or equal to zero for balance adjustment")
+		}
+	}
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
 }

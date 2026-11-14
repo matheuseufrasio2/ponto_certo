@@ -843,3 +843,262 @@ func TestCommissionDomain(t *testing.T) {
 		}
 	})
 }
+
+func TestInventoryMovementType_IsValid(t *testing.T) {
+	tests := []struct {
+		name     string
+		movType  domain.InventoryMovementType
+		expected bool
+	}{
+		{name: "entry", movType: domain.InventoryMovementEntry, expected: true},
+		{name: "exit", movType: domain.InventoryMovementExit, expected: true},
+		{name: "adjustment", movType: domain.InventoryMovementAdjustment, expected: true},
+		{name: "invalid", movType: domain.InventoryMovementType("TRANSFER"), expected: false},
+		{name: "empty", movType: domain.InventoryMovementType(""), expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.movType.IsValid(); got != tt.expected {
+				t.Errorf("InventoryMovementType.IsValid() = %v, expected %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCatalogInputs(t *testing.T) {
+	t.Run("CreateServiceInput validations", func(t *testing.T) {
+		err := domain.CreateServiceInput{
+			Name:            "",
+			Category:        domain.ServiceCategoryCabelo,
+			DurationMinutes: 30,
+			PriceInCents:    3500,
+		}.Validate()
+		var valErr *domain.ValidationError
+		if !errors.As(err, &valErr) || valErr.Fields["name"] == "" {
+			t.Fatalf("expected validation error for name, got %v", err)
+		}
+
+		err = domain.CreateServiceInput{
+			Name:            "Corte Degradê",
+			Category:        domain.ServiceCategory("INVALID"),
+			DurationMinutes: 30,
+			PriceInCents:    3500,
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["category"] == "" {
+			t.Fatalf("expected validation error for category, got %v", err)
+		}
+
+		err = domain.CreateServiceInput{
+			Name:            "Corte Degradê",
+			Category:        domain.ServiceCategoryCabelo,
+			DurationMinutes: 0,
+			PriceInCents:    3500,
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["duration_minutes"] == "" {
+			t.Fatalf("expected validation error for duration_minutes, got %v", err)
+		}
+
+		err = domain.CreateServiceInput{
+			Name:            "Corte Degradê",
+			Category:        domain.ServiceCategoryCabelo,
+			DurationMinutes: 30,
+			PriceInCents:    -100,
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["price_in_cents"] == "" {
+			t.Fatalf("expected validation error for price_in_cents, got %v", err)
+		}
+
+		err = domain.CreateServiceInput{
+			Name:            "Corte Degradê",
+			Category:        domain.ServiceCategoryCabelo,
+			DurationMinutes: 30,
+			PriceInCents:    3500,
+		}.Validate()
+		if err != nil {
+			t.Fatalf("unexpected validation error: %v", err)
+		}
+	})
+
+	t.Run("UpdateServiceInput validations", func(t *testing.T) {
+		err := domain.UpdateServiceInput{
+			Name:            "",
+			Category:        domain.ServiceCategoryCabelo,
+			DurationMinutes: 30,
+			PriceInCents:    3500,
+		}.Validate()
+		var valErr *domain.ValidationError
+		if !errors.As(err, &valErr) || valErr.Fields["name"] == "" {
+			t.Fatalf("expected validation error for name, got %v", err)
+		}
+
+		err = domain.UpdateServiceInput{
+			Name:            "Barba Terapia",
+			Category:        domain.ServiceCategoryBarba,
+			DurationMinutes: 30,
+			PriceInCents:    4000,
+		}.Validate()
+		if err != nil {
+			t.Fatalf("unexpected validation error: %v", err)
+		}
+	})
+
+	t.Run("CreateProductInput validations", func(t *testing.T) {
+		err := domain.CreateProductInput{
+			Name:          "",
+			Category:      domain.ProductCategoryFinalizadores,
+			PriceInCents:  5000,
+			CostInCents:   2000,
+			StockQuantity: 10,
+		}.Validate()
+		var valErr *domain.ValidationError
+		if !errors.As(err, &valErr) || valErr.Fields["name"] == "" {
+			t.Fatalf("expected validation error for name, got %v", err)
+		}
+
+		err = domain.CreateProductInput{
+			Name:          "Pomada Matte",
+			Category:      domain.ProductCategory("INVALID"),
+			PriceInCents:  5000,
+			CostInCents:   2000,
+			StockQuantity: 10,
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["category"] == "" {
+			t.Fatalf("expected validation error for category, got %v", err)
+		}
+
+		err = domain.CreateProductInput{
+			Name:          "Pomada Matte",
+			Category:      domain.ProductCategoryFinalizadores,
+			PriceInCents:  -10,
+			CostInCents:   2000,
+			StockQuantity: 10,
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["price_in_cents"] == "" {
+			t.Fatalf("expected validation error for price_in_cents, got %v", err)
+		}
+
+		err = domain.CreateProductInput{
+			Name:          "Pomada Matte",
+			Category:      domain.ProductCategoryFinalizadores,
+			PriceInCents:  5000,
+			CostInCents:   -1,
+			StockQuantity: 10,
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["cost_in_cents"] == "" {
+			t.Fatalf("expected validation error for cost_in_cents, got %v", err)
+		}
+
+		err = domain.CreateProductInput{
+			Name:          "Pomada Matte",
+			Category:      domain.ProductCategoryFinalizadores,
+			PriceInCents:  5000,
+			CostInCents:   2000,
+			StockQuantity: -1,
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["stock_quantity"] == "" {
+			t.Fatalf("expected validation error for stock_quantity, got %v", err)
+		}
+
+		err = domain.CreateProductInput{
+			Name:          "Pomada Matte",
+			Category:      domain.ProductCategoryFinalizadores,
+			PriceInCents:  5000,
+			CostInCents:   2000,
+			StockQuantity: 10,
+		}.Validate()
+		if err != nil {
+			t.Fatalf("unexpected validation error: %v", err)
+		}
+	})
+
+	t.Run("UpdateProductInput validations", func(t *testing.T) {
+		err := domain.UpdateProductInput{
+			Name:         "",
+			Category:     domain.ProductCategoryFinalizadores,
+			PriceInCents: 5000,
+			CostInCents:  2000,
+		}.Validate()
+		var valErr *domain.ValidationError
+		if !errors.As(err, &valErr) || valErr.Fields["name"] == "" {
+			t.Fatalf("expected validation error for name, got %v", err)
+		}
+
+		err = domain.UpdateProductInput{
+			Name:         "Pomada Modeladora",
+			Category:     domain.ProductCategoryFinalizadores,
+			PriceInCents: 5500,
+			CostInCents:  2200,
+		}.Validate()
+		if err != nil {
+			t.Fatalf("unexpected validation error: %v", err)
+		}
+	})
+
+	t.Run("AdjustProductStockInput validations", func(t *testing.T) {
+		var valErr *domain.ValidationError
+
+		err := domain.AdjustProductStockInput{
+			MovementType: "INVALID",
+			Quantity:     5,
+			Reason:       "Recebimento",
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["movement_type"] == "" {
+			t.Fatalf("expected validation error for movement_type, got %v", err)
+		}
+
+		err = domain.AdjustProductStockInput{
+			MovementType: domain.InventoryMovementEntry,
+			Quantity:     5,
+			Reason:       "   ",
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["reason"] == "" {
+			t.Fatalf("expected validation error for reason, got %v", err)
+		}
+
+		err = domain.AdjustProductStockInput{
+			MovementType: domain.InventoryMovementEntry,
+			Quantity:     0,
+			Reason:       "Recebimento",
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["quantity"] == "" {
+			t.Fatalf("expected validation error for entry quantity, got %v", err)
+		}
+
+		err = domain.AdjustProductStockInput{
+			MovementType: domain.InventoryMovementExit,
+			Quantity:     -2,
+			Reason:       "Venda avulsa",
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["quantity"] == "" {
+			t.Fatalf("expected validation error for exit quantity, got %v", err)
+		}
+
+		err = domain.AdjustProductStockInput{
+			MovementType: domain.InventoryMovementAdjustment,
+			Quantity:     -1,
+			Reason:       "Contagem de estoque",
+		}.Validate()
+		if !errors.As(err, &valErr) || valErr.Fields["quantity"] == "" {
+			t.Fatalf("expected validation error for adjustment quantity, got %v", err)
+		}
+
+		err = domain.AdjustProductStockInput{
+			MovementType: domain.InventoryMovementEntry,
+			Quantity:     10,
+			Reason:       "Recebimento fornecedor",
+		}.Validate()
+		if err != nil {
+			t.Fatalf("unexpected validation error: %v", err)
+		}
+
+		err = domain.AdjustProductStockInput{
+			MovementType: domain.InventoryMovementAdjustment,
+			Quantity:     0,
+			Reason:       "Zerando estoque",
+		}.Validate()
+		if err != nil {
+			t.Fatalf("unexpected validation error: %v", err)
+		}
+	})
+}
