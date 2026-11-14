@@ -165,6 +165,20 @@ func TestHandleError(t *testing.T) {
 			expectedCode:   domain.ErrCodeUnitNotInOrg,
 		},
 		{
+			name:           "barber not in org error",
+			err:            domain.ErrBarberNotInOrg,
+			expectedStatus: http.StatusForbidden,
+			expectedMsg:    domain.ErrBarberNotInOrg.Error(),
+			expectedCode:   domain.ErrCodeBarberNotInOrg,
+		},
+		{
+			name:           "invalid commission scope error",
+			err:            domain.ErrInvalidCommissionScope,
+			expectedStatus: http.StatusBadRequest,
+			expectedMsg:    domain.ErrInvalidCommissionScope.Error(),
+			expectedCode:   domain.ErrCodeInvalidCommissionScope,
+		},
+		{
 			name:           "unexpected server error (sanitized to 500)",
 			err:            errors.New("raw postgres connection pool exhausted"),
 			expectedStatus: http.StatusInternalServerError,

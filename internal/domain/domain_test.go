@@ -776,3 +776,70 @@ func TestCreateManagerInput_Validate(t *testing.T) {
 		}
 	})
 }
+
+func TestCommissionDomain(t *testing.T) {
+	if got := domain.CodeForError(domain.ErrBarberNotInOrg); got != domain.ErrCodeBarberNotInOrg {
+		t.Errorf("expected %q, got %q", domain.ErrCodeBarberNotInOrg, got)
+	}
+	if got := domain.CodeForError(domain.ErrInvalidCommissionScope); got != domain.ErrCodeInvalidCommissionScope {
+		t.Errorf("expected %q, got %q", domain.ErrCodeInvalidCommissionScope, got)
+	}
+
+	validUUID := "11111111-1111-1111-1111-111111111111"
+
+	t.Run("validate scope", func(t *testing.T) {
+		err := domain.UpdateCommissionsInput{
+			Scope:      "INVALID",
+			Percentage: 50,
+		}.Validate()
+		if !errors.Is(err, domain.ErrInvalidCommissionScope) {
+			t.Fatalf("expected ErrInvalidCommissionScope, got %v", err)
+		}
+	})
+
+	t.Run("validate percentage out of bounds", func(t *testing.T) {
+		err := domain.UpdateCommissionsInput{
+			Scope:      domain.CommissionScopeAllOrganization,
+			Percentage: 101,
+		}.Validate()
+		var valErr *domain.ValidationError
+		if !errors.As(err, &valErr) || valErr.Fields["percentage"] == "" {
+			t.Fatalf("expected validation error for percentage, got %v", err)
+		}
+	})
+
+	t.Run("validate unit scope requires valid unit_id", func(t *testing.T) {
+		err := domain.UpdateCommissionsInput{
+			Scope:      domain.CommissionScopeUnit,
+			UnitID:     "invalid",
+			Percentage: 50,
+		}.Validate()
+		var valErr *domain.ValidationError
+		if !errors.As(err, &valErr) || valErr.Fields["unit_id"] == "" {
+			t.Fatalf("expected validation error for unit_id, got %v", err)
+		}
+	})
+
+	t.Run("validate barber scope requires valid barber_id", func(t *testing.T) {
+		err := domain.UpdateCommissionsInput{
+			Scope:      domain.CommissionScopeBarber,
+			BarberID:   "invalid",
+			Percentage: 50,
+		}.Validate()
+		var valErr *domain.ValidationError
+		if !errors.As(err, &valErr) || valErr.Fields["barber_id"] == "" {
+			t.Fatalf("expected validation error for barber_id, got %v", err)
+		}
+	})
+
+	t.Run("valid input passes", func(t *testing.T) {
+		err := domain.UpdateCommissionsInput{
+			Scope:      domain.CommissionScopeUnit,
+			UnitID:     validUUID,
+			Percentage: 50,
+		}.Validate()
+		if err != nil {
+			t.Fatalf("unexpected validation error: %v", err)
+		}
+	})
+}

@@ -117,6 +117,30 @@ func TestTranslate(t *testing.T) {
 			code:     domain.ErrCodeUnitNotInOrg,
 			expected: "The selected branch does not belong to your organization.",
 		},
+		{
+			name:     "pt-BR Invalid Commission Scope",
+			locale:   i18n.LocalePTBR,
+			code:     domain.ErrCodeInvalidCommissionScope,
+			expected: "Escopo de comissão inválido: use ALL_ORGANIZATION, UNIT ou BARBER.",
+		},
+		{
+			name:     "en-US Invalid Commission Scope",
+			locale:   i18n.LocaleENUS,
+			code:     domain.ErrCodeInvalidCommissionScope,
+			expected: "Invalid commission scope: must be ALL_ORGANIZATION, UNIT, or BARBER.",
+		},
+		{
+			name:     "pt-BR Barber Not In Org",
+			locale:   i18n.LocalePTBR,
+			code:     domain.ErrCodeBarberNotInOrg,
+			expected: "Este barbeiro não pertence à sua organização.",
+		},
+		{
+			name:     "en-US Barber Not In Org",
+			locale:   i18n.LocaleENUS,
+			code:     domain.ErrCodeBarberNotInOrg,
+			expected: "Barber does not belong to your organization.",
+		},
 	}
 
 	for _, tc := range tests {

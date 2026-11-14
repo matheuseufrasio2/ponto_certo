@@ -241,6 +241,16 @@ definitions:
       payment_method:
         $ref: '#/definitions/domain.PaymentMethod'
     type: object
+  domain.CommissionScope:
+    enum:
+    - ALL_ORGANIZATION
+    - UNIT
+    - BARBER
+    type: string
+    x-enum-varnames:
+    - CommissionScopeAllOrganization
+    - CommissionScopeUnit
+    - CommissionScopeBarber
   domain.CreateAppointmentInput:
     properties:
       barber_id:
@@ -490,6 +500,7 @@ definitions:
     - CANNOT_DEACTIVATE_SUPER_ADMIN
     - CANNOT_DEACTIVATE_SELF
     - INSUFFICIENT_ROLE_HIERARCHY
+    - BARBER_NOT_IN_ORG
     - VALIDATION_FAILED
     - INVALID_TIME_SLOT
     - INVALID_PAYMENT_METHOD
@@ -527,6 +538,7 @@ definitions:
     - INVALID_LOGO_URL
     - UNIT_NAME_REQUIRED
     - INVALID_CHAIR_COUNT
+    - INVALID_COMMISSION_SCOPE
     - INTERNAL_SERVER_ERROR
     type: string
     x-enum-varnames:
@@ -566,6 +578,7 @@ definitions:
     - ErrCodeCannotDeactivateSuperAdmin
     - ErrCodeCannotDeactivateSelf
     - ErrCodeInsufficientRoleHierarchy
+    - ErrCodeBarberNotInOrg
     - ErrCodeValidationFailed
     - ErrCodeInvalidTimeSlot
     - ErrCodeInvalidPaymentMethod
@@ -603,6 +616,7 @@ definitions:
     - ErrCodeInvalidLogoURL
     - ErrCodeUnitNameRequired
     - ErrCodeInvalidChairCount
+    - ErrCodeInvalidCommissionScope
     - ErrCodeInternalServerError
   domain.ImpersonateResponse:
     properties:
@@ -990,6 +1004,26 @@ definitions:
         type: string
       unit_name:
         type: string
+    type: object
+  domain.UpdateCommissionsInput:
+    properties:
+      barber_id:
+        type: string
+      percentage:
+        type: integer
+      scope:
+        $ref: '#/definitions/domain.CommissionScope'
+      unit_id:
+        type: string
+    type: object
+  domain.UpdateCommissionsResponse:
+    properties:
+      barbers_affected:
+        type: integer
+      percentage:
+        type: integer
+      scope:
+        $ref: '#/definitions/domain.CommissionScope'
     type: object
   domain.UpdateOrganizationInput:
     properties:
@@ -2128,6 +2162,47 @@ paths:
       security:
       - BearerAuth: []
       summary: List consolidated billings
+      tags:
+      - owner
+  /owner/commissions:
+    put:
+      consumes:
+      - application/json
+      description: Updates commission percentage across the organization, a single
+        unit, or a specific barber.
+      parameters:
+      - description: Commission update scope and percentage
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateCommissionsInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UpdateCommissionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update barber commissions
       tags:
       - owner
   /owner/employees:

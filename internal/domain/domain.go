@@ -58,6 +58,8 @@ var (
 	ErrUnitInactive                 = errors.New("barbershop unit is inactive")
 	ErrManagerEmailTaken            = errors.New("email already in use by another user")
 	ErrUnitNotInOrg                 = errors.New("unit does not belong to your organization")
+	ErrInvalidCommissionScope       = errors.New("invalid commission scope: must be ALL_ORGANIZATION, UNIT, or BARBER")
+	ErrBarberNotInOrg               = errors.New("barber does not belong to the caller's organization")
 )
 
 // BarberStatus defines live operational shift state for a barber.
@@ -930,7 +932,6 @@ func (i CreateEmployeeLeaveInput) Validate() error {
 	return nil
 }
 
-
 // ManagerListItem represents a unit manager listed under an owner's organization.
 type ManagerListItem struct {
 	ID        string    `json:"id"`
@@ -1006,4 +1007,61 @@ func isValidEmailAddress(email string) bool {
 	}
 	domainPart := email[at+1:]
 	return strings.Contains(domainPart, ".") && !strings.HasPrefix(domainPart, ".") && !strings.HasSuffix(domainPart, ".")
+}
+
+// CommissionScope defines the target scope for a bulk or individual commission update.
+type CommissionScope string
+
+const (
+	CommissionScopeAllOrganization CommissionScope = "ALL_ORGANIZATION"
+	CommissionScopeUnit            CommissionScope = "UNIT"
+	CommissionScopeBarber          CommissionScope = "BARBER"
+)
+
+// IsValid checks if the CommissionScope is supported.
+func (s CommissionScope) IsValid() bool {
+	switch s {
+	case CommissionScopeAllOrganization, CommissionScopeUnit, CommissionScopeBarber:
+		return true
+	default:
+		return false
+	}
+}
+
+// UpdateCommissionsInput represents the payload for updating barber commissions across 3 hierarchy scopes.
+type UpdateCommissionsInput struct {
+	Scope      CommissionScope `json:"scope"`
+	UnitID     string          `json:"unit_id,omitempty"`
+	BarberID   string          `json:"barber_id,omitempty"`
+	Percentage int             `json:"percentage"`
+}
+
+// Validate validates UpdateCommissionsInput scope, percentage bounds, and target UUIDs.
+func (i UpdateCommissionsInput) Validate() error {
+	if !i.Scope.IsValid() {
+		return ErrInvalidCommissionScope
+	}
+
+	valErr := NewValidationError()
+	if i.Percentage < 0 || i.Percentage > 100 {
+		valErr.Add("percentage", "must be between 0 and 100")
+	}
+	if i.Scope == CommissionScopeUnit && !IsValidUUID(strings.TrimSpace(i.UnitID)) {
+		valErr.Add("unit_id", "must be a valid UUID")
+	}
+	if i.Scope == CommissionScopeBarber && !IsValidUUID(strings.TrimSpace(i.BarberID)) {
+		valErr.Add("barber_id", "must be a valid UUID")
+	}
+
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+// UpdateCommissionsResponse returns a summary of updated barber commission rules.
+type UpdateCommissionsResponse struct {
+	Scope           CommissionScope `json:"scope"`
+	Percentage      int             `json:"percentage"`
+	BarbersAffected int             `json:"barbers_affected"`
 }

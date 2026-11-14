@@ -89,6 +89,7 @@ func main() {
 	orgRepo := repository.NewPostgresOrganizationRepository(dbPool)
 	unitRepo := repository.NewPostgresUnitRepository(dbPool)
 	ownerManagersRepo := repository.NewPostgresOwnerManagersRepository(dbPool)
+	ownerCommissionsRepo := repository.NewPostgresOwnerCommissionsRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
@@ -105,12 +106,14 @@ func main() {
 	orgService := service.NewOrganizationService(orgRepo)
 	unitService := service.NewUnitService(unitRepo)
 	ownerManagersService := service.NewOwnerManagersService(ownerManagersRepo)
+	ownerCommissionsService := service.NewOwnerCommissionsService(ownerCommissionsRepo)
 
 	// Wire audit recorders for critical and sensitive actions
 	tenantAdminService.SetAuditRecorder(auditLogRepo)
 	unitOpsService.SetAuditRecorder(auditLogRepo)
 	billingService.SetAuditRecorder(auditLogRepo)
 	unitService.SetAuditRecorder(auditLogRepo)
+	ownerCommissionsService.SetAuditRecorder(auditLogRepo)
 
 	// 6. Instantiate handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -127,6 +130,7 @@ func main() {
 	ownerMgmtHandler := handler.NewOwnerManagementHandler(orgService)
 	ownerUnitsHandler := handler.NewOwnerUnitsHandler(unitService)
 	ownerManagersHandler := handler.NewOwnerManagersHandler(ownerManagersService)
+	ownerCommissionsHandler := handler.NewOwnerCommissionsHandler(ownerCommissionsService)
 
 	var devHandler *handler.DevHandler
 	if cfg.Env != "production" {
@@ -224,6 +228,7 @@ func main() {
 					r.Post("/units", ownerUnitsHandler.CreateUnit)
 					r.Put("/units/{id}", ownerUnitsHandler.UpdateUnit)
 					r.Patch("/units/{id}/status", ownerUnitsHandler.ToggleUnitStatus)
+					r.Put("/commissions", ownerCommissionsHandler.UpdateCommissions)
 					r.Get("/metrics", ownerAnalyticsHandler.GetMetrics)
 					r.Get("/revenue-by-unit", ownerAnalyticsHandler.GetRevenueByUnit)
 					r.Get("/services-mix", ownerAnalyticsHandler.GetServicesMix)

@@ -1513,6 +1513,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/owner/commissions": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates commission percentage across the organization, a single unit, or a specific barber.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "owner"
+                ],
+                "summary": "Update barber commissions",
+                "parameters": [
+                    {
+                        "description": "Commission update scope and percentage",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.UpdateCommissionsInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.UpdateCommissionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/owner/employees": {
             "get": {
                 "security": [
@@ -3255,6 +3318,19 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.CommissionScope": {
+            "type": "string",
+            "enum": [
+                "ALL_ORGANIZATION",
+                "UNIT",
+                "BARBER"
+            ],
+            "x-enum-varnames": [
+                "CommissionScopeAllOrganization",
+                "CommissionScopeUnit",
+                "CommissionScopeBarber"
+            ]
+        },
         "domain.CreateAppointmentInput": {
             "type": "object",
             "properties": {
@@ -3615,6 +3691,7 @@ const docTemplate = `{
                 "CANNOT_DEACTIVATE_SUPER_ADMIN",
                 "CANNOT_DEACTIVATE_SELF",
                 "INSUFFICIENT_ROLE_HIERARCHY",
+                "BARBER_NOT_IN_ORG",
                 "VALIDATION_FAILED",
                 "INVALID_TIME_SLOT",
                 "INVALID_PAYMENT_METHOD",
@@ -3652,6 +3729,7 @@ const docTemplate = `{
                 "INVALID_LOGO_URL",
                 "UNIT_NAME_REQUIRED",
                 "INVALID_CHAIR_COUNT",
+                "INVALID_COMMISSION_SCOPE",
                 "INTERNAL_SERVER_ERROR"
             ],
             "x-enum-varnames": [
@@ -3691,6 +3769,7 @@ const docTemplate = `{
                 "ErrCodeCannotDeactivateSuperAdmin",
                 "ErrCodeCannotDeactivateSelf",
                 "ErrCodeInsufficientRoleHierarchy",
+                "ErrCodeBarberNotInOrg",
                 "ErrCodeValidationFailed",
                 "ErrCodeInvalidTimeSlot",
                 "ErrCodeInvalidPaymentMethod",
@@ -3728,6 +3807,7 @@ const docTemplate = `{
                 "ErrCodeInvalidLogoURL",
                 "ErrCodeUnitNameRequired",
                 "ErrCodeInvalidChairCount",
+                "ErrCodeInvalidCommissionScope",
                 "ErrCodeInternalServerError"
             ]
         },
@@ -4290,6 +4370,37 @@ const docTemplate = `{
                 },
                 "unit_name": {
                     "type": "string"
+                }
+            }
+        },
+        "domain.UpdateCommissionsInput": {
+            "type": "object",
+            "properties": {
+                "barber_id": {
+                    "type": "string"
+                },
+                "percentage": {
+                    "type": "integer"
+                },
+                "scope": {
+                    "$ref": "#/definitions/domain.CommissionScope"
+                },
+                "unit_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.UpdateCommissionsResponse": {
+            "type": "object",
+            "properties": {
+                "barbers_affected": {
+                    "type": "integer"
+                },
+                "percentage": {
+                    "type": "integer"
+                },
+                "scope": {
+                    "$ref": "#/definitions/domain.CommissionScope"
                 }
             }
         },

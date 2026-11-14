@@ -50,6 +50,7 @@ const (
 	ErrCodeCannotDeactivateSuperAdmin  ErrorCode = "CANNOT_DEACTIVATE_SUPER_ADMIN"
 	ErrCodeCannotDeactivateSelf        ErrorCode = "CANNOT_DEACTIVATE_SELF"
 	ErrCodeInsufficientRoleHierarchy   ErrorCode = "INSUFFICIENT_ROLE_HIERARCHY"
+	ErrCodeBarberNotInOrg              ErrorCode = "BARBER_NOT_IN_ORG"
 
 	// 400 - Validation & Input
 	ErrCodeValidationFailed             ErrorCode = "VALIDATION_FAILED"
@@ -89,6 +90,7 @@ const (
 	ErrCodeInvalidLogoURL               ErrorCode = "INVALID_LOGO_URL"
 	ErrCodeUnitNameRequired             ErrorCode = "UNIT_NAME_REQUIRED"
 	ErrCodeInvalidChairCount            ErrorCode = "INVALID_CHAIR_COUNT"
+	ErrCodeInvalidCommissionScope       ErrorCode = "INVALID_COMMISSION_SCOPE"
 
 	// 500 - Server
 	ErrCodeInternalServerError ErrorCode = "INTERNAL_SERVER_ERROR"
@@ -194,6 +196,8 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeCannotDeactivateSelf
 	case errors.Is(err, ErrInsufficientRoleHierarchy):
 		return ErrCodeInsufficientRoleHierarchy
+	case errors.Is(err, ErrBarberNotInOrg):
+		return ErrCodeBarberNotInOrg
 
 	// 400
 	case errors.Is(err, ErrInvalidTimeSlot):
@@ -226,6 +230,8 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeUnitNameRequired
 	case errors.Is(err, ErrInvalidChairCount):
 		return ErrCodeInvalidChairCount
+	case errors.Is(err, ErrInvalidCommissionScope):
+		return ErrCodeInvalidCommissionScope
 	case errors.Is(err, ErrValidationFailed):
 		return ErrCodeValidationFailed
 
