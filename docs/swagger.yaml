@@ -1,5 +1,14 @@
 basePath: /api/v1
 definitions:
+  domain.AdjustProductStockInput:
+    properties:
+      movement_type:
+        $ref: '#/definitions/domain.InventoryMovementType'
+      quantity:
+        type: integer
+      reason:
+        type: string
+    type: object
   domain.Appointment:
     properties:
       barber_id:
@@ -302,6 +311,21 @@ definitions:
       unit_id:
         type: string
     type: object
+  domain.CreateProductInput:
+    properties:
+      category:
+        $ref: '#/definitions/domain.ProductCategory'
+      cost_in_cents:
+        type: integer
+      description:
+        type: string
+      name:
+        type: string
+      price_in_cents:
+        type: integer
+      stock_quantity:
+        type: integer
+    type: object
   domain.CreateScheduleBlockInput:
     properties:
       end_time:
@@ -310,6 +334,19 @@ definitions:
         type: string
       start_time:
         type: string
+    type: object
+  domain.CreateServiceInput:
+    properties:
+      category:
+        $ref: '#/definitions/domain.ServiceCategory'
+      description:
+        type: string
+      duration_minutes:
+        type: integer
+      name:
+        type: string
+      price_in_cents:
+        type: integer
     type: object
   domain.CreateTenantInput:
     properties:
@@ -484,6 +521,8 @@ definitions:
     - EMPLOYEE_LEAVE_CONFLICT
     - UNIT_NAME_ALREADY_EXISTS
     - MANAGER_EMAIL_TAKEN
+    - SERVICE_NAME_ALREADY_EXISTS
+    - PRODUCT_NAME_ALREADY_EXISTS
     - UNAUTHORIZED
     - INVALID_CREDENTIALS
     - INVALID_TOKEN
@@ -562,6 +601,8 @@ definitions:
     - ErrCodeEmployeeLeaveConflict
     - ErrCodeUnitNameAlreadyExists
     - ErrCodeManagerEmailTaken
+    - ErrCodeServiceNameAlreadyExists
+    - ErrCodeProductNameAlreadyExists
     - ErrCodeUnauthorized
     - ErrCodeInvalidCredentials
     - ErrCodeInvalidToken
@@ -632,6 +673,41 @@ definitions:
       token:
         type: string
     type: object
+  domain.InventoryMovement:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      movement_type:
+        $ref: '#/definitions/domain.InventoryMovementType'
+      new_stock:
+        type: integer
+      previous_stock:
+        type: integer
+      product_id:
+        type: string
+      quantity:
+        type: integer
+      reason:
+        type: string
+      unit_id:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+    type: object
+  domain.InventoryMovementType:
+    enum:
+    - ENTRY
+    - EXIT
+    - ADJUSTMENT
+    type: string
+    x-enum-varnames:
+    - InventoryMovementEntry
+    - InventoryMovementExit
+    - InventoryMovementAdjustment
   domain.LeaveType:
     enum:
     - VACATION
@@ -846,6 +922,51 @@ definitions:
     x-enum-varnames:
     - PaymentStatusPending
     - PaymentStatusPaid
+  domain.Product:
+    properties:
+      category:
+        $ref: '#/definitions/domain.ProductCategory'
+      cost_in_cents:
+        description: Cost of acquisition
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      price_in_cents:
+        description: Sale price to client
+        type: integer
+      stock_quantity:
+        type: integer
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.ProductCategory:
+    enum:
+    - KITS
+    - SHAMPOO_HIGIENE
+    - FINALIZADORES
+    - BARBEARIA_CUIDADOS
+    - ACESSORIOS
+    - SKINCARE
+    - BEBIDAS_MERCHANDISING
+    type: string
+    x-enum-varnames:
+    - ProductCategoryKits
+    - ProductCategoryShampooHigiene
+    - ProductCategoryFinalizadores
+    - ProductCategoryBarbeariaCuidados
+    - ProductCategoryAcessorios
+    - ProductCategorySkincare
+    - ProductCategoryBebidasMerch
   domain.ResetPasswordResponse:
     properties:
       temporary_password:
@@ -1038,6 +1159,36 @@ definitions:
       trade_name:
         type: string
     type: object
+  domain.UpdateProductInput:
+    properties:
+      category:
+        $ref: '#/definitions/domain.ProductCategory'
+      cost_in_cents:
+        type: integer
+      description:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      price_in_cents:
+        type: integer
+    type: object
+  domain.UpdateServiceInput:
+    properties:
+      category:
+        $ref: '#/definitions/domain.ServiceCategory'
+      description:
+        type: string
+      duration_minutes:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      price_in_cents:
+        type: integer
+    type: object
   domain.UpdateTenantPlanInput:
     properties:
       monthly_fee_in_cents:
@@ -1084,6 +1235,13 @@ definitions:
         type: boolean
       updated_at:
         type: string
+    type: object
+  handler.AdjustStockResponse:
+    properties:
+      movement:
+        $ref: '#/definitions/domain.InventoryMovement'
+      product:
+        $ref: '#/definitions/domain.Product'
     type: object
   handler.ErrorResponse:
     properties:
@@ -2076,6 +2234,562 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete barber schedule block
+      tags:
+      - manager
+  /manager/products:
+    get:
+      parameters:
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Product category filter
+        in: query
+        name: category
+        type: string
+      - description: Product status filter (active, inactive, low_stock)
+        in: query
+        name: status
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Product'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List retail products and stock for branch unit
+      tags:
+      - manager
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Product payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateProductInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a retail product in branch unit
+      tags:
+      - manager
+  /manager/products/{id}:
+    delete:
+      parameters:
+      - description: Product UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      responses:
+        "200":
+          description: Soft-deleted product
+          schema:
+            additionalProperties: true
+            type: object
+        "204":
+          description: Hard-deleted product
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete or soft-deactivate a branch product
+      tags:
+      - manager
+    get:
+      parameters:
+      - description: Product UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get branch product by ID
+      tags:
+      - manager
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Product update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateProductInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update branch product details
+      tags:
+      - manager
+  /manager/products/{id}/movements:
+    get:
+      parameters:
+      - description: Product UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Maximum records to return (default 50)
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.InventoryMovement'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List inventory movements history for a product
+      tags:
+      - manager
+  /manager/products/{id}/stock:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Stock adjustment payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.AdjustProductStockInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AdjustStockResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Adjust product inventory balance with audit movement
+      tags:
+      - manager
+  /manager/services:
+    get:
+      parameters:
+      - description: Unit UUID (defaults to manager's unit)
+        in: query
+        name: unit_id
+        type: string
+      - description: Service category filter
+        in: query
+        name: category
+        type: string
+      - description: Service status filter (active, inactive, all)
+        in: query
+        name: status
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Service'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List services for branch unit
+      tags:
+      - manager
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Service creation payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateServiceInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Service'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new service for branch unit
+      tags:
+      - manager
+  /manager/services/{id}:
+    delete:
+      parameters:
+      - description: Service UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      responses:
+        "200":
+          description: Soft-deleted service
+          schema:
+            additionalProperties: true
+            type: object
+        "204":
+          description: Hard-deleted service
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete or soft-deactivate a branch service
+      tags:
+      - manager
+    get:
+      parameters:
+      - description: Service UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Service'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get branch service by ID
+      tags:
+      - manager
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Service UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Service update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateServiceInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Service'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update branch service details
       tags:
       - manager
   /owner/audit-logs:

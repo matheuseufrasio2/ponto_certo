@@ -71,6 +71,8 @@
   "UNIT_NOT_IN_ORG": "A unidade selecionada não pertence à sua organização.",
   "INVALID_COMMISSION_SCOPE": "Escopo de comissão inválido: use ALL_ORGANIZATION, UNIT ou BARBER.",
   "BARBER_NOT_IN_ORG": "Este barbeiro não pertence à sua organização.",
+  "SERVICE_NAME_ALREADY_EXISTS": "Já existe um serviço cadastrado com este nome nesta unidade.",
+  "PRODUCT_NAME_ALREADY_EXISTS": "Já existe um produto cadastrado com este nome nesta unidade.",
   "INTERNAL_SERVER_ERROR": "Ocorreu um erro interno no servidor. Nossa equipe técnica já foi informada. Tente novamente em instantes."
 }
 
