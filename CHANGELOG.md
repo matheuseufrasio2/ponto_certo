@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.16.0...ponto_certo-v0.17.0) (2026-11-14)
+
+
+### Features
+
+* **api:** add owner commissions multi-level update endpoints ([2d42256](https://github.com/matheuseufrasio2/ponto_certo/commit/2d42256569d8fd3c8c6b88e4c71b69bf022904c0))
+* **api:** add owner commissions multi-level update endpoints ([7541829](https://github.com/matheuseufrasio2/ponto_certo/commit/75418298861de876e127cfd5b79c01eb87bd8704))
+
 ## [0.16.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.15.0...ponto_certo-v0.16.0) (2026-11-14)
 
 
