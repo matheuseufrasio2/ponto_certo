@@ -113,6 +113,7 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrAppointmentNotFound),
 		errors.Is(err, domain.ErrScheduleBlockNotFound),
 		errors.Is(err, domain.ErrEmployeeLeaveNotFound),
+		errors.Is(err, domain.ErrProductNotFound),
 		errors.Is(err, domain.ErrUnitNotFound):
 		slog.Warn("resource not found (404)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusNotFound, err.Error(), loc, code)
@@ -141,6 +142,8 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrEmployeeLeaveConflict),
 		errors.Is(err, domain.ErrUnitNameAlreadyExists),
 		errors.Is(err, domain.ErrManagerEmailTaken),
+		errors.Is(err, domain.ErrServiceNameAlreadyExists),
+		errors.Is(err, domain.ErrProductNameAlreadyExists),
 		errors.Is(err, domain.ErrBillingAlreadyProcessed):
 		slog.Warn("conflict detected (409)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusConflict, err.Error(), loc, code)
@@ -159,6 +162,8 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrUnitNameRequired),
 		errors.Is(err, domain.ErrInvalidChairCount),
 		errors.Is(err, domain.ErrInvalidCommissionScope),
+		errors.Is(err, domain.ErrInvalidProductPrice),
+		errors.Is(err, domain.ErrInvalidProductStock),
 		errors.Is(err, domain.ErrValidationFailed):
 		slog.Warn("bad request validation failed (400)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusBadRequest, err.Error(), loc, code)
