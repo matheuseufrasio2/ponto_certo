@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.15.0...ponto_certo-v0.16.0) (2026-11-14)
+
+
+### Features
+
+* **api:** add owner unit managers endpoints ([37d6adf](https://github.com/matheuseufrasio2/ponto_certo/commit/37d6adf59829584c2025f7f2130025516a43eae8))
+* **api:** add owner unit managers endpoints ([c55e838](https://github.com/matheuseufrasio2/ponto_certo/commit/c55e8380fd24ddf1a3ea72be5fb354ac33f19037))
+
 ## [0.15.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.14.0...ponto_certo-v0.15.0) (2026-11-12)
 
 
