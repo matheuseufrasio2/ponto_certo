@@ -279,6 +279,19 @@ definitions:
       user_id:
         type: string
     type: object
+  domain.CreateManagerInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      unit_id:
+        type: string
+    type: object
   domain.CreateScheduleBlockInput:
     properties:
       end_time:
@@ -460,6 +473,7 @@ definitions:
     - SCHEDULE_BLOCK_CONFLICT
     - EMPLOYEE_LEAVE_CONFLICT
     - UNIT_NAME_ALREADY_EXISTS
+    - MANAGER_EMAIL_TAKEN
     - UNAUTHORIZED
     - INVALID_CREDENTIALS
     - INVALID_TOKEN
@@ -472,6 +486,7 @@ definitions:
     - IMPERSONATION_ACTION_BLOCKED
     - TENANT_INACTIVE
     - UNIT_INACTIVE
+    - UNIT_NOT_IN_ORG
     - CANNOT_DEACTIVATE_SUPER_ADMIN
     - CANNOT_DEACTIVATE_SELF
     - INSUFFICIENT_ROLE_HIERARCHY
@@ -534,6 +549,7 @@ definitions:
     - ErrCodeScheduleBlockConflict
     - ErrCodeEmployeeLeaveConflict
     - ErrCodeUnitNameAlreadyExists
+    - ErrCodeManagerEmailTaken
     - ErrCodeUnauthorized
     - ErrCodeInvalidCredentials
     - ErrCodeInvalidToken
@@ -546,6 +562,7 @@ definitions:
     - ErrCodeImpersonationActionBlocked
     - ErrCodeTenantInactive
     - ErrCodeUnitInactive
+    - ErrCodeUnitNotInOrg
     - ErrCodeCannotDeactivateSuperAdmin
     - ErrCodeCannotDeactivateSelf
     - ErrCodeInsufficientRoleHierarchy
@@ -613,6 +630,25 @@ definitions:
     - LeaveTypeMedicalLeave
     - LeaveTypePersonal
     - LeaveTypeOther
+  domain.ManagerListItem:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      unit_id:
+        type: string
+      unit_name:
+        type: string
+    type: object
   domain.Organization:
     properties:
       active_users_count:
@@ -2286,6 +2322,80 @@ paths:
       summary: Cancel an employee leave
       tags:
       - owner
+  /owner/managers:
+    get:
+      description: Returns all UNIT_MANAGER users under the authenticated owner's
+        organization, ordered by unit then name.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.ManagerListItem'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List unit managers of the organization
+      tags:
+      - Owner
+    post:
+      consumes:
+      - application/json
+      description: Creates a new UNIT_MANAGER user and assigns them to the specified
+        barbershop unit within the owner's organization.
+      parameters:
+      - description: Manager creation payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateManagerInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.ManagerListItem'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a unit manager and link to a branch
+      tags:
+      - Owner
   /owner/metrics:
     get:
       description: Returns gross revenue, net revenue, total commissions, average

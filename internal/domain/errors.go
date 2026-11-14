@@ -31,6 +31,7 @@ const (
 	ErrCodeScheduleBlockConflict       ErrorCode = "SCHEDULE_BLOCK_CONFLICT"
 	ErrCodeEmployeeLeaveConflict       ErrorCode = "EMPLOYEE_LEAVE_CONFLICT"
 	ErrCodeUnitNameAlreadyExists       ErrorCode = "UNIT_NAME_ALREADY_EXISTS"
+	ErrCodeManagerEmailTaken           ErrorCode = "MANAGER_EMAIL_TAKEN"
 
 	// 401 & 403 - Auth, Tenant & Governance
 	ErrCodeUnauthorized                ErrorCode = "UNAUTHORIZED"
@@ -45,6 +46,7 @@ const (
 	ErrCodeImpersonationActionBlocked  ErrorCode = "IMPERSONATION_ACTION_BLOCKED"
 	ErrCodeTenantInactive              ErrorCode = "TENANT_INACTIVE"
 	ErrCodeUnitInactive                ErrorCode = "UNIT_INACTIVE"
+	ErrCodeUnitNotInOrg                ErrorCode = "UNIT_NOT_IN_ORG"
 	ErrCodeCannotDeactivateSuperAdmin  ErrorCode = "CANNOT_DEACTIVATE_SUPER_ADMIN"
 	ErrCodeCannotDeactivateSelf        ErrorCode = "CANNOT_DEACTIVATE_SELF"
 	ErrCodeInsufficientRoleHierarchy   ErrorCode = "INSUFFICIENT_ROLE_HIERARCHY"
@@ -166,6 +168,8 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeEmployeeLeaveConflict
 	case errors.Is(err, ErrUnitNameAlreadyExists):
 		return ErrCodeUnitNameAlreadyExists
+	case errors.Is(err, ErrManagerEmailTaken):
+		return ErrCodeManagerEmailTaken
 
 	// 401 & 403
 	case errors.Is(err, ErrUnauthorized):
@@ -182,6 +186,8 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeTenantInactive
 	case errors.Is(err, ErrUnitInactive):
 		return ErrCodeUnitInactive
+	case errors.Is(err, ErrUnitNotInOrg):
+		return ErrCodeUnitNotInOrg
 	case errors.Is(err, ErrCannotDeactivateSuperAdmin):
 		return ErrCodeCannotDeactivateSuperAdmin
 	case errors.Is(err, ErrCannotDeactivateSelf):

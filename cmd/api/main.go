@@ -88,6 +88,7 @@ func main() {
 	employeeLeaveRepo := repository.NewPostgresEmployeeLeaveRepository(dbPool)
 	orgRepo := repository.NewPostgresOrganizationRepository(dbPool)
 	unitRepo := repository.NewPostgresUnitRepository(dbPool)
+	ownerManagersRepo := repository.NewPostgresOwnerManagersRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
@@ -103,6 +104,7 @@ func main() {
 	employeeLeaveService := service.NewEmployeeLeaveService(employeeLeaveRepo)
 	orgService := service.NewOrganizationService(orgRepo)
 	unitService := service.NewUnitService(unitRepo)
+	ownerManagersService := service.NewOwnerManagersService(ownerManagersRepo)
 
 	// Wire audit recorders for critical and sensitive actions
 	tenantAdminService.SetAuditRecorder(auditLogRepo)
@@ -124,6 +126,7 @@ func main() {
 	employeeLeaveHandler := handler.NewEmployeeLeaveHandler(employeeLeaveService)
 	ownerMgmtHandler := handler.NewOwnerManagementHandler(orgService)
 	ownerUnitsHandler := handler.NewOwnerUnitsHandler(unitService)
+	ownerManagersHandler := handler.NewOwnerManagersHandler(ownerManagersService)
 
 	var devHandler *handler.DevHandler
 	if cfg.Env != "production" {
@@ -212,6 +215,8 @@ func main() {
 				r.Get("/organization", ownerMgmtHandler.GetOrganization)
 				r.Put("/organization", ownerMgmtHandler.UpdateOrganization)
 				r.Get("/units", ownerUnitsHandler.ListUnits)
+				r.Get("/managers", ownerManagersHandler.ListManagers)
+				r.Post("/managers", ownerManagersHandler.CreateManager)
 
 				// Analytical and export routes require active tenant
 				r.Group(func(r chi.Router) {
