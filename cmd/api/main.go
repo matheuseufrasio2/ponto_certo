@@ -90,6 +90,7 @@ func main() {
 	unitRepo := repository.NewPostgresUnitRepository(dbPool)
 	ownerManagersRepo := repository.NewPostgresOwnerManagersRepository(dbPool)
 	ownerCommissionsRepo := repository.NewPostgresOwnerCommissionsRepository(dbPool)
+	managerCatalogRepo := repository.NewPostgresManagerCatalogRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
@@ -107,6 +108,7 @@ func main() {
 	unitService := service.NewUnitService(unitRepo)
 	ownerManagersService := service.NewOwnerManagersService(ownerManagersRepo)
 	ownerCommissionsService := service.NewOwnerCommissionsService(ownerCommissionsRepo)
+	managerCatalogService := service.NewManagerCatalogService(managerCatalogRepo)
 
 	// Wire audit recorders for critical and sensitive actions
 	tenantAdminService.SetAuditRecorder(auditLogRepo)
@@ -114,6 +116,7 @@ func main() {
 	billingService.SetAuditRecorder(auditLogRepo)
 	unitService.SetAuditRecorder(auditLogRepo)
 	ownerCommissionsService.SetAuditRecorder(auditLogRepo)
+	managerCatalogService.SetAuditRecorder(auditLogRepo)
 
 	// 6. Instantiate handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -131,6 +134,7 @@ func main() {
 	ownerUnitsHandler := handler.NewOwnerUnitsHandler(unitService)
 	ownerManagersHandler := handler.NewOwnerManagersHandler(ownerManagersService)
 	ownerCommissionsHandler := handler.NewOwnerCommissionsHandler(ownerCommissionsService)
+	managerCatalogHandler := handler.NewManagerCatalogHandler(managerCatalogService)
 
 	var devHandler *handler.DevHandler
 	if cfg.Env != "production" {
@@ -265,6 +269,21 @@ func main() {
 					r.Get("/barbers/{id}/blocks", scheduleBlockHandler.ListBlocks)
 					r.Post("/barbers/{id}/blocks", scheduleBlockHandler.CreateBlock)
 					r.Delete("/barbers/blocks/{block_id}", scheduleBlockHandler.DeleteBlock)
+
+					// Phase 5 & 6: Catalog & Retail Inventory Management
+					r.Get("/services", managerCatalogHandler.ListServices)
+					r.Post("/services", managerCatalogHandler.CreateService)
+					r.Get("/services/{id}", managerCatalogHandler.GetService)
+					r.Put("/services/{id}", managerCatalogHandler.UpdateService)
+					r.Delete("/services/{id}", managerCatalogHandler.DeleteService)
+
+					r.Get("/products", managerCatalogHandler.ListProducts)
+					r.Post("/products", managerCatalogHandler.CreateProduct)
+					r.Get("/products/{id}", managerCatalogHandler.GetProduct)
+					r.Put("/products/{id}", managerCatalogHandler.UpdateProduct)
+					r.Delete("/products/{id}", managerCatalogHandler.DeleteProduct)
+					r.Patch("/products/{id}/stock", managerCatalogHandler.AdjustStock)
+					r.Get("/products/{id}/movements", managerCatalogHandler.ListProductMovements)
 				})
 
 				// Unit catalog lookup (accessible by staff)
