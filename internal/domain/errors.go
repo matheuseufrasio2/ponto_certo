@@ -32,6 +32,8 @@ const (
 	ErrCodeEmployeeLeaveConflict       ErrorCode = "EMPLOYEE_LEAVE_CONFLICT"
 	ErrCodeUnitNameAlreadyExists       ErrorCode = "UNIT_NAME_ALREADY_EXISTS"
 	ErrCodeManagerEmailTaken           ErrorCode = "MANAGER_EMAIL_TAKEN"
+	ErrCodeServiceNameAlreadyExists    ErrorCode = "SERVICE_NAME_ALREADY_EXISTS"
+	ErrCodeProductNameAlreadyExists    ErrorCode = "PRODUCT_NAME_ALREADY_EXISTS"
 
 	// 401 & 403 - Auth, Tenant & Governance
 	ErrCodeUnauthorized                ErrorCode = "UNAUTHORIZED"
@@ -172,6 +174,10 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeUnitNameAlreadyExists
 	case errors.Is(err, ErrManagerEmailTaken):
 		return ErrCodeManagerEmailTaken
+	case errors.Is(err, ErrServiceNameAlreadyExists):
+		return ErrCodeServiceNameAlreadyExists
+	case errors.Is(err, ErrProductNameAlreadyExists):
+		return ErrCodeProductNameAlreadyExists
 
 	// 401 & 403
 	case errors.Is(err, ErrUnauthorized):
@@ -310,6 +316,10 @@ func CodeForMessage(msg string) ErrorCode {
 		return ErrCodeInvalidChairCount
 	case strings.Contains(normalized, "already exists in the organization"):
 		return ErrCodeUnitNameAlreadyExists
+	case strings.Contains(normalized, "a service with this name already exists"):
+		return ErrCodeServiceNameAlreadyExists
+	case strings.Contains(normalized, "a product with this name already exists"):
+		return ErrCodeProductNameAlreadyExists
 	case strings.Contains(normalized, "barbershop unit is inactive"):
 		return ErrCodeUnitInactive
 	default:
