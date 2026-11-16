@@ -132,7 +132,8 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrCannotDeactivateSuperAdmin),
 		errors.Is(err, domain.ErrCannotDeactivateSelf),
 		errors.Is(err, domain.ErrInsufficientRoleHierarchy),
-		errors.Is(err, domain.ErrBarberNotInOrg):
+		errors.Is(err, domain.ErrBarberNotInOrg),
+		errors.Is(err, domain.ErrBarberNotAssignedToUnit):
 		slog.Warn("forbidden request (403)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusForbidden, err.Error(), loc, code)
 
@@ -144,6 +145,10 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrManagerEmailTaken),
 		errors.Is(err, domain.ErrServiceNameAlreadyExists),
 		errors.Is(err, domain.ErrProductNameAlreadyExists),
+		errors.Is(err, domain.ErrUnitClosed),
+		errors.Is(err, domain.ErrBarberOffDuty),
+		errors.Is(err, domain.ErrBarberOnBreak),
+		errors.Is(err, domain.ErrBarberAlreadyScheduledHours),
 		errors.Is(err, domain.ErrBillingAlreadyProcessed):
 		slog.Warn("conflict detected (409)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusConflict, err.Error(), loc, code)
@@ -164,6 +169,9 @@ func HandleError(w http.ResponseWriter, err error, r ...*http.Request) {
 		errors.Is(err, domain.ErrInvalidCommissionScope),
 		errors.Is(err, domain.ErrInvalidProductPrice),
 		errors.Is(err, domain.ErrInvalidProductStock),
+		errors.Is(err, domain.ErrOutsideOperatingHours),
+		errors.Is(err, domain.ErrInvalidWorkingHours),
+		errors.Is(err, domain.ErrInvalidOperatingHours),
 		errors.Is(err, domain.ErrValidationFailed):
 		slog.Warn("bad request validation failed (400)", "error", err.Error(), "code", code)
 		WriteErrorWithLocale(w, http.StatusBadRequest, err.Error(), loc, code)

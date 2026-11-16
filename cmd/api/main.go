@@ -91,6 +91,8 @@ func main() {
 	ownerManagersRepo := repository.NewPostgresOwnerManagersRepository(dbPool)
 	ownerCommissionsRepo := repository.NewPostgresOwnerCommissionsRepository(dbPool)
 	managerCatalogRepo := repository.NewPostgresManagerCatalogRepository(dbPool)
+	managerTeamRepo := repository.NewPostgresManagerTeamRepository(dbPool)
+	managerUnitSettingsRepo := repository.NewPostgresManagerUnitSettingsRepository(dbPool)
 
 	// 5. Instantiate services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
@@ -109,6 +111,12 @@ func main() {
 	ownerManagersService := service.NewOwnerManagersService(ownerManagersRepo)
 	ownerCommissionsService := service.NewOwnerCommissionsService(ownerCommissionsRepo)
 	managerCatalogService := service.NewManagerCatalogService(managerCatalogRepo)
+	managerTeamService := service.NewManagerTeamService(managerTeamRepo)
+	managerUnitSettingsService := service.NewManagerUnitSettingsService(managerUnitSettingsRepo)
+
+	// Wire operating and working hours providers to appointment booking lock
+	appointmentService.SetOperatingHoursProvider(managerUnitSettingsRepo)
+	appointmentService.SetBarberWorkingHoursProvider(managerTeamRepo)
 
 	// Wire audit recorders for critical and sensitive actions
 	tenantAdminService.SetAuditRecorder(auditLogRepo)
@@ -117,6 +125,8 @@ func main() {
 	unitService.SetAuditRecorder(auditLogRepo)
 	ownerCommissionsService.SetAuditRecorder(auditLogRepo)
 	managerCatalogService.SetAuditRecorder(auditLogRepo)
+	managerTeamService.SetAuditRecorder(auditLogRepo)
+	managerUnitSettingsService.SetAuditRecorder(auditLogRepo)
 
 	// 6. Instantiate handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -135,6 +145,8 @@ func main() {
 	ownerManagersHandler := handler.NewOwnerManagersHandler(ownerManagersService)
 	ownerCommissionsHandler := handler.NewOwnerCommissionsHandler(ownerCommissionsService)
 	managerCatalogHandler := handler.NewManagerCatalogHandler(managerCatalogService)
+	managerTeamHandler := handler.NewManagerTeamHandler(managerTeamService)
+	managerUnitSettingsHandler := handler.NewManagerUnitSettingsHandler(managerUnitSettingsService)
 
 	var devHandler *handler.DevHandler
 	if cfg.Env != "production" {
@@ -284,6 +296,16 @@ func main() {
 					r.Delete("/products/{id}", managerCatalogHandler.DeleteProduct)
 					r.Patch("/products/{id}/stock", managerCatalogHandler.AdjustStock)
 					r.Get("/products/{id}/movements", managerCatalogHandler.ListProductMovements)
+
+					// Phase 7: Local Team & Weekly Shift Schedule
+					r.Get("/team", managerTeamHandler.ListTeamMembers)
+					r.Post("/team", managerTeamHandler.CreateTeamMember)
+					r.Get("/team/{id}/working-hours", managerTeamHandler.GetWorkingHours)
+					r.Put("/team/{id}/working-hours", managerTeamHandler.UpdateWorkingHours)
+
+					// Phase 8: Unit Operational Rules & Operating Hours
+					r.Get("/unit-settings", managerUnitSettingsHandler.GetUnitSettings)
+					r.Put("/unit-settings", managerUnitSettingsHandler.UpdateUnitSettings)
 				})
 
 				// Unit catalog lookup (accessible by staff)
