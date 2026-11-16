@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.18.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.17.0...ponto_certo-v0.18.0) (2026-11-16)
+
+
+### Features
+
+* **api:** add manager catalog inventory management endpoints ([8ddb39e](https://github.com/matheuseufrasio2/ponto_certo/commit/8ddb39e4701cc9b2c667c0a3993c0d2e942fa623))
+* **api:** register manager catalog routes ([683d80a](https://github.com/matheuseufrasio2/ponto_certo/commit/683d80a49a0f9554650e35c60a6d31c7848d2ec9))
+* **domain:** define manager catalog entities ([2aa2eab](https://github.com/matheuseufrasio2/ponto_certo/commit/2aa2eabbad7745055c0bf5a6c080999deefb8e04))
+* **handler:** add manager catalog endpoints ([783945e](https://github.com/matheuseufrasio2/ponto_certo/commit/783945e65aef3a17bd17ee8811223b526811644c))
+* **migrations:** add product inventory movements schema ([809eb04](https://github.com/matheuseufrasio2/ponto_certo/commit/809eb0413957a38876eb983fc7ba945fb097ddb1))
+* **repo:** implement manager catalog queries ([2a934d9](https://github.com/matheuseufrasio2/ponto_certo/commit/2a934d93745828e210dbec66fea7307ca66c4b6a))
+* **service:** implement manager catalog operations ([2495093](https://github.com/matheuseufrasio2/ponto_certo/commit/24950931ac0a80d92dd6eee142da7485ed361a11))
+
+
+### Bug Fixes
+
+* **repo:** remove ineffectual index increment in manager catalog queries ([6f639a1](https://github.com/matheuseufrasio2/ponto_certo/commit/6f639a185a52a44d775371ac36e1c86f9f856e4c))
+
 ## [0.17.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.16.0...ponto_certo-v0.17.0) (2026-11-14)
 
 
