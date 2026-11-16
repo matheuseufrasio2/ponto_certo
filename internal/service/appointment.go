@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/matheuseufrasio2/ponto_certo/internal/domain"
@@ -15,11 +16,23 @@ type UnitAvailabilityChecker interface {
 	IsUnitActive(ctx context.Context, unitID string) (bool, error)
 }
 
+// UnitOperatingHoursProvider retrieves the unit operating schedule.
+type UnitOperatingHoursProvider interface {
+	GetUnitOperatingHours(ctx context.Context, unitID string) ([]domain.UnitOperatingHour, error)
+}
+
+// BarberWorkingHoursProvider retrieves the barber weekly schedule.
+type BarberWorkingHoursProvider interface {
+	GetBarberWorkingHours(ctx context.Context, barberID string) ([]domain.BarberWorkingHour, error)
+}
+
 // AppointmentService coordinates appointment scheduling and lifecycle operations.
 type AppointmentService struct {
-	appointmentRepo repository.AppointmentRepository
-	catalogRepo     repository.CatalogRepository
-	unitChecker     UnitAvailabilityChecker
+	appointmentRepo     repository.AppointmentRepository
+	catalogRepo         repository.CatalogRepository
+	unitChecker         UnitAvailabilityChecker
+	unitHoursProvider   UnitOperatingHoursProvider
+	barberHoursProvider BarberWorkingHoursProvider
 }
 
 // NewAppointmentService instantiates AppointmentService.
@@ -33,6 +46,16 @@ func NewAppointmentService(
 		catalogRepo:     catalogRepo,
 		unitChecker:     unitChecker,
 	}
+}
+
+// SetOperatingHoursProvider wires the unit operating schedule provider.
+func (s *AppointmentService) SetOperatingHoursProvider(provider UnitOperatingHoursProvider) {
+	s.unitHoursProvider = provider
+}
+
+// SetBarberWorkingHoursProvider wires the barber shift schedule provider.
+func (s *AppointmentService) SetBarberWorkingHoursProvider(provider BarberWorkingHoursProvider) {
+	s.barberHoursProvider = provider
 }
 
 // CreateAppointment schedules a new customer appointment with validation and conflict checks.
@@ -90,7 +113,17 @@ func (s *AppointmentService) CreateAppointment(ctx context.Context, input domain
 		endTime = startTime.Add(duration)
 	}
 
-	// 4. Check for overlapping appointments with this barber
+	// 4. Validate unit operating hours
+	if err := s.validateOperatingHours(ctx, input.UnitID, startTime, endTime); err != nil {
+		return nil, err
+	}
+
+	// 5. Validate barber working hours & shifts
+	if err := s.validateBarberWorkingHours(ctx, input.BarberID, startTime, endTime); err != nil {
+		return nil, err
+	}
+
+	// 6. Check for overlapping appointments with this barber
 	conflict, err := s.appointmentRepo.CheckConflict(ctx, input.BarberID, startTime, endTime, "")
 	if err != nil {
 		return nil, fmt.Errorf("verify conflict: %w", err)
@@ -99,7 +132,7 @@ func (s *AppointmentService) CreateAppointment(ctx context.Context, input domain
 		return nil, domain.ErrAppointmentConflict
 	}
 
-	// 5. Build domain appointment
+	// 7. Build domain appointment
 	apt := &domain.Appointment{
 		UnitID:        input.UnitID,
 		BarberID:      input.BarberID,
@@ -168,4 +201,102 @@ func (s *AppointmentService) CompleteCut(ctx context.Context, appointmentID, bar
 	}
 
 	return s.appointmentRepo.UpdateStatus(ctx, appointmentID, domain.StatusCompleted)
+}
+
+func normalizeTimeStr(t string) string {
+	trimmed := strings.TrimSpace(t)
+	if len(trimmed) == 5 {
+		return trimmed + ":00"
+	}
+	return trimmed
+}
+
+func (s *AppointmentService) validateOperatingHours(ctx context.Context, unitID string, start, end time.Time) error {
+	if s.unitHoursProvider == nil {
+		return nil
+	}
+	hours, err := s.unitHoursProvider.GetUnitOperatingHours(ctx, unitID)
+	if err != nil {
+		return fmt.Errorf("verify unit operating hours: %w", err)
+	}
+	if len(hours) == 0 {
+		return nil
+	}
+
+	dayOfWeek := int(start.Weekday())
+	var dayRule *domain.UnitOperatingHour
+	for i := range hours {
+		if hours[i].DayOfWeek == dayOfWeek {
+			dayRule = &hours[i]
+			break
+		}
+	}
+	if dayRule == nil {
+		return nil
+	}
+
+	if dayRule.IsClosed {
+		return domain.ErrUnitClosed
+	}
+
+	apptStartTime := start.Format("15:04:00")
+	apptEndTime := end.Format("15:04:00")
+	openTime := normalizeTimeStr(dayRule.OpenTime)
+	closeTime := normalizeTimeStr(dayRule.CloseTime)
+
+	if apptStartTime < openTime || apptEndTime > closeTime {
+		return domain.ErrOutsideOperatingHours
+	}
+
+	return nil
+}
+
+func (s *AppointmentService) validateBarberWorkingHours(ctx context.Context, barberID string, start, end time.Time) error {
+	if s.barberHoursProvider == nil {
+		return nil
+	}
+	hours, err := s.barberHoursProvider.GetBarberWorkingHours(ctx, barberID)
+	if err != nil {
+		return fmt.Errorf("verify barber working hours: %w", err)
+	}
+	if len(hours) == 0 {
+		return nil
+	}
+
+	dayOfWeek := int(start.Weekday())
+	var dayRule *domain.BarberWorkingHour
+	for i := range hours {
+		if hours[i].DayOfWeek == dayOfWeek {
+			dayRule = &hours[i]
+			break
+		}
+	}
+	if dayRule == nil {
+		return nil
+	}
+
+	if dayRule.IsOff {
+		return domain.ErrBarberOffDuty
+	}
+
+	apptStartTime := start.Format("15:04:00")
+	apptEndTime := end.Format("15:04:00")
+	shiftStart := normalizeTimeStr(dayRule.StartTime)
+	shiftEnd := normalizeTimeStr(dayRule.EndTime)
+
+	if apptStartTime < shiftStart || apptEndTime > shiftEnd {
+		return domain.ErrBarberOffDuty
+	}
+
+	if dayRule.BreakStartTime != nil && dayRule.BreakEndTime != nil {
+		breakStart := normalizeTimeStr(*dayRule.BreakStartTime)
+		breakEnd := normalizeTimeStr(*dayRule.BreakEndTime)
+		if breakStart != "" && breakEnd != "" {
+			if apptStartTime < breakEnd && apptEndTime > breakStart {
+				return domain.ErrBarberOnBreak
+			}
+		}
+	}
+
+	return nil
 }

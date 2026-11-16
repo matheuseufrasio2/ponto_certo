@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -258,6 +259,128 @@ func TestAppointmentService_CompleteCut(t *testing.T) {
 		err := svc.CompleteCut(ctx, "apt-1", otherBarberUser)
 		if err != domain.ErrForbidden {
 			t.Fatalf("expected ErrForbidden, got %v", err)
+		}
+	})
+}
+
+type mockUnitOperatingHoursProvider struct {
+	hours []domain.UnitOperatingHour
+}
+
+func (m *mockUnitOperatingHoursProvider) GetUnitOperatingHours(ctx context.Context, unitID string) ([]domain.UnitOperatingHour, error) {
+	return m.hours, nil
+}
+
+type mockBarberWorkingHoursProvider struct {
+	hours []domain.BarberWorkingHour
+}
+
+func (m *mockBarberWorkingHoursProvider) GetBarberWorkingHours(ctx context.Context, barberID string) ([]domain.BarberWorkingHour, error) {
+	return m.hours, nil
+}
+
+func TestAppointmentService_OperatingAndWorkingHoursValidation(t *testing.T) {
+	aptRepo := &mockAppointmentRepo{}
+	catalogRepo := &mockCatalogRepo{
+		services: map[string]*domain.Service{
+			"svc-1": {
+				ID:              "svc-1",
+				DurationMinutes: 30,
+				PriceInCents:    4500,
+			},
+		},
+	}
+	unitChecker := &mockUnitAvailabilityChecker{}
+	svc := NewAppointmentService(aptRepo, catalogRepo, unitChecker)
+
+	// Wednesday at 10:00 (Weekday 3)
+	wednesday10am, _ := time.Parse(time.RFC3339, "2026-11-18T10:00:00Z")
+	// Sunday at 14:00 (Weekday 0)
+	sunday2pm, _ := time.Parse(time.RFC3339, "2026-11-15T14:00:00Z")
+	// Wednesday at 07:00 (too early)
+	wednesdayEarly, _ := time.Parse(time.RFC3339, "2026-11-18T07:00:00Z")
+	// Wednesday at 12:15 (during lunch 12:00-13:00)
+	wednesdayLunch, _ := time.Parse(time.RFC3339, "2026-11-18T12:15:00Z")
+
+	breakStart := "12:00"
+	breakEnd := "13:00"
+
+	unitHours := []domain.UnitOperatingHour{
+		{DayOfWeek: 0, OpenTime: "09:00", CloseTime: "18:00", IsClosed: true},
+		{DayOfWeek: 3, OpenTime: "09:00", CloseTime: "20:00", IsClosed: false},
+	}
+	barberHours := []domain.BarberWorkingHour{
+		{DayOfWeek: 0, StartTime: "09:00", EndTime: "18:00", IsOff: true},
+		{
+			DayOfWeek:      3,
+			StartTime:      "09:00",
+			EndTime:        "19:00",
+			BreakStartTime: &breakStart,
+			BreakEndTime:   &breakEnd,
+			IsOff:          false,
+		},
+	}
+
+	unitProvider := &mockUnitOperatingHoursProvider{hours: unitHours}
+	barberProvider := &mockBarberWorkingHoursProvider{hours: barberHours}
+
+	svc.SetOperatingHoursProvider(unitProvider)
+	svc.SetBarberWorkingHoursProvider(barberProvider)
+
+	ctx := context.Background()
+
+	t.Run("rejects appointment when unit is closed", func(t *testing.T) {
+		_, err := svc.CreateAppointment(ctx, domain.CreateAppointmentInput{
+			UnitID:     "unit-1",
+			BarberID:   "barber-1",
+			ClientName: "Cliente Teste",
+			ServiceID:  "svc-1",
+			StartTime:  sunday2pm,
+		})
+		if !errors.Is(err, domain.ErrUnitClosed) {
+			t.Fatalf("expected ErrUnitClosed, got %v", err)
+		}
+	})
+
+	t.Run("rejects appointment outside unit operating hours", func(t *testing.T) {
+		_, err := svc.CreateAppointment(ctx, domain.CreateAppointmentInput{
+			UnitID:     "unit-1",
+			BarberID:   "barber-1",
+			ClientName: "Cliente Teste",
+			ServiceID:  "svc-1",
+			StartTime:  wednesdayEarly,
+		})
+		if !errors.Is(err, domain.ErrOutsideOperatingHours) {
+			t.Fatalf("expected ErrOutsideOperatingHours, got %v", err)
+		}
+	})
+
+	t.Run("rejects appointment during barber break time", func(t *testing.T) {
+		_, err := svc.CreateAppointment(ctx, domain.CreateAppointmentInput{
+			UnitID:     "unit-1",
+			BarberID:   "barber-1",
+			ClientName: "Cliente Teste",
+			ServiceID:  "svc-1",
+			StartTime:  wednesdayLunch,
+		})
+		if !errors.Is(err, domain.ErrBarberOnBreak) {
+			t.Fatalf("expected ErrBarberOnBreak, got %v", err)
+		}
+	})
+
+	t.Run("succeeds when unit is open and barber is on duty", func(t *testing.T) {
+		apt, err := svc.CreateAppointment(ctx, domain.CreateAppointmentInput{
+			UnitID:     "unit-1",
+			BarberID:   "barber-1",
+			ClientName: "Cliente Teste",
+			ServiceID:  "svc-1",
+			StartTime:  wednesday10am,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if apt == nil {
+			t.Fatal("expected non-nil appointment")
 		}
 	})
 }
