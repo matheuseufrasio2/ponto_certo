@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.18.0...ponto_certo-v0.19.0) (2026-11-16)
+
+
+### Features
+
+* **api:** add manager team operational settings endpoints ([113f0ca](https://github.com/matheuseufrasio2/ponto_certo/commit/113f0ca6a798df82f866f10df6c705911faca090))
+* **api:** register manager team routes ([0911fbb](https://github.com/matheuseufrasio2/ponto_certo/commit/0911fbbcec42bca48309aef9f4354d3f25854011))
+* **domain:** define manager team operational models ([422da9e](https://github.com/matheuseufrasio2/ponto_certo/commit/422da9e0013a4b0da2d16a3cc42a90f1c0b469cc))
+* **handler:** add manager team endpoints ([6297ed7](https://github.com/matheuseufrasio2/ponto_certo/commit/6297ed715345c1ec2651a3d3a7d2882a9da9810f))
+* **repo:** implement manager team queries ([0699e74](https://github.com/matheuseufrasio2/ponto_certo/commit/0699e7473b71e98791b7e134844c41e4ad65c6db))
+* **service:** implement manager team operations ([7282412](https://github.com/matheuseufrasio2/ponto_certo/commit/7282412e2326585a4313c6c8c16b4d8d7b23e562))
+
 ## [0.18.0](https://github.com/matheuseufrasio2/ponto_certo/compare/ponto_certo-v0.17.0...ponto_certo-v0.18.0) (2026-11-16)
 
 
