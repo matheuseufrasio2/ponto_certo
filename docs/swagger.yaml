@@ -179,6 +179,29 @@ definitions:
     - BarberStatusLunch
     - BarberStatusOffDuty
     - BarberStatusVacation
+  domain.BarberWorkingHour:
+    properties:
+      barber_id:
+        type: string
+      break_end_time:
+        type: string
+      break_start_time:
+        type: string
+      created_at:
+        type: string
+      day_of_week:
+        type: integer
+      end_time:
+        type: string
+      id:
+        type: string
+      is_off:
+        type: boolean
+      start_time:
+        type: string
+      updated_at:
+        type: string
+    type: object
   domain.BarbershopUnit:
     properties:
       address:
@@ -347,6 +370,21 @@ definitions:
         type: string
       price_in_cents:
         type: integer
+    type: object
+  domain.CreateTeamMemberInput:
+    properties:
+      commission_percentage:
+        type: integer
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/domain.TeamRole'
     type: object
   domain.CreateTenantInput:
     properties:
@@ -1097,6 +1135,39 @@ definitions:
     - SubscriptionStatusPastDue
     - SubscriptionStatusTrial
     - SubscriptionStatusCancelled
+  domain.TeamMemberItem:
+    properties:
+      barber_id:
+        type: string
+      commission_percentage:
+        type: integer
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/domain.Role'
+      status:
+        $ref: '#/definitions/domain.BarberStatus'
+      unit_id:
+        type: string
+    type: object
+  domain.TeamRole:
+    enum:
+    - BARBER
+    - RECEPTIONIST
+    type: string
+    x-enum-varnames:
+    - TeamRoleBarber
+    - TeamRoleReceptionist
   domain.TenantOverview:
     properties:
       appointments_last_30_days:
@@ -1133,10 +1204,46 @@ definitions:
       user_id:
         type: string
     type: object
+  domain.UnitOperatingHour:
+    properties:
+      close_time:
+        type: string
+      created_at:
+        type: string
+      day_of_week:
+        type: integer
+      id:
+        type: string
+      is_closed:
+        type: boolean
+      open_time:
+        type: string
+      unit_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
   domain.UnitRevenueComparison:
     properties:
       revenue_in_cents:
         type: integer
+      unit_id:
+        type: string
+      unit_name:
+        type: string
+    type: object
+  domain.UnitSettingsResponse:
+    properties:
+      address:
+        type: string
+      chair_count:
+        type: integer
+      operating_hours:
+        items:
+          $ref: '#/definitions/domain.UnitOperatingHour'
+        type: array
+      phone:
+        type: string
       unit_id:
         type: string
       unit_name:
@@ -1161,6 +1268,17 @@ definitions:
         type: integer
       scope:
         $ref: '#/definitions/domain.CommissionScope'
+    type: object
+  domain.UpdateOperatingDayInput:
+    properties:
+      close_time:
+        type: string
+      day_of_week:
+        type: integer
+      is_closed:
+        type: boolean
+      open_time:
+        type: string
     type: object
   domain.UpdateOrganizationInput:
     properties:
@@ -1222,6 +1340,47 @@ definitions:
         type: string
       phone:
         type: string
+    type: object
+  domain.UpdateUnitSettingsInput:
+    properties:
+      address:
+        type: string
+      operating_hours:
+        items:
+          $ref: '#/definitions/domain.UpdateOperatingDayInput'
+        type: array
+      phone:
+        type: string
+      schedule:
+        items:
+          $ref: '#/definitions/domain.UpdateOperatingDayInput'
+        type: array
+    type: object
+  domain.UpdateWorkingHoursDayInput:
+    properties:
+      break_end_time:
+        type: string
+      break_start_time:
+        type: string
+      day_of_week:
+        type: integer
+      end_time:
+        type: string
+      is_off:
+        type: boolean
+      start_time:
+        type: string
+    type: object
+  domain.UpdateWorkingHoursInput:
+    properties:
+      schedule:
+        items:
+          $ref: '#/definitions/domain.UpdateWorkingHoursDayInput'
+        type: array
+      working_hours:
+        items:
+          $ref: '#/definitions/domain.UpdateWorkingHoursDayInput'
+        type: array
     type: object
   domain.User:
     properties:
@@ -2806,6 +2965,273 @@ paths:
       security:
       - BearerAuth: []
       summary: Update branch service details
+      tags:
+      - manager
+  /manager/team:
+    get:
+      parameters:
+      - description: Unit UUID (defaults to manager's unit)
+        in: query
+        name: unit_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.TeamMemberItem'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List team members for branch unit
+      tags:
+      - manager
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Team member creation payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateTeamMemberInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.TeamMemberItem'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new team member for branch unit
+      tags:
+      - manager
+  /manager/team/{id}/working-hours:
+    get:
+      parameters:
+      - description: Barber UUID or User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.BarberWorkingHour'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get working hours for team member
+      tags:
+      - manager
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Barber UUID or User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Unit UUID
+        in: query
+        name: unit_id
+        type: string
+      - description: Working hours payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateWorkingHoursInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.BarberWorkingHour'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update working hours for team member
+      tags:
+      - manager
+  /manager/unit-settings:
+    get:
+      parameters:
+      - description: Unit UUID (defaults to manager's unit)
+        in: query
+        name: unit_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UnitSettingsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get operational settings and operating hours for branch unit
+      tags:
+      - manager
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Unit UUID (defaults to manager's unit)
+        in: query
+        name: unit_id
+        type: string
+      - description: Unit settings payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateUnitSettingsInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UnitSettingsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update operational settings and operating hours for branch unit
       tags:
       - manager
   /owner/audit-logs:
