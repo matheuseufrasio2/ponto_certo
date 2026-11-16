@@ -1102,3 +1102,137 @@ func TestCatalogInputs(t *testing.T) {
 		}
 	})
 }
+
+func TestTeamAndScheduleInputs(t *testing.T) {
+	t.Run("CreateTeamMemberInput_validations", func(t *testing.T) {
+		comm := 50
+		valid := domain.CreateTeamMemberInput{
+			Name:                 "Lucas Barbeiro",
+			Email:                "lucas@barbearia.com",
+			Phone:                "11988887777",
+			Password:             "senhaForte123",
+			Role:                 domain.TeamRoleBarber,
+			CommissionPercentage: &comm,
+		}
+		if err := valid.Validate(); err != nil {
+			t.Fatalf("expected valid input, got %v", err)
+		}
+
+		// Invalid role
+		invalidRole := valid
+		invalidRole.Role = domain.TeamRole("ADMIN")
+		if err := invalidRole.Validate(); err == nil {
+			t.Fatal("expected error for invalid role")
+		}
+
+		// Empty name
+		invalidName := valid
+		invalidName.Name = ""
+		if err := invalidName.Validate(); err == nil {
+			t.Fatal("expected error for empty name")
+		}
+
+		// Short password
+		invalidPass := valid
+		invalidPass.Password = "123"
+		if err := invalidPass.Validate(); err == nil {
+			t.Fatal("expected error for short password")
+		}
+
+		// Invalid email
+		invalidEmail := valid
+		invalidEmail.Email = "invalid-email"
+		if err := invalidEmail.Validate(); err == nil {
+			t.Fatal("expected error for invalid email")
+		}
+
+		// Invalid commission
+		badComm := 150
+		invalidComm := valid
+		invalidComm.CommissionPercentage = &badComm
+		if err := invalidComm.Validate(); err == nil {
+			t.Fatal("expected error for commission > 100")
+		}
+	})
+
+	t.Run("UpdateWorkingHoursInput_validations", func(t *testing.T) {
+		breakStart := "12:00"
+		breakEnd := "13:00"
+		var schedule []domain.UpdateWorkingHoursDayInput
+		for day := 0; day < 7; day++ {
+			if day == 0 {
+				schedule = append(schedule, domain.UpdateWorkingHoursDayInput{
+					DayOfWeek: day,
+					IsOff:     true,
+					StartTime: "09:00",
+					EndTime:   "18:00",
+				})
+			} else {
+				schedule = append(schedule, domain.UpdateWorkingHoursDayInput{
+					DayOfWeek:      day,
+					IsOff:          false,
+					StartTime:      "09:00",
+					EndTime:        "19:00",
+					BreakStartTime: &breakStart,
+					BreakEndTime:   &breakEnd,
+				})
+			}
+		}
+
+		input := domain.UpdateWorkingHoursInput{
+			Schedule: schedule,
+		}
+		if err := input.Validate(); err != nil {
+			t.Fatalf("expected valid schedule, got %v", err)
+		}
+
+		// Less than 7 days
+		invalidDays := domain.UpdateWorkingHoursInput{
+			WorkingHours: schedule[:6],
+		}
+		if err := invalidDays.Validate(); err == nil {
+			t.Fatal("expected error for schedule with less than 7 days")
+		}
+
+		// Start after end
+		badTimeSchedule := make([]domain.UpdateWorkingHoursDayInput, len(schedule))
+		copy(badTimeSchedule, schedule)
+		badTimeSchedule[1].StartTime = "20:00"
+		badTimeSchedule[1].EndTime = "10:00"
+		if err := (domain.UpdateWorkingHoursInput{Schedule: badTimeSchedule}).Validate(); err == nil {
+			t.Fatal("expected error when start_time is after end_time")
+		}
+	})
+
+	t.Run("UpdateUnitSettingsInput_validations", func(t *testing.T) {
+		var opHours []domain.UpdateOperatingDayInput
+		for day := 0; day < 7; day++ {
+			opHours = append(opHours, domain.UpdateOperatingDayInput{
+				DayOfWeek: day,
+				OpenTime:  "09:00",
+				CloseTime: "20:00",
+				IsClosed:  day == 0,
+			})
+		}
+		phone := "11999998888"
+		addr := "Rua Oscar Freire, 100"
+		valid := domain.UpdateUnitSettingsInput{
+			Phone:          &phone,
+			Address:        &addr,
+			OperatingHours: opHours,
+		}
+		if err := valid.Validate(); err != nil {
+			t.Fatalf("expected valid settings input, got %v", err)
+		}
+
+		// Open time after close time
+		badHours := make([]domain.UpdateOperatingDayInput, len(opHours))
+		copy(badHours, opHours)
+		badHours[1].OpenTime = "22:00"
+		badHours[1].CloseTime = "08:00"
+		badHours[1].IsClosed = false
+		if err := (domain.UpdateUnitSettingsInput{OperatingHours: badHours}).Validate(); err == nil {
+			t.Fatal("expected error when open_time is after close_time")
+		}
+	})
+}

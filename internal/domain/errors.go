@@ -34,6 +34,10 @@ const (
 	ErrCodeManagerEmailTaken           ErrorCode = "MANAGER_EMAIL_TAKEN"
 	ErrCodeServiceNameAlreadyExists    ErrorCode = "SERVICE_NAME_ALREADY_EXISTS"
 	ErrCodeProductNameAlreadyExists    ErrorCode = "PRODUCT_NAME_ALREADY_EXISTS"
+	ErrCodeUnitClosed                  ErrorCode = "UNIT_CLOSED"
+	ErrCodeBarberOffDuty               ErrorCode = "BARBER_OFF_DUTY"
+	ErrCodeBarberOnBreak               ErrorCode = "BARBER_ON_BREAK"
+	ErrCodeBarberAlreadyScheduledHours ErrorCode = "BARBER_ALREADY_SCHEDULED_HOURS"
 
 	// 401 & 403 - Auth, Tenant & Governance
 	ErrCodeUnauthorized                ErrorCode = "UNAUTHORIZED"
@@ -53,6 +57,7 @@ const (
 	ErrCodeCannotDeactivateSelf        ErrorCode = "CANNOT_DEACTIVATE_SELF"
 	ErrCodeInsufficientRoleHierarchy   ErrorCode = "INSUFFICIENT_ROLE_HIERARCHY"
 	ErrCodeBarberNotInOrg              ErrorCode = "BARBER_NOT_IN_ORG"
+	ErrCodeBarberNotAssignedToUnit     ErrorCode = "BARBER_NOT_ASSIGNED_TO_UNIT"
 
 	// 400 - Validation & Input
 	ErrCodeValidationFailed             ErrorCode = "VALIDATION_FAILED"
@@ -66,6 +71,9 @@ const (
 	ErrCodeInvalidAppointmentTime       ErrorCode = "INVALID_APPOINTMENT_TIME"
 	ErrCodeInvalidBarberStatus          ErrorCode = "INVALID_BARBER_STATUS"
 	ErrCodeInvalidDateRange             ErrorCode = "INVALID_DATE_RANGE"
+	ErrCodeOutsideOperatingHours       ErrorCode = "OUTSIDE_OPERATING_HOURS"
+	ErrCodeInvalidWorkingHours         ErrorCode = "INVALID_WORKING_HOURS"
+	ErrCodeInvalidOperatingHours       ErrorCode = "INVALID_OPERATING_HOURS"
 	ErrCodeProductNameRequired          ErrorCode = "PRODUCT_NAME_REQUIRED"
 	ErrCodeInvalidProductCategory       ErrorCode = "INVALID_PRODUCT_CATEGORY"
 	ErrCodeProductCostMinValue          ErrorCode = "PRODUCT_COST_MIN_VALUE"
@@ -178,6 +186,14 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeServiceNameAlreadyExists
 	case errors.Is(err, ErrProductNameAlreadyExists):
 		return ErrCodeProductNameAlreadyExists
+	case errors.Is(err, ErrUnitClosed):
+		return ErrCodeUnitClosed
+	case errors.Is(err, ErrBarberOffDuty):
+		return ErrCodeBarberOffDuty
+	case errors.Is(err, ErrBarberOnBreak):
+		return ErrCodeBarberOnBreak
+	case errors.Is(err, ErrBarberAlreadyScheduledHours):
+		return ErrCodeBarberAlreadyScheduledHours
 
 	// 401 & 403
 	case errors.Is(err, ErrUnauthorized):
@@ -204,8 +220,16 @@ func CodeForError(err error) ErrorCode {
 		return ErrCodeInsufficientRoleHierarchy
 	case errors.Is(err, ErrBarberNotInOrg):
 		return ErrCodeBarberNotInOrg
+	case errors.Is(err, ErrBarberNotAssignedToUnit):
+		return ErrCodeBarberNotAssignedToUnit
 
 	// 400
+	case errors.Is(err, ErrOutsideOperatingHours):
+		return ErrCodeOutsideOperatingHours
+	case errors.Is(err, ErrInvalidWorkingHours):
+		return ErrCodeInvalidWorkingHours
+	case errors.Is(err, ErrInvalidOperatingHours):
+		return ErrCodeInvalidOperatingHours
 	case errors.Is(err, ErrInvalidTimeSlot):
 		return ErrCodeInvalidTimeSlot
 	case errors.Is(err, ErrInvalidPaymentMethod):

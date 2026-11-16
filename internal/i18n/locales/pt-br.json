@@ -73,6 +73,14 @@
   "BARBER_NOT_IN_ORG": "Este barbeiro não pertence à sua organização.",
   "SERVICE_NAME_ALREADY_EXISTS": "Já existe um serviço cadastrado com este nome nesta unidade.",
   "PRODUCT_NAME_ALREADY_EXISTS": "Já existe um produto cadastrado com este nome nesta unidade.",
+  "UNIT_CLOSED": "A unidade está fechada neste dia da semana.",
+  "OUTSIDE_OPERATING_HOURS": "O horário solicitado está fora do expediente de funcionamento da filial.",
+  "BARBER_OFF_DUTY": "O profissional está de folga ou fora da sua jornada neste dia ou horário.",
+  "BARBER_ON_BREAK": "O agendamento coincide com o intervalo de almoço do profissional.",
+  "BARBER_NOT_ASSIGNED_TO_UNIT": "O profissional barbeiro não está vinculado a esta unidade.",
+  "BARBER_ALREADY_SCHEDULED_HOURS": "A grade semanal deste profissional já está configurada.",
+  "INVALID_WORKING_HOURS": "Os horários de trabalho informados são inválidos.",
+  "INVALID_OPERATING_HOURS": "Os horários de funcionamento informados são inválidos.",
   "INTERNAL_SERVER_ERROR": "Ocorreu um erro interno no servidor. Nossa equipe técnica já foi informada. Tente novamente em instantes."
 }
 

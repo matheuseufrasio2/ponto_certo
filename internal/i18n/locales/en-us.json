@@ -73,6 +73,14 @@
   "BARBER_NOT_IN_ORG": "Barber does not belong to your organization.",
   "SERVICE_NAME_ALREADY_EXISTS": "A service with this name already exists in this branch.",
   "PRODUCT_NAME_ALREADY_EXISTS": "A product with this name already exists in this branch.",
+  "UNIT_CLOSED": "The branch unit is closed on this day of the week.",
+  "OUTSIDE_OPERATING_HOURS": "The requested appointment time is outside the branch operating hours.",
+  "BARBER_OFF_DUTY": "The professional is off duty or outside working hours on this day or time.",
+  "BARBER_ON_BREAK": "The appointment overlaps with the professional's scheduled break time.",
+  "BARBER_NOT_ASSIGNED_TO_UNIT": "The barber professional does not belong to this branch unit.",
+  "BARBER_ALREADY_SCHEDULED_HOURS": "Weekly working hours are already configured for this professional.",
+  "INVALID_WORKING_HOURS": "The specified working hours schedule is invalid.",
+  "INVALID_OPERATING_HOURS": "The specified branch operating hours are invalid.",
   "INTERNAL_SERVER_ERROR": "An internal server error occurred. Our technical team has been notified."
 }
 

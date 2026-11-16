@@ -3,6 +3,7 @@ package domain
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/mail"
 	"strings"
 	"time"
@@ -62,6 +63,14 @@ var (
 	ErrBarberNotInOrg               = errors.New("barber does not belong to the caller's organization")
 	ErrServiceNameAlreadyExists     = errors.New("a service with this name already exists in this unit")
 	ErrProductNameAlreadyExists     = errors.New("a product with this name already exists in this unit")
+	ErrUnitClosed                  = errors.New("unit is closed on this day")
+	ErrOutsideOperatingHours       = errors.New("appointment time is outside unit operating hours")
+	ErrBarberOffDuty               = errors.New("barber is off duty on this day or time")
+	ErrBarberOnBreak               = errors.New("appointment overlaps with barber break time")
+	ErrBarberNotAssignedToUnit     = errors.New("barber does not belong to this unit")
+	ErrBarberAlreadyScheduledHours = errors.New("barber already has working hours configured")
+	ErrInvalidWorkingHours         = errors.New("invalid working hours")
+	ErrInvalidOperatingHours       = errors.New("invalid operating hours")
 )
 
 // BarberStatus defines live operational shift state for a barber.
@@ -1257,6 +1266,253 @@ func (i AdjustProductStockInput) Validate() error {
 	case InventoryMovementAdjustment:
 		if i.Quantity < 0 {
 			valErr.Add("quantity", "must be greater than or equal to zero for balance adjustment")
+		}
+	}
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+// TeamRole defines acceptable roles a manager can assign within their unit.
+type TeamRole string
+
+const (
+	TeamRoleBarber       TeamRole = "BARBER"
+	TeamRoleReceptionist TeamRole = "RECEPTIONIST"
+)
+
+// IsValid validates whether the team role is allowed.
+func (r TeamRole) IsValid() bool {
+	return r == TeamRoleBarber || r == TeamRoleReceptionist
+}
+
+// TeamMemberItem represents a team member profile listed by a manager.
+type TeamMemberItem struct {
+	ID                   string        `json:"id"`
+	BarberID             *string       `json:"barber_id,omitempty"`
+	UnitID               string        `json:"unit_id"`
+	Name                 string        `json:"name"`
+	Email                string        `json:"email"`
+	Phone                string        `json:"phone"`
+	Role                 Role          `json:"role"`
+	CommissionPercentage *int          `json:"commission_percentage,omitempty"`
+	Status               *BarberStatus `json:"status,omitempty"`
+	IsActive             bool          `json:"is_active"`
+	CreatedAt            time.Time     `json:"created_at"`
+}
+
+// CreateTeamMemberInput defines input payload for creating a team member.
+type CreateTeamMemberInput struct {
+	Name                 string   `json:"name"`
+	Email                string   `json:"email"`
+	Phone                string   `json:"phone"`
+	Password             string   `json:"password"`
+	Role                 TeamRole `json:"role"`
+	CommissionPercentage *int     `json:"commission_percentage,omitempty"`
+}
+
+// Validate validates CreateTeamMemberInput fields.
+func (i CreateTeamMemberInput) Validate() error {
+	valErr := NewValidationError()
+	trimmedName := strings.TrimSpace(i.Name)
+	if trimmedName == "" || utf8.RuneCountInString(trimmedName) > 120 {
+		valErr.Add("name", "must be between 1 and 120 characters")
+	}
+	if !i.Role.IsValid() {
+		valErr.Add("role", "role must be BARBER or RECEPTIONIST")
+	}
+	trimmedEmail := strings.TrimSpace(i.Email)
+	if trimmedEmail == "" {
+		valErr.Add("email", "email is required")
+	} else if _, err := mail.ParseAddress(trimmedEmail); err != nil {
+		valErr.Add("email", "invalid email address format")
+	}
+	trimmedPhone := strings.TrimSpace(i.Phone)
+	if trimmedPhone == "" || len(trimmedPhone) < 8 || len(trimmedPhone) > 20 {
+		valErr.Add("phone", "must be between 8 and 20 characters")
+	}
+	if len(i.Password) < 8 {
+		valErr.Add("password", "must be at least 8 characters")
+	}
+	if i.Role == TeamRoleBarber && i.CommissionPercentage != nil {
+		if *i.CommissionPercentage < 0 || *i.CommissionPercentage > 100 {
+			valErr.Add("commission_percentage", "must be between 0 and 100")
+		}
+	}
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+// UpdateWorkingHoursDayInput represents a day's schedule input.
+type UpdateWorkingHoursDayInput struct {
+	DayOfWeek      int     `json:"day_of_week"`
+	StartTime      string  `json:"start_time"`
+	EndTime        string  `json:"end_time"`
+	BreakStartTime *string `json:"break_start_time,omitempty"`
+	BreakEndTime   *string `json:"break_end_time,omitempty"`
+	IsOff          bool    `json:"is_off"`
+}
+
+// UpdateWorkingHoursInput defines payload for updating barber working hours.
+// Accepts either "schedule" or "working_hours" to maximize front/back compatibility.
+type UpdateWorkingHoursInput struct {
+	WorkingHours []UpdateWorkingHoursDayInput `json:"working_hours,omitempty"`
+	Schedule     []UpdateWorkingHoursDayInput `json:"schedule,omitempty"`
+}
+
+// Normalize returns the populated slice between Schedule and WorkingHours.
+func (i UpdateWorkingHoursInput) Normalize() []UpdateWorkingHoursDayInput {
+	if len(i.Schedule) > 0 && len(i.WorkingHours) == 0 {
+		return i.Schedule
+	}
+	return i.WorkingHours
+}
+
+func parseTimeOnly(s string) (time.Time, error) {
+	trimmed := strings.TrimSpace(s)
+	if len(trimmed) == 5 {
+		return time.Parse("15:04", trimmed)
+	}
+	return time.Parse("15:04:05", trimmed)
+}
+
+// Validate validates UpdateWorkingHoursInput fields.
+func (i UpdateWorkingHoursInput) Validate() error {
+	hours := i.Normalize()
+	valErr := NewValidationError()
+	if len(hours) != 7 {
+		valErr.Add("schedule", "must provide schedule for all 7 days of the week (0 to 6)")
+		return valErr
+	}
+	seenDays := make(map[int]bool)
+	for idx, d := range hours {
+		if d.DayOfWeek < 0 || d.DayOfWeek > 6 {
+			valErr.Add(fmt.Sprintf("schedule[%d].day_of_week", idx), "day_of_week must be between 0 and 6")
+		}
+		if seenDays[d.DayOfWeek] {
+			valErr.Add(fmt.Sprintf("schedule[%d].day_of_week", idx), "duplicate day_of_week in payload")
+		}
+		seenDays[d.DayOfWeek] = true
+
+		if !d.IsOff {
+			start, err1 := parseTimeOnly(d.StartTime)
+			end, err2 := parseTimeOnly(d.EndTime)
+			if err1 != nil {
+				valErr.Add(fmt.Sprintf("schedule[%d].start_time", idx), "invalid start_time format (expected HH:MM)")
+			}
+			if err2 != nil {
+				valErr.Add(fmt.Sprintf("schedule[%d].end_time", idx), "invalid end_time format (expected HH:MM)")
+			}
+			if err1 == nil && err2 == nil && !start.Before(end) {
+				valErr.Add(fmt.Sprintf("schedule[%d]", idx), "start_time must be before end_time")
+			}
+			if d.BreakStartTime != nil && d.BreakEndTime != nil {
+				bStartStr := strings.TrimSpace(*d.BreakStartTime)
+				bEndStr := strings.TrimSpace(*d.BreakEndTime)
+				if bStartStr != "" && bEndStr != "" {
+					bStart, bErr1 := parseTimeOnly(bStartStr)
+					bEnd, bErr2 := parseTimeOnly(bEndStr)
+					if bErr1 != nil || bErr2 != nil {
+						valErr.Add(fmt.Sprintf("schedule[%d].break", idx), "invalid break time format")
+					} else {
+						if !bStart.Before(bEnd) {
+							valErr.Add(fmt.Sprintf("schedule[%d].break", idx), "break_start_time must be before break_end_time")
+						}
+						if err1 == nil && err2 == nil && (bStart.Before(start) || bEnd.After(end)) {
+							valErr.Add(fmt.Sprintf("schedule[%d].break", idx), "break must be within working hours range")
+						}
+					}
+				}
+			}
+		}
+	}
+	if valErr.HasErrors() {
+		return valErr
+	}
+	return nil
+}
+
+// UnitSettingsResponse represents the branch profile and operational hours.
+type UnitSettingsResponse struct {
+	UnitID         string              `json:"unit_id"`
+	UnitName       string              `json:"unit_name"`
+	Phone          *string             `json:"phone"`
+	Address        *string             `json:"address"`
+	ChairCount     int                 `json:"chair_count"`
+	OperatingHours []UnitOperatingHour `json:"operating_hours"`
+}
+
+// UpdateOperatingDayInput represents operating hours input for a day of week.
+type UpdateOperatingDayInput struct {
+	DayOfWeek int    `json:"day_of_week"`
+	OpenTime  string `json:"open_time"`
+	CloseTime string `json:"close_time"`
+	IsClosed  bool   `json:"is_closed"`
+}
+
+// UpdateUnitSettingsInput defines payload for updating unit phone, address and operating hours.
+type UpdateUnitSettingsInput struct {
+	Phone          *string                   `json:"phone,omitempty"`
+	Address        *string                   `json:"address,omitempty"`
+	OperatingHours []UpdateOperatingDayInput `json:"operating_hours,omitempty"`
+	Schedule       []UpdateOperatingDayInput `json:"schedule,omitempty"`
+}
+
+// NormalizeHours returns populated hours slice between OperatingHours and Schedule.
+func (i UpdateUnitSettingsInput) NormalizeHours() []UpdateOperatingDayInput {
+	if len(i.Schedule) > 0 && len(i.OperatingHours) == 0 {
+		return i.Schedule
+	}
+	return i.OperatingHours
+}
+
+// Validate validates UpdateUnitSettingsInput fields.
+func (i UpdateUnitSettingsInput) Validate() error {
+	valErr := NewValidationError()
+	if i.Phone != nil {
+		trimmedPhone := strings.TrimSpace(*i.Phone)
+		if trimmedPhone != "" && (len(trimmedPhone) < 8 || len(trimmedPhone) > 20) {
+			valErr.Add("phone", "must be between 8 and 20 characters")
+		}
+	}
+	if i.Address != nil {
+		trimmedAddress := strings.TrimSpace(*i.Address)
+		if trimmedAddress != "" && utf8.RuneCountInString(trimmedAddress) > 255 {
+			valErr.Add("address", "must be at most 255 characters")
+		}
+	}
+	hours := i.NormalizeHours()
+	if len(hours) > 0 {
+		if len(hours) != 7 {
+			valErr.Add("operating_hours", "must provide schedule for all 7 days of the week (0 to 6)")
+			return valErr
+		}
+		seenDays := make(map[int]bool)
+		for idx, d := range hours {
+			if d.DayOfWeek < 0 || d.DayOfWeek > 6 {
+				valErr.Add(fmt.Sprintf("operating_hours[%d].day_of_week", idx), "day_of_week must be between 0 and 6")
+			}
+			if seenDays[d.DayOfWeek] {
+				valErr.Add(fmt.Sprintf("operating_hours[%d].day_of_week", idx), "duplicate day_of_week in payload")
+			}
+			seenDays[d.DayOfWeek] = true
+
+			if !d.IsClosed {
+				open, err1 := parseTimeOnly(d.OpenTime)
+				closeTime, err2 := parseTimeOnly(d.CloseTime)
+				if err1 != nil {
+					valErr.Add(fmt.Sprintf("operating_hours[%d].open_time", idx), "invalid open_time format (expected HH:MM)")
+				}
+				if err2 != nil {
+					valErr.Add(fmt.Sprintf("operating_hours[%d].close_time", idx), "invalid close_time format (expected HH:MM)")
+				}
+				if err1 == nil && err2 == nil && !open.Before(closeTime) {
+					valErr.Add(fmt.Sprintf("operating_hours[%d]", idx), "open_time must be before close_time")
+				}
+			}
 		}
 	}
 	if valErr.HasErrors() {
