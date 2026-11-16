@@ -49,12 +49,10 @@ func (r *PostgresManagerCatalogRepository) ListServicesByUnit(ctx context.Contex
 		WHERE (unit_id = $1 OR unit_id IS NULL)
 	`
 	args := []any{unitID}
-	argIdx := 2
 
 	if category != nil && *category != "" {
-		query += fmt.Sprintf(" AND category = $%d", argIdx)
+		query += " AND category = $2"
 		args = append(args, *category)
-		argIdx++
 	}
 
 	if status != nil && *status != "" {
@@ -294,12 +292,10 @@ func (r *PostgresManagerCatalogRepository) ListProductsByUnit(ctx context.Contex
 		WHERE unit_id = $1
 	`
 	args := []any{unitID}
-	argIdx := 2
 
 	if category != nil && *category != "" {
-		query += fmt.Sprintf(" AND category = $%d", argIdx)
+		query += " AND category = $2"
 		args = append(args, *category)
-		argIdx++
 	}
 
 	if status != nil && *status != "" {
